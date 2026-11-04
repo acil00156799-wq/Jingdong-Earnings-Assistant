@@ -1,0 +1,21 @@
+{
+  "id": "./",
+  "name": "京东个人收益助手",
+  "short_name": "收益助手",
+  "description": "个人收益记录与线上机会管理工具",
+  "lang": "zh-CN",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f4f5f8",
+  "theme_color": "#e1251b",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
