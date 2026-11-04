@@ -1,0 +1,80 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>京东个人收益助手</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f4f5f8;color:#222;font-family:Arial,"Microsoft YaHei",sans-serif}
+header{background:linear-gradient(135deg,#e1251b,#ff6845);color:white;padding:25px 18px 30px;border-radius:0 0 22px 22px}
+header h2{margin:0 0 8px}
+header p{margin:0;font-size:13px;opacity:.9}
+main{padding:16px;max-width:650px;margin:auto}
+.card{background:white;border-radius:15px;padding:17px;margin-bottom:14px;box-shadow:0 3px 12px #00000008}
+.big{font-size:30px;font-weight:bold;color:#e1251b;margin:8px 0}
+.muted{font-size:13px;color:#888}
+h3{margin:0 0 14px;font-size:17px}
+input,select,button{width:100%;padding:12px;border-radius:9px;border:1px solid #ddd;font-size:15px;margin:6px 0}
+button{background:#e1251b;color:white;border:0;font-weight:bold}
+button.secondary{background:#f1f1f1;color:#333}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.item{background:#fff5f3;padding:13px;border-radius:12px}
+.item strong{display:block;color:#e1251b;font-size:20px;margin-top:5px}
+.task{border-bottom:1px solid #eee;padding:12px 0}
+.task:last-child{border:0}
+.task small{color:#888}
+footer{text-align:center;color:#999;font-size:12px;padding:20px}
+</style>
+</head>
+<body>
+<header>
+<h2>京东个人收益助手</h2>
+<p>个人收益管理 · 任务记录 · 多账号管理</p>
+</header>
+<main>
+<div class="card">
+<h3>我的收益总览</h3>
+<div class="big" id="total">¥0.00</div>
+<div class="muted">累计记录收益（手动登记）</div>
+</div>
+<div class="grid">
+<div class="item">本月收益<strong id="month">¥0.00</strong></div>
+<div class="item">任务记录<strong id="count">0</strong></div>
+</div>
+<div class="card">
+<h3>账号管理</h3>
+<input id="account" placeholder="输入账号备注，如账号1">
+<button onclick="addAccount()">添加账号</button>
+<select id="accounts"><option>默认账号</option></select>
+</div>
+<div class="card">
+<h3>登记一笔收益</h3>
+<input id="taskname" placeholder="任务名称，如签到、京豆兑换">
+<input id="amount" type="number" step="0.01" placeholder="实际收益金额（元）">
+<button onclick="addRecord()">保存收益记录</button>
+</div>
+<div class="card">
+<h3>我的收益明细</h3>
+<div id="records" class="muted">暂时还没有记录</div>
+<button class="secondary" onclick="clearRecords()">清空记录</button>
+</div>
+<div class="card">
+<h3>安全提醒</h3>
+<p class="muted">只使用京东官方渠道参与活动。不要提供密码、短信验证码或支付信息。收益记录不代表平台承诺收益。</p>
+</div>
+</main>
+<footer>京东个人收益助手 · 个人管理工具</footer>
+<script>
+let records=JSON.parse(localStorage.getItem("jd_records")||"[]");
+let accounts=JSON.parse(localStorage.getItem("jd_accounts")||'["默认账号"]');
+function save(){localStorage.setItem("jd_records",JSON.stringify(records));localStorage.setItem("jd_accounts",JSON.stringify(accounts));render()}
+function addAccount(){let v=document.getElementById("account").value.trim();if(!v)return;accounts.push(v);document.getElementById("account").value="";save()}
+function addRecord(){let name=document.getElementById("taskname").value.trim();let amount=Number(document.getElementById("amount").value);if(!name||!Number.isFinite(amount)||amount<=0){alert("请填写任务名称和有效收益金额");return}records.unshift({name,amount,date:new Date().toLocaleDateString(),account:document.getElementById("accounts").value});document.getElementById("taskname").value="";document.getElementById("amount").value="";save()}
+function clearRecords(){if(confirm("确定清空所有收益记录？")){records=[];save()}}
+function render(){let total=records.reduce((s,r)=>s+r.amount,0);let m=new Date().getMonth();let monthly=records.filter(r=>new Date(r.date).getMonth()===m).reduce((s,r)=>s+r.amount,0);document.getElementById("total").textContent="¥"+total.toFixed(2);document.getElementById("month").textContent="¥"+monthly.toFixed(2);document.getElementById("count").textContent=records.length;document.getElementById("accounts").innerHTML=accounts.map(a=>`<option>${a}</option>`).join("");document.getElementById("records").innerHTML=records.length?records.map(r=>`<div class="task"><b>${r.name}</b>　<span style="color:#e1251b">+¥${r.amount.toFixed(2)}</span><br><small>${r.date} · ${r.account}</small></div>`).join(""):"暂时还没有记录"}
+render();
+</script>
+</body>
+</html>
