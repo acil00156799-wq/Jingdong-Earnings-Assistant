@@ -54,12 +54,6 @@ footer{text-align:center;color:#aaa;font-size:11px;padding:16px}
 <button class="launch" onclick="startTaskShortcut('其他活动')"><span class="ico">⭐</span><span>其他活动</span></button>
 </div><button class="primary-action" onclick="startOneClaim()">一键启动领取识别</button><div class="status" id="claimStatus">状态：等待启动</div>
 <div class="note">当前版本会打开京东并识别页面上明确的领取按钮；单次点击不代表全部任务已完成或奖励已到账。</div></section>
-<section class="card">
-<h3>福利任务测试清单</h3>
-<p class="muted">以下只是待检查的入口线索，不代表京东当前仍提供该活动，也不代表账号有领取资格。以你京东 App 当前页面和活动规则为准。</p>
-<div id="moduleCatalog"></div>
-<div class="note">测试时请在京东官方 App 内按页面实际提示操作。遇到验证码、安全验证或活动规则限制时停止并由你本人处理。本工具不会伪造领取成功状态。</div>
-</section>
 <details><summary>任务记录与自定义任务</summary><h3>当前账号任务记录</h3>
 <input id="taskName" placeholder="任务名称，例如：京豆购物返豆领取">
 <input id="taskUrl" placeholder="可选：京东活动链接（http/https）">
@@ -74,14 +68,6 @@ footer{text-align:center;color:#aaa;font-size:11px;padding:16px}
 </main><footer>京东个人收益助手 · 数据保存在本设备本地</footer>
 <script>
 const KEY='jd_assistant_accounts_v3', ACTIVE='jd_assistant_active_v3';
-const MODULES=[
-{id:'bean',name:'京豆购物返豆',route:'我的 → 京豆；查看是否有“购物返豆/待领取”项目。具体是否存在待领取项目、领取期限和资格，以当前页面规则为准。',source:'入口路径待核实',kind:'参考线索'},
-{id:'redpacket',name:'每日红包/红包活动',route:'我的 → 我的钱包 → 红包；另外检查首页活动区是否有当日红包活动。',source:'入口路径待核实',kind:'参考线索'},
-{id:'claim',name:'首页“点我领奖”/游戏中心',route:'从京东首页查看右下角或游戏中心相关入口；入口线索来自近期用户整理，可能因账号和活动变化。',source:'未核实线索',kind:'待实测'},
-{id:'treasure',name:'今日寻宝/开盲盒',route:'检查“我的优惠券”及首页活动区域是否出现“今日寻宝”“点我开盲盒”。',source:'历史线索，当前状态未知',kind:'待实测'},
-{id:'pet',name:'宠物互动福利',route:'检查“我的”及首页活动入口是否仍有宠物互动；旧版教程不能证明16.1.50仍可用。',source:'历史线索，当前状态未知',kind:'待实测'}
-];
-
 function makeAccount(name){return {id:'a'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),name,tasks:[],incomes:[],created:new Date().toISOString()}}
 const accountsSeed=[];
 function loadAccounts(){try{const v=JSON.parse(localStorage.getItem(KEY));if(Array.isArray(v)&&v.length)return v}catch(e){}const first=makeAccount('主账号');try{first.tasks=JSON.parse(localStorage.getItem('jd_tasks'))||[];first.incomes=JSON.parse(localStorage.getItem('jd_incomes'))||[];const labels=JSON.parse(localStorage.getItem('jd_accounts'))||[];labels.forEach((name,i)=>{if(typeof name==='string'&&name.trim()&&name.trim()!=='主账号')accountsSeed.push(makeAccount(name.trim()))})}catch(e){}return [first,...accountsSeed]}
@@ -107,9 +93,7 @@ function goTask(id){const t=current().tasks.find(x=>x.id===id);if(!t)return;if(t
 function confirmTask(id){const t=current().tasks.find(x=>x.id===id);if(!t)return;t.status='已检查任务，到账需另行核验';t.confirmed=new Date().toISOString();save()}
 function removeTask(id){current().tasks=current().tasks.filter(x=>x.id!==id);save()}
 function addIncome(){const name=document.getElementById('incomeName').value.trim(),amount=Number(document.getElementById('incomeAmount').value),unit=document.getElementById('incomeUnit').value;if(!name||!Number.isFinite(amount)||amount<=0){alert('请填写收益来源和有效到账数量');return}const a=current();a.incomes.unshift({name,amount,unit,date:new Date().toISOString(),verifiedByUser:true,verificationSource:'user_confirmed'});if(unit==='beans'){if(!a.moduleChecks)a.moduleChecks={};a.moduleChecks.bean={status:'已登记用户核验到账',updated:new Date().toISOString(),incomeRecordId:a.incomes[0].date}}document.getElementById('incomeName').value='';document.getElementById('incomeAmount').value='';save()}
-function setModuleStatus(id,value){const a=current();if(!a.moduleChecks)a.moduleChecks={};a.moduleChecks[id]={status:value,updated:new Date().toISOString()};save()}
-function renderModules(){const box=document.getElementById('moduleCatalog');if(!box)return;box.innerHTML='';const a=current();MODULES.forEach(m=>{const d=document.createElement('div');d.className='module';const h=document.createElement('h4');h.textContent=m.name;const tag=document.createElement('div');tag.className='muted';tag.textContent=m.kind+' · '+m.source;const route=document.createElement('div');route.className='route';route.textContent='建议检查路径：'+m.route;const sel=document.createElement('select');['待检查','已打开京东待检查','找到入口待本人领取','本人已操作待到账核验','无待领取项目','活动已下线'].forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;sel.append(o)});const savedStatus=(a.moduleChecks&&a.moduleChecks[m.id]&&a.moduleChecks[m.id].status)||'待检查';if(!Array.from(sel.options).some(o=>o.value===savedStatus)){const o=document.createElement('option');o.value=savedStatus;o.textContent=savedStatus;sel.append(o)}sel.value=savedStatus;sel.onchange=()=>setModuleStatus(m.id,sel.value);const btn=document.createElement('button');btn.className='secondary';btn.textContent='启动本任务的一次领取识别';btn.onclick=()=>{try{if(!window.AndroidBridge){alert('请安装 Android APK 后使用自动化功能。');return}AndroidBridge.startOneClaimAttempt();openJd();if(!a.moduleChecks)a.moduleChecks={};a.moduleChecks[m.id]={status:'已启动一次识别，等待京东页面按钮',updated:new Date().toISOString()};setTaskHint(m.name+'：已启动一次识别；需在京东对应页面等待明确领取按钮');save()}catch(e){alert('启动失败，请检查无障碍权限。')}};d.append(h,tag,route,sel,btn);box.append(d)})}
-function render(){renderModules();const sel=document.getElementById('activeAccount');sel.innerHTML='';accounts.forEach(a=>{const o=document.createElement('option');o.value=a.id;o.textContent=a.name;sel.append(o)});sel.value=activeId;const a=current();document.getElementById('activeHint').textContent='当前数据空间：'+a.name+' · '+a.tasks.length+' 条任务 · '+a.incomes.length+' 条收益记录';
+function render(){const sel=document.getElementById('activeAccount');sel.innerHTML='';accounts.forEach(a=>{const o=document.createElement('option');o.value=a.id;o.textContent=a.name;sel.append(o)});sel.value=activeId;const a=current();document.getElementById('activeHint').textContent='当前数据空间：'+a.name+' · '+a.tasks.length+' 条任务 · '+a.incomes.length+' 条收益记录';
 const yuanOnly=x=>(x.unit||'yuan')==='yuan',total=a.incomes.filter(yuanOnly).reduce((s,x)=>s+x.amount,0),beans=a.incomes.filter(x=>x.unit==='beans').reduce((s,x)=>s+x.amount,0),redpackets=a.incomes.filter(x=>x.unit==='redpacket').reduce((s,x)=>s+x.amount,0),now=new Date(),month=a.incomes.filter(x=>yuanOnly(x)&&(()=>{const d=new Date(x.date);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()})()).reduce((s,x)=>s+x.amount,0);
 document.getElementById('activeTotal').textContent=money(total);document.getElementById('activeMonth').textContent=money(month);document.getElementById('activeCount').textContent=a.incomes.length;
 const beansEl=document.getElementById('activeBeans');if(beansEl)beansEl.textContent=beans.toLocaleString()+' 个';const packetsEl=document.getElementById('activeRedpackets');if(packetsEl)packetsEl.textContent=redpackets.toLocaleString()+' 个';
