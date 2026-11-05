@@ -49,7 +49,7 @@ footer{text-align:center;color:#999;font-size:12px;padding:18px}
 </section>
 <section class="card">
 <h3>福利任务测试清单</h3>
-<p class="muted">按京东16.1.50版本逐项核对。每个模块有自己的入口线索和测试状态；目前这些是待实测清单，不代表你的账号一定有入口或领取资格。</p>
+<p class="muted">以下只是待检查的入口线索，不代表京东当前仍提供该活动，也不代表账号有领取资格。以你京东 App 当前页面和活动规则为准。</p>
 <div id="moduleCatalog"></div>
 <div class="note">测试时请在京东官方 App 内按页面实际提示操作。遇到验证码、安全验证或活动规则限制时停止并由你本人处理。本工具不会伪造领取成功状态。</div>
 </section>
@@ -58,7 +58,7 @@ footer{text-align:center;color:#999;font-size:12px;padding:18px}
 <input id="taskUrl" placeholder="可选：京东活动链接（http/https）">
 <button onclick="addTask()">添加任务</button><div id="tasks" class="muted">暂无任务</div>
 </section>
-<section class="card"><h3>登记当前账号实际到账</h3>
+<section class="card"><h3>登记当前账号实际到账</h3><p class="muted">此处由你根据京东页面或账单手动登记，不会自动读取京东账户；只有核对到账后才填写。</p>
 <input id="incomeName" placeholder="收益来源，例如：购物返豆">
 <select id="incomeUnit" aria-label="收益单位"><option value="yuan">现金/红包金额（元）</option><option value="beans">京豆（个）</option><option value="redpacket">红包（个）</option></select>
 <input id="incomeAmount" type="number" min="0.01" step="0.01" placeholder="实际到账数量">
@@ -68,11 +68,11 @@ footer{text-align:center;color:#999;font-size:12px;padding:18px}
 <script>
 const KEY='jd_assistant_accounts_v3', ACTIVE='jd_assistant_active_v3';
 const MODULES=[
-{id:'bean',name:'京豆购物返豆',route:'我的 → 京豆；查看是否有“购物返豆/待领取”项目。官方说明：符合条件的订单完成后可能需要手动领取，领取期限30天。',source:'京东官方帮助中心',kind:'官方规则线索'},
-{id:'redpacket',name:'每日红包/红包活动',route:'我的 → 我的钱包 → 红包；另外检查首页活动区是否有当日红包活动。',source:'京东官方帮助中心及活动线索',kind:'入口需按账号核对'},
-{id:'claim',name:'首页“点我领奖”/游戏中心',route:'从京东首页查看右下角或游戏中心相关入口；入口线索来自近期用户整理，可能因账号和活动变化。',source:'2026-11-03用户线报',kind:'待实测线索'},
+{id:'bean',name:'京豆购物返豆',route:'我的 → 京豆；查看是否有“购物返豆/待领取”项目。官方说明：符合条件的订单完成后可能需要手动领取，领取期限30天。',source:'入口路径待核实',kind:'参考线索'},
+{id:'redpacket',name:'每日红包/红包活动',route:'我的 → 我的钱包 → 红包；另外检查首页活动区是否有当日红包活动。',source:'入口路径待核实',kind:'参考线索'},
+{id:'claim',name:'首页“点我领奖”/游戏中心',route:'从京东首页查看右下角或游戏中心相关入口；入口线索来自近期用户整理，可能因账号和活动变化。',source:'未核实线索',kind:'待实测'},
 {id:'treasure',name:'今日寻宝/开盲盒',route:'检查“我的优惠券”及首页活动区域是否出现“今日寻宝”“点我开盲盒”。',source:'2026-11-03用户线报',kind:'待实测线索'},
-{id:'pet',name:'宠物互动福利',route:'检查“我的”及首页活动入口是否仍有宠物互动；旧版教程不能证明16.1.50仍可用。',source:'历史活动线索',kind:'重点核实是否改版/下线'}
+{id:'pet',name:'宠物互动福利',route:'检查“我的”及首页活动入口是否仍有宠物互动；旧版教程不能证明16.1.50仍可用。',source:'历史线索，当前状态未知',kind:'待实测'}
 ];
 
 function makeAccount(name){return {id:'a'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),name,tasks:[],incomes:[],created:new Date().toISOString()}}
@@ -96,7 +96,7 @@ function refreshClaimStatus(){try{if(window.AndroidBridge){const s=AndroidBridge
 setInterval(refreshClaimStatus,1200);
 function addTask(){const name=document.getElementById('taskName').value.trim(),url=document.getElementById('taskUrl').value.trim();if(!name){alert('请填写任务名称');return}if(url&&!/^https?:\/\//i.test(url)){alert('链接需以 http:// 或 https:// 开头');return}current().tasks.unshift({id:Date.now(),name,url,status:'待核对',created:new Date().toISOString()});document.getElementById('taskName').value='';document.getElementById('taskUrl').value='';save()}
 function goTask(id){const t=current().tasks.find(x=>x.id===id);if(!t)return;if(t.url){try{const ok=window.AndroidBridge&&AndroidBridge.openJdUrl(t.url);if(!ok)alert('无法直接打开京东 App，请手动打开京东查看。')}catch(e){alert('无法调用京东，请手动打开京东 App。')}}else openJd();t.status='已打开入口，待人工核对';save()}
-function confirmTask(id){const t=current().tasks.find(x=>x.id===id);if(!t)return;t.status='已由用户核对';t.confirmed=new Date().toISOString();save()}
+function confirmTask(id){const t=current().tasks.find(x=>x.id===id);if(!t)return;t.status='已检查任务，到账需另行核验';t.confirmed=new Date().toISOString();save()}
 function removeTask(id){current().tasks=current().tasks.filter(x=>x.id!==id);save()}
 function addIncome(){const name=document.getElementById('incomeName').value.trim(),amount=Number(document.getElementById('incomeAmount').value),unit=document.getElementById('incomeUnit').value;if(!name||!Number.isFinite(amount)||amount<=0){alert('请填写收益来源和有效到账数量');return}current().incomes.unshift({name,amount,unit,date:new Date().toISOString(),verifiedByUser:true});document.getElementById('incomeName').value='';document.getElementById('incomeAmount').value='';save()}
 function setModuleStatus(id,value){const a=current();if(!a.moduleChecks)a.moduleChecks={};a.moduleChecks[id]={status:value,updated:new Date().toISOString()};save()}
@@ -106,7 +106,7 @@ const yuanOnly=x=>(x.unit||'yuan')==='yuan',total=a.incomes.filter(yuanOnly).red
 document.getElementById('activeTotal').textContent=money(total);document.getElementById('activeMonth').textContent=money(month);document.getElementById('activeCount').textContent=a.incomes.length;
 const beansEl=document.getElementById('activeBeans');if(beansEl)beansEl.textContent=beans.toLocaleString()+' 个';const packetsEl=document.getElementById('activeRedpackets');if(packetsEl)packetsEl.textContent=redpackets.toLocaleString()+' 个';
 const all=accounts.reduce((s,x)=>s+x.incomes.filter(yuanOnly).reduce((q,r)=>q+r.amount,0),0);document.getElementById('allTotal').textContent=money(all);const summary=document.getElementById('accountSummary');summary.innerHTML='';accounts.forEach(x=>{const p=document.createElement('p');const n=x.incomes.reduce((s,r)=>s+r.amount,0);p.textContent=x.name+'：'+money(n)+'（'+x.incomes.length+'笔）';summary.append(p)});
-const taskBox=document.getElementById('tasks');taskBox.innerHTML='';if(!a.tasks.length)taskBox.textContent='当前账号暂无任务';a.tasks.forEach(t=>{const d=document.createElement('div');d.className='task';const b=document.createElement('b');b.textContent=t.name;const s=document.createElement('div');s.className='status';s.textContent=t.status+(t.confirmed?' · '+new Date(t.confirmed).toLocaleString():'');const go=document.createElement('button');go.textContent='打开京东查看';go.onclick=()=>goTask(t.id);const done=document.createElement('button');done.className='secondary';done.textContent='我已核对完成';done.onclick=()=>confirmTask(t.id);const del=document.createElement('button');del.className='danger';del.textContent='删除任务';del.onclick=()=>removeTask(t.id);d.append(b,s,go,done,del);taskBox.append(d)});
+const taskBox=document.getElementById('tasks');taskBox.innerHTML='';if(!a.tasks.length)taskBox.textContent='当前账号暂无任务';a.tasks.forEach(t=>{const d=document.createElement('div');d.className='task';const b=document.createElement('b');b.textContent=t.name;const s=document.createElement('div');s.className='status';s.textContent=t.status+(t.confirmed?' · '+new Date(t.confirmed).toLocaleString():'');const go=document.createElement('button');go.textContent='打开京东查看';go.onclick=()=>goTask(t.id);const done=document.createElement('button');done.className='secondary';done.textContent='我已检查任务（不代表到账）';done.onclick=()=>confirmTask(t.id);const del=document.createElement('button');del.className='danger';del.textContent='删除任务';del.onclick=()=>removeTask(t.id);d.append(b,s,go,done,del);taskBox.append(d)});
 const rb=document.getElementById('records');rb.innerHTML='';if(!a.incomes.length)rb.textContent='当前账号暂无收益记录';a.incomes.forEach(x=>{const p=document.createElement('p');const unit=x.unit||'yuan',shown=unit==='beans'?Number(x.amount).toLocaleString()+' 京豆':unit==='redpacket'?Number(x.amount).toLocaleString()+' 个红包':money(x.amount);p.textContent=x.name+'  +'+shown+'  '+new Date(x.date).toLocaleDateString();rb.append(p)})}
 render();
 </script></body></html>
