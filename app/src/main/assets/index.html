@@ -39,7 +39,13 @@ footer{text-align:center;color:#999;font-size:12px;padding:18px}
 <section class="card"><h3>所有账号汇总</h3><div class="big" id="allTotal">¥0.00</div><div class="muted">全部账号累计登记收益（仅汇总本工具中保存的数据）</div><div id="accountSummary" class="muted"></div></section>
 <section class="card"><h3>京东操作入口</h3><p class="muted">打开京东官方 App 后，可在京东内查看活动、执行平台允许的操作，并核对实际到账情况。</p>
 <button onclick="openJd()">打开京东 App</button>
-<div class="note">当前版本不具备自动读取京东页面、自动领取奖励或自动核验到账的能力。不会把“打开页面”误报为“领取成功”。京东规则对使用未经认可的机器人软件领取京豆、优惠券或参与活动有限制，因此本工具不提供绕过验证、风控或平台限制的自动刷领功能。</div>
+<div class="rowbtn">
+<button class="secondary" onclick="enableAccessibility()">开启无障碍权限</button>
+<button onclick="startOneClaim()">启动一次自动领取</button>
+</div>
+<button class="danger" onclick="stopClaim()">停止自动领取</button>
+<div class="status" id="claimStatus">自动领取状态：尚未执行</div>
+<div class="note">自动领取目前为单次试运行：你主动启动后，助手只会在京东前台识别白名单中的明确领取按钮（如“领取京豆”“领取红包”“立即领取”），最多点击一次。不会自动玩游戏、浏览广告、做互动任务、处理验证码或绕过风控。点击后仍须以京东页面的成功提示/到账记录为准。</div>
 </section>
 <section class="card">
 <h3>福利任务测试清单</h3>
@@ -82,6 +88,11 @@ function addAccount(){const el=document.getElementById('newAccountName'),name=el
 function renameAccount(){const a=current(),name=prompt('修改账号备注',a.name);if(name===null)return;const v=name.trim();if(!v){alert('备注不能为空');return}if(accounts.some(x=>x.id!==a.id&&x.name===v)){alert('已有同名账号备注');return}a.name=v;save()}
 function deleteAccount(){if(accounts.length===1){alert('至少保留一个账号');return}const a=current();if(!confirm('确定删除“'+a.name+'”及其本工具中的任务和收益记录吗？此操作不可撤销。'))return;accounts=accounts.filter(x=>x.id!==a.id);activeId=accounts[0].id;save()}
 function openJd(){try{const ok=window.AndroidBridge&&AndroidBridge.openJdApp();if(!ok)alert('没有检测到京东 App，请先安装京东官方 App。')}catch(e){alert('暂时无法打开京东 App，请确认已安装。')}}
+function enableAccessibility(){try{if(window.AndroidBridge)AndroidBridge.openAccessibilitySettings();else alert('请在安卓系统设置中手动开启本助手的无障碍权限。')}catch(e){alert('无法打开设置，请手动进入系统无障碍设置。')}}
+function startOneClaim(){try{if(!window.AndroidBridge){alert('请安装安卓 APK 版本后使用自动领取。');return}AndroidBridge.startOneClaimAttempt();document.getElementById('claimStatus').textContent='自动领取状态：已启动，正在打开京东等待明确领取按钮';openJd()}catch(e){alert('启动失败，请先开启无障碍权限。')}}
+function stopClaim(){try{if(window.AndroidBridge)AndroidBridge.stopClaimAttempt();document.getElementById('claimStatus').textContent='自动领取状态：已停止'}catch(e){}}
+function refreshClaimStatus(){try{if(window.AndroidBridge){const s=AndroidBridge.getClaimStatus();document.getElementById('claimStatus').textContent='自动领取状态：'+s}}catch(e){}}
+setInterval(refreshClaimStatus,1200);
 function addTask(){const name=document.getElementById('taskName').value.trim(),url=document.getElementById('taskUrl').value.trim();if(!name){alert('请填写任务名称');return}if(url&&!/^https?:\/\//i.test(url)){alert('链接需以 http:// 或 https:// 开头');return}current().tasks.unshift({id:Date.now(),name,url,status:'待核对',created:new Date().toISOString()});document.getElementById('taskName').value='';document.getElementById('taskUrl').value='';save()}
 function goTask(id){const t=current().tasks.find(x=>x.id===id);if(!t)return;if(t.url){try{const ok=window.AndroidBridge&&AndroidBridge.openJdUrl(t.url);if(!ok)alert('无法直接打开京东 App，请手动打开京东查看。')}catch(e){alert('无法调用京东，请手动打开京东 App。')}}else openJd();t.status='已打开入口，待人工核对';save()}
 function confirmTask(id){const t=current().tasks.find(x=>x.id===id);if(!t)return;t.status='已由用户核对';t.confirmed=new Date().toISOString();save()}
