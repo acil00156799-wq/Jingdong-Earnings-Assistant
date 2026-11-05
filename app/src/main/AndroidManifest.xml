@@ -2,7 +2,7 @@
     <queries><package android:name="com.jingdong.app.mall" /></queries>
     <application
         android:allowBackup="true"
-        android:label="京东个人收益助手"
+        android:label="京东福利助手"
         android:theme="@android:style/Theme.Material.Light.NoActionBar"
         android:usesCleartextTraffic="false">
         <activity android:name=".MainActivity" android:exported="true" android:screenOrientation="unspecified">
