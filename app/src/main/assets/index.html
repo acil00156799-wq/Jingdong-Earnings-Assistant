@@ -22,7 +22,7 @@ button{background:#e1251b;color:white;border:0;font-weight:bold}.secondary{backg
 footer{text-align:center;color:#999;font-size:12px;padding:18px}
 </style></head>
 <body>
-<header><h2>京东个人收益助手</h2><p>账号独立管理 · 任务跟踪 · 收益统计</p></header>
+<header><h2>京东个人收益助手</h2><p>账号数据分区 · 官方入口辅助 · 到账核验统计</p></header>
 <main>
 <section class="card">
 <h3>当前京东账号</h3>
@@ -37,15 +37,10 @@ footer{text-align:center;color:#999;font-size:12px;padding:18px}
 <div class="grid"><div class="item">本月现金/红包金额<strong id="activeMonth">¥0.00</strong></div><div class="item">收益记录笔数<strong id="activeCount">0</strong></div><div class="item">京豆到账<strong id="activeBeans">0 个</strong></div><div class="item">红包到账<strong id="activeRedpackets">0 个</strong></div></div>
 </section>
 <section class="card"><h3>所有账号汇总</h3><div class="big" id="allTotal">¥0.00</div><div class="muted">全部账号累计登记收益（仅汇总本工具中保存的数据）</div><div id="accountSummary" class="muted"></div></section>
-<section class="card"><h3>京东操作入口</h3><p class="muted">打开京东官方 App 后，可在京东内查看活动、执行平台允许的操作，并核对实际到账情况。</p>
-<button onclick="openJd()">打开京东 App</button>
-<div class="rowbtn">
-<button class="secondary" onclick="enableAccessibility()">开启无障碍权限</button>
-<button onclick="startOneClaim()">启动一次自动领取</button>
-</div>
-<button class="danger" onclick="stopClaim()">停止自动领取</button>
-<div class="status" id="claimStatus">自动领取状态：尚未执行</div>
-<div class="note">自动领取目前为单次试运行：你主动启动后，助手只会在京东前台识别白名单中的明确领取按钮（如“领取京豆”“领取红包”“立即领取”），最多点击一次。不会自动玩游戏、浏览广告、做互动任务、处理验证码或绕过风控。点击后仍须以京东页面的成功提示/到账记录为准。</div>
+<section class="card"><h3>京东官方操作入口</h3><p class="muted">当前版本提供官方 App 跳转、任务进度记录和到账登记。它不会声称自己已自动领取，也不会把“打开页面/点击按钮”当成收益。</p>
+<button onclick="openJd()">打开京东官方 App</button>
+<div class="status" id="claimStatus">任务辅助状态：等待你选择任务</div>
+<div class="note">重要说明：目前没有查到面向普通个人助手开放的京豆/红包领取官方 API。此版本不执行自动点击或后台领取。你在京东本人操作后，再回到本工具记录核验结果；只有你确认京豆/红包已实际到账并登记数量，才会计入收益统计。</div>
 </section>
 <section class="card">
 <h3>福利任务测试清单</h3>
@@ -58,7 +53,7 @@ footer{text-align:center;color:#999;font-size:12px;padding:18px}
 <input id="taskUrl" placeholder="可选：京东活动链接（http/https）">
 <button onclick="addTask()">添加任务</button><div id="tasks" class="muted">暂无任务</div>
 </section>
-<section class="card"><h3>登记当前账号实际到账</h3><p class="muted">此处由你根据京东页面或账单手动登记，不会自动读取京东账户；只有核对到账后才填写。</p>
+<section class="card"><h3>登记当前账号实际到账</h3><p class="muted">此处由你根据京东页面或账单手动登记。本工具不会自动读取京东账户；只有确认实际到账后才填写。</p>
 <input id="incomeName" placeholder="收益来源，例如：购物返豆">
 <select id="incomeUnit" aria-label="收益单位"><option value="yuan">现金/红包金额（元）</option><option value="beans">京豆（个）</option><option value="redpacket">红包（个）</option></select>
 <input id="incomeAmount" type="number" min="0.01" step="0.01" placeholder="实际到账数量">
@@ -89,18 +84,15 @@ function addAccount(){const el=document.getElementById('newAccountName'),name=el
 function renameAccount(){const a=current(),name=prompt('修改账号备注',a.name);if(name===null)return;const v=name.trim();if(!v){alert('备注不能为空');return}if(accounts.some(x=>x.id!==a.id&&x.name===v)){alert('已有同名账号备注');return}a.name=v;save()}
 function deleteAccount(){if(accounts.length===1){alert('至少保留一个账号');return}const a=current();if(!confirm('确定删除“'+a.name+'”及其本工具中的任务和收益记录吗？此操作不可撤销。'))return;accounts=accounts.filter(x=>x.id!==a.id);activeId=accounts[0].id;save()}
 function openJd(){try{const ok=window.AndroidBridge&&AndroidBridge.openJdApp();if(!ok)alert('没有检测到京东 App，请先安装京东官方 App。')}catch(e){alert('暂时无法打开京东 App，请确认已安装。')}}
-function enableAccessibility(){try{if(window.AndroidBridge)AndroidBridge.openAccessibilitySettings();else alert('请在安卓系统设置中手动开启本助手的无障碍权限。')}catch(e){alert('无法打开设置，请手动进入系统无障碍设置。')}}
-function startOneClaim(){try{if(!window.AndroidBridge){alert('请安装安卓 APK 版本后使用自动领取。');return}AndroidBridge.startOneClaimAttempt();document.getElementById('claimStatus').textContent='自动领取状态：已启动，正在打开京东等待明确领取按钮';openJd()}catch(e){alert('启动失败，请先开启无障碍权限。')}}
-function stopClaim(){try{if(window.AndroidBridge)AndroidBridge.stopClaimAttempt();document.getElementById('claimStatus').textContent='自动领取状态：已停止'}catch(e){}}
-function refreshClaimStatus(){try{if(window.AndroidBridge){const s=AndroidBridge.getClaimStatus();document.getElementById('claimStatus').textContent='自动领取状态：'+s}}catch(e){}}
-setInterval(refreshClaimStatus,1200);
+function setTaskHint(message){const el=document.getElementById('claimStatus');if(el)el.textContent='任务辅助状态：'+message;}
+
 function addTask(){const name=document.getElementById('taskName').value.trim(),url=document.getElementById('taskUrl').value.trim();if(!name){alert('请填写任务名称');return}if(url&&!/^https?:\/\//i.test(url)){alert('链接需以 http:// 或 https:// 开头');return}current().tasks.unshift({id:Date.now(),name,url,status:'待核对',created:new Date().toISOString()});document.getElementById('taskName').value='';document.getElementById('taskUrl').value='';save()}
 function goTask(id){const t=current().tasks.find(x=>x.id===id);if(!t)return;if(t.url){try{const ok=window.AndroidBridge&&AndroidBridge.openJdUrl(t.url);if(!ok)alert('无法直接打开京东 App，请手动打开京东查看。')}catch(e){alert('无法调用京东，请手动打开京东 App。')}}else openJd();t.status='已打开入口，待人工核对';save()}
 function confirmTask(id){const t=current().tasks.find(x=>x.id===id);if(!t)return;t.status='已检查任务，到账需另行核验';t.confirmed=new Date().toISOString();save()}
 function removeTask(id){current().tasks=current().tasks.filter(x=>x.id!==id);save()}
 function addIncome(){const name=document.getElementById('incomeName').value.trim(),amount=Number(document.getElementById('incomeAmount').value),unit=document.getElementById('incomeUnit').value;if(!name||!Number.isFinite(amount)||amount<=0){alert('请填写收益来源和有效到账数量');return}current().incomes.unshift({name,amount,unit,date:new Date().toISOString(),verifiedByUser:true});document.getElementById('incomeName').value='';document.getElementById('incomeAmount').value='';save()}
 function setModuleStatus(id,value){const a=current();if(!a.moduleChecks)a.moduleChecks={};a.moduleChecks[id]={status:value,updated:new Date().toISOString()};save()}
-function renderModules(){const box=document.getElementById('moduleCatalog');if(!box)return;box.innerHTML='';const a=current();MODULES.forEach(m=>{const d=document.createElement('div');d.className='module';const h=document.createElement('h4');h.textContent=m.name;const tag=document.createElement('div');tag.className='muted';tag.textContent=m.kind+' · '+m.source;const route=document.createElement('div');route.className='route';route.textContent='建议检查路径：'+m.route;const sel=document.createElement('select');['待测试','找到入口','未找到入口','有领取资格','无领取资格','已到账核验','活动已下线'].forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;sel.append(o)});sel.value=(a.moduleChecks&&a.moduleChecks[m.id]&&a.moduleChecks[m.id].status)||'待测试';sel.onchange=()=>setModuleStatus(m.id,sel.value);const btn=document.createElement('button');btn.className='secondary';btn.textContent='打开京东后按路径检查';btn.onclick=()=>{openJd();if(!a.moduleChecks)a.moduleChecks={};a.moduleChecks[m.id]={status:'已打开京东，待检查',updated:new Date().toISOString()};save()};d.append(h,tag,route,sel,btn);box.append(d)})}
+function renderModules(){const box=document.getElementById('moduleCatalog');if(!box)return;box.innerHTML='';const a=current();MODULES.forEach(m=>{const d=document.createElement('div');d.className='module';const h=document.createElement('h4');h.textContent=m.name;const tag=document.createElement('div');tag.className='muted';tag.textContent=m.kind+' · '+m.source;const route=document.createElement('div');route.className='route';route.textContent='建议检查路径：'+m.route;const sel=document.createElement('select');['待检查','已打开京东待检查','找到入口待本人领取','本人已操作待到账核验','已核验到账','无待领取项目','活动已下线'].forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;sel.append(o)});sel.value=(a.moduleChecks&&a.moduleChecks[m.id]&&a.moduleChecks[m.id].status)||'待测试';sel.onchange=()=>setModuleStatus(m.id,sel.value);const btn=document.createElement('button');btn.className='secondary';btn.textContent='打开京东检查此任务';btn.onclick=()=>{openJd();if(!a.moduleChecks)a.moduleChecks={};a.moduleChecks[m.id]={status:'已打开京东待检查',updated:new Date().toISOString()};setTaskHint(m.name+'：已打开京东，需你本人查看页面并操作');save()};d.append(h,tag,route,sel,btn);box.append(d)})}
 function render(){renderModules();const sel=document.getElementById('activeAccount');sel.innerHTML='';accounts.forEach(a=>{const o=document.createElement('option');o.value=a.id;o.textContent=a.name;sel.append(o)});sel.value=activeId;const a=current();document.getElementById('activeHint').textContent='当前数据空间：'+a.name+' · '+a.tasks.length+' 条任务 · '+a.incomes.length+' 条收益记录';
 const yuanOnly=x=>(x.unit||'yuan')==='yuan',total=a.incomes.filter(yuanOnly).reduce((s,x)=>s+x.amount,0),beans=a.incomes.filter(x=>x.unit==='beans').reduce((s,x)=>s+x.amount,0),redpackets=a.incomes.filter(x=>x.unit==='redpacket').reduce((s,x)=>s+x.amount,0),now=new Date(),month=a.incomes.filter(x=>yuanOnly(x)&&(()=>{const d=new Date(x.date);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()})()).reduce((s,x)=>s+x.amount,0);
 document.getElementById('activeTotal').textContent=money(total);document.getElementById('activeMonth').textContent=money(month);document.getElementById('activeCount').textContent=a.incomes.length;
