@@ -68,10 +68,10 @@ footer{text-align:center;color:#999;font-size:12px;padding:18px}
 <script>
 const KEY='jd_assistant_accounts_v3', ACTIVE='jd_assistant_active_v3';
 const MODULES=[
-{id:'bean',name:'京豆购物返豆',route:'我的 → 京豆；查看是否有“购物返豆/待领取”项目。官方说明：符合条件的订单完成后可能需要手动领取，领取期限30天。',source:'入口路径待核实',kind:'参考线索'},
+{id:'bean',name:'京豆购物返豆',route:'我的 → 京豆；查看是否有“购物返豆/待领取”项目。具体是否存在待领取项目、领取期限和资格，以当前页面规则为准。',source:'入口路径待核实',kind:'参考线索'},
 {id:'redpacket',name:'每日红包/红包活动',route:'我的 → 我的钱包 → 红包；另外检查首页活动区是否有当日红包活动。',source:'入口路径待核实',kind:'参考线索'},
 {id:'claim',name:'首页“点我领奖”/游戏中心',route:'从京东首页查看右下角或游戏中心相关入口；入口线索来自近期用户整理，可能因账号和活动变化。',source:'未核实线索',kind:'待实测'},
-{id:'treasure',name:'今日寻宝/开盲盒',route:'检查“我的优惠券”及首页活动区域是否出现“今日寻宝”“点我开盲盒”。',source:'2026-11-03用户线报',kind:'待实测线索'},
+{id:'treasure',name:'今日寻宝/开盲盒',route:'检查“我的优惠券”及首页活动区域是否出现“今日寻宝”“点我开盲盒”。',source:'历史线索，当前状态未知',kind:'待实测'},
 {id:'pet',name:'宠物互动福利',route:'检查“我的”及首页活动入口是否仍有宠物互动；旧版教程不能证明16.1.50仍可用。',source:'历史线索，当前状态未知',kind:'待实测'}
 ];
 
@@ -105,7 +105,7 @@ function render(){renderModules();const sel=document.getElementById('activeAccou
 const yuanOnly=x=>(x.unit||'yuan')==='yuan',total=a.incomes.filter(yuanOnly).reduce((s,x)=>s+x.amount,0),beans=a.incomes.filter(x=>x.unit==='beans').reduce((s,x)=>s+x.amount,0),redpackets=a.incomes.filter(x=>x.unit==='redpacket').reduce((s,x)=>s+x.amount,0),now=new Date(),month=a.incomes.filter(x=>yuanOnly(x)&&(()=>{const d=new Date(x.date);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()})()).reduce((s,x)=>s+x.amount,0);
 document.getElementById('activeTotal').textContent=money(total);document.getElementById('activeMonth').textContent=money(month);document.getElementById('activeCount').textContent=a.incomes.length;
 const beansEl=document.getElementById('activeBeans');if(beansEl)beansEl.textContent=beans.toLocaleString()+' 个';const packetsEl=document.getElementById('activeRedpackets');if(packetsEl)packetsEl.textContent=redpackets.toLocaleString()+' 个';
-const all=accounts.reduce((s,x)=>s+x.incomes.filter(yuanOnly).reduce((q,r)=>q+r.amount,0),0);document.getElementById('allTotal').textContent=money(all);const summary=document.getElementById('accountSummary');summary.innerHTML='';accounts.forEach(x=>{const p=document.createElement('p');const n=x.incomes.reduce((s,r)=>s+r.amount,0);p.textContent=x.name+'：'+money(n)+'（'+x.incomes.length+'笔）';summary.append(p)});
+const all=accounts.reduce((s,x)=>s+x.incomes.filter(yuanOnly).reduce((q,r)=>q+r.amount,0),0);document.getElementById('allTotal').textContent=money(all);const summary=document.getElementById('accountSummary');summary.innerHTML='';accounts.forEach(x=>{const p=document.createElement('p');const yuan=x.incomes.filter(yuanOnly).reduce((s,r)=>s+r.amount,0),beanCount=x.incomes.filter(r=>r.unit==='beans').reduce((s,r)=>s+r.amount,0),packetCount=x.incomes.filter(r=>r.unit==='redpacket').reduce((s,r)=>s+r.amount,0);p.textContent=x.name+'：现金 '+money(yuan)+' · 京豆 '+beanCount.toLocaleString()+' 个 · 红包 '+packetCount.toLocaleString()+' 个（'+x.incomes.length+'笔）';summary.append(p)});
 const taskBox=document.getElementById('tasks');taskBox.innerHTML='';if(!a.tasks.length)taskBox.textContent='当前账号暂无任务';a.tasks.forEach(t=>{const d=document.createElement('div');d.className='task';const b=document.createElement('b');b.textContent=t.name;const s=document.createElement('div');s.className='status';s.textContent=t.status+(t.confirmed?' · '+new Date(t.confirmed).toLocaleString():'');const go=document.createElement('button');go.textContent='打开京东查看';go.onclick=()=>goTask(t.id);const done=document.createElement('button');done.className='secondary';done.textContent='我已检查任务（不代表到账）';done.onclick=()=>confirmTask(t.id);const del=document.createElement('button');del.className='danger';del.textContent='删除任务';del.onclick=()=>removeTask(t.id);d.append(b,s,go,done,del);taskBox.append(d)});
 const rb=document.getElementById('records');rb.innerHTML='';if(!a.incomes.length)rb.textContent='当前账号暂无收益记录';a.incomes.forEach(x=>{const p=document.createElement('p');const unit=x.unit||'yuan',shown=unit==='beans'?Number(x.amount).toLocaleString()+' 京豆':unit==='redpacket'?Number(x.amount).toLocaleString()+' 个红包':money(x.amount);p.textContent=x.name+'  +'+shown+'  '+new Date(x.date).toLocaleDateString();rb.append(p)})}
 render();
