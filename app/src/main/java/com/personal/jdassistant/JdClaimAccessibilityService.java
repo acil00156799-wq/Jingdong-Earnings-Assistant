@@ -4,15 +4,14 @@ import android.accessibilityservice.AccessibilityService;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.content.SharedPreferences;
-import android.os.Build;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
 /**
- * User-started, single-action helper. It only clicks a small allowlist of
- * explicit claim labels in the foreground JD app. It never solves challenges,
- * plays games, browses ads, or repeats clicks.
+ * User-started, one-shot helper. It clicks at most one exact, visible claim
+ * label in the foreground JD app. It does not solve challenges, play games,
+ * interact with ads, or repeat actions.
  */
 public class JdClaimAccessibilityService extends AccessibilityService {
     private static final String PREFS = "jd_claim_assistant";
@@ -25,57 +24,44 @@ public class JdClaimAccessibilityService extends AccessibilityService {
     public void onAccessibilityEvent(AccessibilityEvent event) {
         if (event == null || event.getPackageName() == null) return;
         if (!"com.jingdong.app.mall".contentEquals(event.getPackageName())) return;
-
-        if (event.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
-            actionAttempted = false;
-        }
+        if (event.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) actionAttempted = false;
 
         SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
         if (!prefs.getBoolean("auto_claim_enabled", false) || actionAttempted) return;
-        if (event.getEventType() != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
-                && event.getEventType() != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return;
+        int type = event.getEventType();
+        if (type != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
+                && type != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return;
 
         AccessibilityNodeInfo root = getRootInActiveWindow();
         if (root == null) return;
-        try {
-            AccessibilityNodeInfo target = findClaimNode(root);
-            if (target != null) {
-                actionAttempted = true;
-                boolean clicked = target.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-                prefs.edit()
-                    .putBoolean("auto_claim_enabled", false)
-                    .putString("last_result", clicked ? "已点击一个明确的领取按钮，请核对京东页面结果" : "找到领取按钮但点击未成功")
-                    .putLong("last_action_time", System.currentTimeMillis())
-                    .apply();
-            }
-        } finally {
-            root.recycle();
-        }
+        AccessibilityNodeInfo target = findClaimNode(root);
+        if (target == null) return;
+
+        actionAttempted = true;
+        boolean clicked = target.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+        prefs.edit()
+            .putBoolean("auto_claim_enabled", false)
+            .putString("last_result", clicked
+                ? "已点击一个明确的领取按钮；请核对京东是否显示领取成功"
+                : "已找到领取按钮，但点击未成功")
+            .putLong("last_action_time", System.currentTimeMillis())
+            .apply();
     }
 
     private AccessibilityNodeInfo findClaimNode(AccessibilityNodeInfo node) {
         if (node == null || !node.isVisibleToUser() || !node.isEnabled()) return null;
-        CharSequence text = node.getText();
-        CharSequence desc = node.getContentDescription();
-        String label = text != null ? text.toString().trim() : "";
-        if (label.isEmpty() && desc != null) label = desc.toString().trim();
+        CharSequence t = node.getText();
+        CharSequence d = node.getContentDescription();
+        String label = t != null ? t.toString().trim() : "";
+        if (label.isEmpty() && d != null) label = d.toString().trim();
 
         if (CLAIM_LABELS.contains(label)) {
-            AccessibilityNodeInfo clickable = node;
-            while (clickable != null && !clickable.isClickable()) {
-                AccessibilityNodeInfo parent = clickable.getParent();
-                if (clickable != node) clickable.recycle();
-                clickable = parent;
-            }
-            if (clickable != null && clickable.isClickable()) {
-                if (clickable != node) node.recycle();
-                return clickable;
-            }
+            AccessibilityNodeInfo candidate = node;
+            while (candidate != null && !candidate.isClickable()) candidate = candidate.getParent();
+            if (candidate != null && candidate.isClickable()) return candidate;
         }
-
         for (int i = 0; i < node.getChildCount(); i++) {
-            AccessibilityNodeInfo child = node.getChild(i);
-            AccessibilityNodeInfo found = findClaimNode(child);
+            AccessibilityNodeInfo found = findClaimNode(node.getChild(i));
             if (found != null) return found;
         }
         return null;
