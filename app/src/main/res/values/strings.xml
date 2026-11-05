@@ -1,4 +1,4 @@
 <resources>
     <string name="app_name">京东个人收益助手</string>
-    <string name="accessibility_service_description">仅在用户主动开启后识别京东前台页面文字，用于显示当前页面和辅助任务判断；不会读取密码或验证码，也不会自动点击。</string>
+    <string name="accessibility_service_description">仅在用户主动启动一次领取后，识别京东前台页面中明确标注的领取按钮，并最多点击一次。不读取密码或验证码，不处理安全验证，不执行游戏、广告或重复任务。</string>
 </resources>
