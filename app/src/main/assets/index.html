@@ -5,26 +5,34 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#e1251b">
 <title>京东个人收益助手</title>
-<style>
-*{box-sizing:border-box}body{margin:0;background:#f4f5f8;color:#222;font-family:Arial,"Microsoft YaHei",sans-serif}
-header{background:linear-gradient(135deg,#c9161d,#f45a42);color:white;padding:24px 18px 28px;border-radius:0 0 22px 22px}
-header h2{margin:0 0 7px;font-size:22px}header p{margin:0;font-size:13px;opacity:.92}
-main{padding:15px;max-width:680px;margin:auto}.card{background:white;border-radius:15px;padding:16px;margin-bottom:13px;box-shadow:0 3px 12px #00000008}
-h3{font-size:17px;margin:0 0 12px}.muted{font-size:13px;color:#888;line-height:1.65}
-input,select,button{width:100%;padding:12px;border-radius:9px;border:1px solid #ddd;font-size:15px;margin:6px 0;background:white}
-button{background:#e1251b;color:white;border:0;font-weight:bold}.secondary{background:#f1f1f1;color:#333}.danger{background:#fff0ef;color:#b21d17}
-.big{font-size:29px;font-weight:bold;color:#e1251b;margin:6px 0}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.item{background:#fff5f3;padding:12px;border-radius:12px}.item strong{display:block;color:#e1251b;font-size:20px;margin-top:5px}
-.task,.account-row{border-bottom:1px solid #eee;padding:12px 0}.task:last-child,.account-row:last-child{border:0}.status{font-size:12px;color:#8b6a54;margin:5px 0}
-.note{background:#fff8e8;border:1px solid #f3d59a;border-radius:10px;padding:11px;color:#75520a;font-size:12px;line-height:1.6}
-.module{border:1px solid #eee;border-radius:12px;padding:12px;margin:10px 0}.module h4{margin:0 0 6px;font-size:15px}.module .route{font-size:12px;color:#666;line-height:1.6;margin:5px 0}.module select{margin:5px 0}.module small{color:#999}
-.rowbtn{display:grid;grid-template-columns:1fr 1fr;gap:8px}.pill{display:inline-block;background:#fce9e7;color:#b51e19;border-radius:20px;padding:4px 9px;font-size:11px}
-footer{text-align:center;color:#999;font-size:12px;padding:18px}
-</style></head>
+
+*{box-sizing:border-box}body{margin:0;background:#f5f6f8;color:#252525;font-family:Arial,"Microsoft YaHei",sans-serif}
+header{background:linear-gradient(140deg,#d71920,#f34c3f);color:#fff;padding:25px 18px 30px;border-radius:0 0 24px 24px}
+header h2{margin:0;font-size:22px;font-weight:800}header p{margin:7px 0 0;font-size:12px;opacity:.9}
+main{padding:14px;max-width:620px;margin:auto}.card{background:#fff;border-radius:17px;padding:16px;margin-bottom:13px;box-shadow:0 3px 14px #17202b0a}
+h3{font-size:16px;margin:0 0 12px}.muted{font-size:12px;color:#888;line-height:1.6}
+.big{font-size:29px;font-weight:800;color:#df2525;margin:3px 0}.grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.item{background:#fff5f3;padding:11px;border-radius:12px;font-size:12px;color:#777}.item strong{display:block;color:#d92323;font-size:19px;margin-top:5px}
+button{border:0;border-radius:12px;padding:12px 10px;font-size:14px;font-weight:700;background:#e1251b;color:white;width:100%;cursor:pointer}
+.secondary{background:#f2f3f5;color:#444}.danger{background:#fff0ef;color:#b21d17}
+.launch-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.launch{background:#fafafa;border:1px solid #f0f0f0;border-radius:14px;padding:13px 5px;color:#333;min-height:94px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
+.launch .ico{font-size:27px;line-height:1}.launch span:last-child{font-size:12px;font-weight:700}
+.primary-action{margin-top:13px;padding:15px;font-size:16px;border-radius:13px}
+.status{font-size:12px;color:#8b6a54;margin-top:9px;text-align:center}
+details{background:#fff;border-radius:15px;padding:14px 16px;margin-bottom:12px;box-shadow:0 3px 12px #00000008}
+summary{font-size:14px;font-weight:700;cursor:pointer;list-style:none}summary:after{content:"＋";float:right;color:#999}details[open] summary:after{content:"－"}
+input,select{width:100%;padding:12px;border-radius:10px;border:1px solid #ddd;font-size:14px;margin:6px 0;background:#fff}
+.rowbtn{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:7px 0}
+.note{background:#fff8e8;border:1px solid #f3d59a;border-radius:10px;padding:10px;color:#75520a;font-size:11px;line-height:1.6;margin-top:10px}
+.task,.account-row{border-bottom:1px solid #eee;padding:10px 0}.module{border:1px solid #eee;border-radius:12px;padding:12px;margin:10px 0}.module h4{margin:0 0 6px;font-size:14px}.module .route{font-size:12px;color:#666;line-height:1.6;margin:5px 0}
+footer{text-align:center;color:#aaa;font-size:11px;padding:16px}
+@media(max-width:360px){.launch-grid{grid-template-columns:repeat(2,1fr)}}
+</head>
 <body>
-<header><h2>京东个人收益助手</h2><p>账号数据分区 · 官方入口辅助 · 到账核验统计</p></header>
+<header><h2>京东福利助手</h2><p>简单操作 · 福利领取 · 收益统计</p></header>
 <main>
-<section class="card">
+<details><summary>账号管理</summary>
 <h3>当前京东账号</h3>
 <select id="activeAccount" aria-label="选择当前账号" onchange="switchAccount(this.value)"></select>
 <div class="muted" id="activeHint"></div>
@@ -32,34 +40,35 @@ footer{text-align:center;color:#999;font-size:12px;padding:18px}
 <input id="newAccountName" placeholder="输入账号备注，例如：主账号、家人账号">
 <button onclick="addAccount()">＋ 添加账号</button>
 <div class="note">这里仅保存账号备注和各自的统计数据，不保存京东密码、短信验证码或登录凭据。切换统计账号不会自动切换京东 App 的登录身份；请在京东官方 App 内自行确认当前登录账号。</div>
-</section>
-<section class="card"><h3>当前账号收益</h3><div class="big" id="activeTotal">¥0.00</div><div class="muted">当前账号累计登记收益</div>
-<div class="grid"><div class="item">本月现金/红包金额<strong id="activeMonth">¥0.00</strong></div><div class="item">收益记录笔数<strong id="activeCount">0</strong></div><div class="item">京豆到账<strong id="activeBeans">0 个</strong></div><div class="item">红包到账<strong id="activeRedpackets">0 个</strong></div></div>
-</section>
-<section class="card"><h3>所有账号汇总</h3><div class="big" id="allTotal">¥0.00</div><div class="muted">全部账号累计登记收益（仅汇总本工具中保存的数据）</div><div id="accountSummary" class="muted"></div></section>
-<section class="card"><h3>京东官方操作入口</h3><p class="muted">当前版本提供官方 App 跳转、任务进度记录和到账登记。京豆任务只有在你本人确认到账、并在收益区登记京豆数量后，才显示“已登记用户核验到账”。</p>
-<div class="rowbtn"><button onclick="openJd()">打开京东官方 App</button><button class="secondary" onclick="openAccessibility()">开启/检查无障碍权限</button></div>
-<div class="rowbtn"><button onclick="startOneClaim()">启动一次自动识别领取</button><button class="danger" onclick="stopClaim()">停止自动识别</button></div>
-<div class="status" id="claimStatus">任务辅助状态：等待启动</div>
-<div class="note">当前接入的是第一阶段真实自动化：你主动启动后，服务只在京东前台页面识别“立即领取、领取京豆、领取红包、领取奖励”等明确按钮，并尝试点击一次；点击不等于到账成功，仍需核对京东结果。它还不能自动寻找所有活动入口或连续跑完全部任务。</div>
-</section>
+</details>
+<section class="card"><h3>我的收益</h3><div class="big" id="activeTotal">¥0.00</div><div class="muted">累计登记收益</div><div class="grid" style="margin-top:12px"><div class="item">本月收益<strong id="activeMonth">¥0.00</strong></div><div class="item">收益记录<strong id="activeCount">0</strong></div><div class="item">京豆到账<strong id="activeBeans">0 个</strong></div><div class="item">红包到账<strong id="activeRedpackets">0 个</strong></div></div></section>
+<details><summary>所有账号收益汇总</summary><h3>所有账号汇总</h3><div class="big" id="allTotal">¥0.00</div><div class="muted">全部账号累计登记收益（仅汇总本工具中保存的数据）</div><div id="accountSummary" class="muted"></div></details>
+<section class="card"><h3>福利入口</h3><div class="launch-grid">
+<button class="launch" onclick="startTaskShortcut('京豆签到')"><span class="ico">🫘</span><span>京豆签到</span></button>
+<button class="launch" onclick="startTaskShortcut('每日红包')"><span class="ico">🧧</span><span>每日红包</span></button>
+<button class="launch" onclick="startTaskShortcut('宠汪汪')"><span class="ico">🐶</span><span>宠汪汪</span></button>
+<button class="launch" onclick="startTaskShortcut('京东红包')"><span class="ico">🎁</span><span>京东红包</span></button>
+<button class="launch" onclick="startTaskShortcut('游戏福利')"><span class="ico">🎮</span><span>游戏福利</span></button>
+<button class="launch" onclick="startTaskShortcut('其他活动')"><span class="ico">⭐</span><span>其他活动</span></button>
+</div><button class="primary-action" onclick="startOneClaim()">一键启动领取识别</button><div class="status" id="claimStatus">状态：等待启动</div>
+<div class="note">当前版本会打开京东并识别页面上明确的领取按钮；单次点击不代表全部任务已完成或奖励已到账。</div></section>
 <section class="card">
 <h3>福利任务测试清单</h3>
 <p class="muted">以下只是待检查的入口线索，不代表京东当前仍提供该活动，也不代表账号有领取资格。以你京东 App 当前页面和活动规则为准。</p>
 <div id="moduleCatalog"></div>
 <div class="note">测试时请在京东官方 App 内按页面实际提示操作。遇到验证码、安全验证或活动规则限制时停止并由你本人处理。本工具不会伪造领取成功状态。</div>
 </section>
-<section class="card"><h3>当前账号任务记录</h3>
+<details><summary>任务记录与自定义任务</summary><h3>当前账号任务记录</h3>
 <input id="taskName" placeholder="任务名称，例如：京豆购物返豆领取">
 <input id="taskUrl" placeholder="可选：京东活动链接（http/https）">
 <button onclick="addTask()">添加任务</button><div id="tasks" class="muted">暂无任务</div>
-</section>
-<section class="card"><h3>登记当前账号实际到账</h3><p class="muted">此处由你根据京东页面或账单手动登记。本工具不会自动读取京东账户；只有确认实际到账后才填写。</p>
+</details>
+<details><summary>到账登记与明细</summary><h3>登记当前账号实际到账</h3><p class="muted">此处由你根据京东页面或账单手动登记。本工具不会自动读取京东账户；只有确认实际到账后才填写。</p>
 <input id="incomeName" placeholder="收益来源，例如：购物返豆">
 <select id="incomeUnit" aria-label="收益单位"><option value="yuan">现金/红包金额（元）</option><option value="beans">京豆（个）</option><option value="redpacket">红包（个）</option></select>
 <input id="incomeAmount" type="number" min="0.01" step="0.01" placeholder="实际到账数量">
 <button onclick="addIncome()">保存到账记录</button><div id="records" class="muted">暂无收益记录</div>
-</section>
+</details>
 </main><footer>京东个人收益助手 · 数据保存在本设备本地</footer>
 <script>
 const KEY='jd_assistant_accounts_v3', ACTIVE='jd_assistant_active_v3';
@@ -86,6 +95,7 @@ function renameAccount(){const a=current(),name=prompt('修改账号备注',a.na
 function deleteAccount(){if(accounts.length===1){alert('至少保留一个账号');return}const a=current();if(!confirm('确定删除“'+a.name+'”及其本工具中的任务和收益记录吗？此操作不可撤销。'))return;accounts=accounts.filter(x=>x.id!==a.id);activeId=accounts[0].id;save()}
 function openJd(){try{const ok=window.AndroidBridge&&AndroidBridge.openJdApp();if(!ok)alert('没有检测到京东 App，请先安装京东官方 App。')}catch(e){alert('暂时无法打开京东 App，请确认已安装。')}}
 function openAccessibility(){try{if(window.AndroidBridge)AndroidBridge.openAccessibilitySettings();else alert('请在系统设置中开启本助手的无障碍服务。')}catch(e){alert('请在系统设置中开启本助手的无障碍服务。')}}
+function startTaskShortcut(name){try{if(!window.AndroidBridge){alert('请安装本助手 APK 后使用');return}AndroidBridge.startOneClaimAttempt();setTaskHint(name+'：已启动识别，正在打开京东');openJd()}catch(e){setTaskHint(name+'：启动失败，请检查无障碍权限')}}
 function startOneClaim(){try{if(!window.AndroidBridge){alert('请安装 Android APK 后使用自动化功能。');return}AndroidBridge.startOneClaimAttempt();setTaskHint('已启动一次识别；正在打开京东');openJd()}catch(e){setTaskHint('启动失败，请检查无障碍权限')}}
 function stopClaim(){try{if(window.AndroidBridge)AndroidBridge.stopClaimAttempt();setTaskHint('已停止')}catch(e){setTaskHint('停止请求已发送')}}
 function setTaskHint(message){const el=document.getElementById('claimStatus');if(el)el.textContent='任务辅助状态：'+message;}
