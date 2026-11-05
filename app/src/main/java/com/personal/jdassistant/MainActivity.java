@@ -4,15 +4,17 @@ import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.Settings;
+import android.content.SharedPreferences;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.Toast;
 
 public class MainActivity extends Activity {
     private WebView webView;
     private static final String JD_PACKAGE = "com.jingdong.app.mall";
+    private static final String PREFS = "jd_claim_assistant";
 
     public class AndroidBridge {
         @JavascriptInterface
@@ -23,9 +25,7 @@ public class MainActivity extends Activity {
                 launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(launch);
                 return true;
-            } catch (Exception e) {
-                return false;
-            }
+            } catch (Exception e) { return false; }
         }
 
         @JavascriptInterface
@@ -37,17 +37,41 @@ public class MainActivity extends Activity {
                 Intent intent = new Intent(Intent.ACTION_VIEW, uri);
                 intent.setPackage(JD_PACKAGE);
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                try {
-                    startActivity(intent);
-                    return true;
-                } catch (Exception appError) {
+                try { startActivity(intent); return true; }
+                catch (Exception appError) {
                     intent.setPackage(null);
                     startActivity(intent);
                     return true;
                 }
-            } catch (Exception e) {
-                return false;
-            }
+            } catch (Exception e) { return false; }
+        }
+
+        @JavascriptInterface
+        public void openAccessibilitySettings() {
+            runOnUiThread(() -> startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)));
+        }
+
+        @JavascriptInterface
+        public void startOneClaimAttempt() {
+            getSharedPreferences(PREFS, MODE_PRIVATE).edit()
+                .putBoolean("auto_claim_enabled", true)
+                .putString("last_result", "已启动：等待京东前台出现明确的领取按钮")
+                .apply();
+        }
+
+        @JavascriptInterface
+        public void stopClaimAttempt() {
+            getSharedPreferences(PREFS, MODE_PRIVATE).edit()
+                .putBoolean("auto_claim_enabled", false)
+                .putString("last_result", "已由用户停止")
+                .apply();
+        }
+
+        @JavascriptInterface
+        public String getClaimStatus() {
+            SharedPreferences p = getSharedPreferences(PREFS, MODE_PRIVATE);
+            return p.getString("last_result", "尚未执行") +
+                (p.getBoolean("auto_claim_enabled", false) ? "（正在等待领取按钮）" : "");
         }
     }
 
