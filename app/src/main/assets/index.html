@@ -52,7 +52,13 @@ footer{text-align:center;color:#aaa;font-size:11px;padding:16px}
 <button class="launch" onclick="startTaskShortcut('京东红包')"><span class="ico">🎁</span><span>京东红包</span></button>
 <button class="launch" onclick="startTaskShortcut('游戏福利')"><span class="ico">🎮</span><span>游戏福利</span></button>
 <button class="launch" onclick="startTaskShortcut('其他活动')"><span class="ico">⭐</span><span>其他活动</span></button>
-</div><button class="primary-action" onclick="startOneClaim()">一键启动领取识别</button><button class="secondary" style="margin-top:8px" onclick="openAccessibility()">开启/检查无障碍权限</button><button class="danger" style="margin-top:8px" onclick="stopClaim()">停止本次识别</button><div class="status" id="claimStatus">状态：等待启动</div>
+</div>
+<div class="module" style="margin-top:12px"><h4>固定福利入口链接（可选）</h4><p class="muted">如果你已从京东官方 App 分享某项福利的活动链接，可在这里保存。以后点击对应入口时，助手会优先尝试打开该链接；未设置时仍打开京东首页。</p>
+<select id="routeModule" aria-label="选择福利模块"><option>京豆签到</option><option>每日红包</option><option>宠汪汪</option><option>京东红包</option><option>游戏福利</option><option>其他活动</option></select>
+<input id="routeUrl" placeholder="粘贴京东活动链接（http/https）">
+<div class="rowbtn"><button class="secondary" onclick="saveModuleRoute()">保存此模块链接</button><button class="danger" onclick="clearModuleRoute()">清除此模块链接</button></div>
+<div class="muted" id="routeHint">尚未设置专属活动链接</div></div>
+<button class="primary-action" onclick="startOneClaim()">一键启动领取识别</button><button class="secondary" style="margin-top:8px" onclick="openAccessibility()">开启/检查无障碍权限</button><button class="danger" style="margin-top:8px" onclick="stopClaim()">停止本次识别</button><div class="status" id="claimStatus">状态：等待启动</div>
 <div class="note">当前版本会打开京东并识别页面上明确的领取按钮；单次点击不代表全部任务已完成或奖励已到账。</div></section>
 <details><summary>任务记录与自定义任务</summary><h3>当前账号任务记录</h3>
 <input id="taskName" placeholder="任务名称，例如：京豆购物返豆领取">
@@ -67,7 +73,7 @@ footer{text-align:center;color:#aaa;font-size:11px;padding:16px}
 </details>
 </main><footer>京东个人收益助手 · 数据保存在本设备本地</footer>
 <script>
-const KEY='jd_assistant_accounts_v3', ACTIVE='jd_assistant_active_v3';
+const KEY='jd_assistant_accounts_v3', ACTIVE='jd_assistant_active_v3', ROUTES='jd_assistant_module_routes_v1';
 function makeAccount(name){return {id:'a'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),name,tasks:[],incomes:[],created:new Date().toISOString()}}
 const accountsSeed=[];
 function loadAccounts(){try{const v=JSON.parse(localStorage.getItem(KEY));if(Array.isArray(v)&&v.length)return v}catch(e){}const first=makeAccount('主账号');try{first.tasks=JSON.parse(localStorage.getItem('jd_tasks'))||[];first.incomes=JSON.parse(localStorage.getItem('jd_incomes'))||[];const labels=JSON.parse(localStorage.getItem('jd_accounts'))||[];labels.forEach((name,i)=>{if(typeof name==='string'&&name.trim()&&name.trim()!=='主账号')accountsSeed.push(makeAccount(name.trim()))})}catch(e){}return [first,...accountsSeed]}
@@ -82,8 +88,14 @@ function addAccount(){const el=document.getElementById('newAccountName'),name=el
 function renameAccount(){const a=current(),name=prompt('修改账号备注',a.name);if(name===null)return;const v=name.trim();if(!v){alert('备注不能为空');return}if(accounts.some(x=>x.id!==a.id&&x.name===v)){alert('已有同名账号备注');return}a.name=v;save()}
 function deleteAccount(){if(accounts.length===1){alert('至少保留一个账号');return}const a=current();if(!confirm('确定删除“'+a.name+'”及其本工具中的任务和收益记录吗？此操作不可撤销。'))return;accounts=accounts.filter(x=>x.id!==a.id);activeId=accounts[0].id;save()}
 function openJd(){try{const ok=window.AndroidBridge&&AndroidBridge.openJdApp();if(!ok)alert('没有检测到京东 App，请先安装京东官方 App。')}catch(e){alert('暂时无法打开京东 App，请确认已安装。')}}
+function moduleRoutes(){try{return JSON.parse(localStorage.getItem(ROUTES)||'{}')}catch(e){return {}}}
+function saveModuleRoute(){const name=document.getElementById('routeModule').value,url=document.getElementById('routeUrl').value.trim();if(!url){alert('请先粘贴京东活动链接');return}if(!/^https?:\\/\\//i.test(url)){alert('只接受 http:// 或 https:// 开头的链接');return}const routes=moduleRoutes();routes[name]=url;localStorage.setItem(ROUTES,JSON.stringify(routes));renderRouteHint()}
+function clearModuleRoute(){const name=document.getElementById('routeModule').value,routes=moduleRoutes();delete routes[name];localStorage.setItem(ROUTES,JSON.stringify(routes));document.getElementById('routeUrl').value='';renderRouteHint()}
+function renderRouteHint(){const name=document.getElementById('routeModule').value,url=moduleRoutes()[name]||'';document.getElementById('routeUrl').value=url;document.getElementById('routeHint').textContent=url?'已保存此模块专属链接：点击入口时优先打开':'尚未设置专属活动链接，将打开京东首页'}
+document.getElementById('routeModule').addEventListener('change',renderRouteHint);
+
 function openAccessibility(){try{if(window.AndroidBridge)AndroidBridge.openAccessibilitySettings();else alert('请在系统设置中开启本助手的无障碍服务。')}catch(e){alert('请在系统设置中开启本助手的无障碍服务。')}}
-function startTaskShortcut(name){try{if(!window.AndroidBridge){alert('请安装本助手 APK 后使用');return}if(!AndroidBridge.startOneClaimAttempt(name)){setTaskHint('请先开启本助手的无障碍权限，再启动'+name);openAccessibility();return}setTaskHint(name+'：已启动对应模块识别，正在打开京东');openJd()}catch(e){setTaskHint(name+'：启动失败，请检查无障碍权限')}}
+function startTaskShortcut(name){try{if(!window.AndroidBridge){alert('请安装本助手 APK 后使用');return}if(!AndroidBridge.startOneClaimAttempt(name)){setTaskHint('请先开启本助手的无障碍权限，再启动'+name);openAccessibility();return}setTaskHint(name+'：已启动对应模块识别，正在打开京东');const url=moduleRoutes()[name];if(url){const ok=AndroidBridge.openJdUrl(url);if(!ok){setTaskHint(name+'：活动链接无法打开，请检查链接或手动进入京东');openJd()}}else openJd()}catch(e){setTaskHint(name+'：启动失败，请检查无障碍权限')}}
 function startOneClaim(){try{if(!window.AndroidBridge){alert('请安装 Android APK 后使用自动化功能。');return}if(!AndroidBridge.startOneClaimAttempt('其他活动')){setTaskHint('请先开启本助手的无障碍权限');openAccessibility();return}setTaskHint('已启动安全识别；其他活动仍需人工核对');openJd()}catch(e){setTaskHint('启动失败，请检查无障碍权限')}}
 function stopClaim(){try{if(window.AndroidBridge)AndroidBridge.stopClaimAttempt();setTaskHint('已停止')}catch(e){setTaskHint('停止请求已发送')}}
 function setTaskHint(message){const el=document.getElementById('claimStatus');if(el)el.textContent='任务辅助状态：'+message;}
@@ -104,4 +116,5 @@ const all=accounts.reduce((s,x)=>s+x.incomes.filter(yuanOnly).reduce((q,r)=>q+r.
 const taskBox=document.getElementById('tasks');taskBox.innerHTML='';if(!a.tasks.length)taskBox.textContent='当前账号暂无任务';a.tasks.forEach(t=>{const d=document.createElement('div');d.className='task';const b=document.createElement('b');b.textContent=t.name;const s=document.createElement('div');s.className='status';s.textContent=t.status+(t.confirmed?' · '+new Date(t.confirmed).toLocaleString():'');const go=document.createElement('button');go.textContent='打开京东查看';go.onclick=()=>goTask(t.id);const done=document.createElement('button');done.className='secondary';done.textContent='我已检查任务（不代表到账）';done.onclick=()=>confirmTask(t.id);const del=document.createElement('button');del.className='danger';del.textContent='删除任务';del.onclick=()=>removeTask(t.id);d.append(b,s,go,done,del);taskBox.append(d)});
 const rb=document.getElementById('records');rb.innerHTML='';if(!a.incomes.length)rb.textContent='当前账号暂无收益记录';a.incomes.forEach(x=>{const p=document.createElement('p');const unit=x.unit||'yuan',shown=unit==='beans'?Number(x.amount).toLocaleString()+' 京豆':unit==='redpacket'?Number(x.amount).toLocaleString()+' 个红包':money(x.amount);p.textContent=x.name+'  +'+shown+'  '+new Date(x.date).toLocaleDateString();rb.append(p)})}
 render();
+renderRouteHint();
 </script></body></html>
