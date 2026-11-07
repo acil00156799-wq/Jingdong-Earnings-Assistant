@@ -16,7 +16,7 @@ import java.util.Set;
 public class JdClaimAccessibilityService extends AccessibilityService {
     private static final String PREFS = "jd_claim_assistant";
     private static final Set<String> CLAIM_LABELS = new HashSet<>(Arrays.asList(
-        "立即领取", "领取京豆", "领取红包", "立即收下", "领取奖励"
+        "立即领取", "点击领取", "去领取", "领取京豆", "立即领取京豆", "领取红包", "立即领取红包", "立即收下", "收下红包", "领取奖励", "立即领取奖励"
     ));
     private static final long ATTEMPT_TIMEOUT_MS = 180_000L;
     private boolean actionAttempted = false;
