@@ -28,4 +28,12 @@ for (const [url, expected] of cases) {
   const actual = isOfficialJdUrl(url);
   if (actual !== expected) throw new Error('URL validation mismatch: ' + url + ' expected ' + expected + ' got ' + actual);
 }
-console.log('Web asset JavaScript syntax and 10 JD URL validation cases passed.');
+const goTaskStart = script.indexOf('function goTask(id)');
+const confirmTaskStart = script.indexOf('function confirmTask(id)', goTaskStart);
+if (goTaskStart < 0 || confirmTaskStart < 0) throw new Error('Saved task execution handler not found');
+const goTaskSource = script.slice(goTaskStart, confirmTaskStart);
+if (!goTaskSource.includes('AndroidBridge.startOneClaimAttempt()')) throw new Error('Saved task does not start claim recognition');
+if (!goTaskSource.includes('AndroidBridge.openJdUrl(t.url)')) throw new Error('Saved task does not open its configured JD link');
+if (!goTaskSource.includes("localStorage.setItem('jd_active_task_id'")) throw new Error('Saved task result tracking is missing');
+if (!script.includes("task.status='已触发一次点击，请人工核对领取结果'")) throw new Error('Claim result is not synchronized to task history');
+console.log('Web asset JavaScript syntax and 10 JD URL cases and saved-task execution checks passed.');
