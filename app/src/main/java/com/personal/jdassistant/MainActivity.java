@@ -2,6 +2,7 @@ package com.personal.jdassistant;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.ComponentName;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -52,15 +53,33 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
-        public void startOneClaimAttempt(String taskName) {
+        public boolean startOneClaimAttempt(String taskName) {
+            if (!isAccessibilityServiceEnabled()) {
+                getSharedPreferences(PREFS, MODE_PRIVATE).edit()
+                    .putBoolean("auto_claim_enabled", false)
+                    .putString("last_result", "请先开启本助手的无障碍服务")
+                    .apply();
+                return false;
+            }
             String selected = taskName == null ? "其他活动" : taskName.trim();
             if (selected.isEmpty()) selected = "其他活动";
+            long now = System.currentTimeMillis();
             getSharedPreferences(PREFS, MODE_PRIVATE).edit()
                 .putString("selected_task", selected)
-                .putLong("attempt_id", System.currentTimeMillis())
+                .putLong("attempt_id", now)
+                .putLong("attempt_started_at", now)
                 .putBoolean("auto_claim_enabled", true)
                 .putString("last_result", selected + "：已启动一次识别，等待对应页面的明确领取按钮")
                 .apply();
+            return true;
+        }
+
+        private boolean isAccessibilityServiceEnabled() {
+            String enabled = Settings.Secure.getString(
+                getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
+            String component = new ComponentName(
+                MainActivity.this, JdClaimAccessibilityService.class).flattenToString();
+            return enabled != null && enabled.contains(component);
         }
 
         @JavascriptInterface
@@ -74,8 +93,17 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public String getClaimStatus() {
             SharedPreferences p = getSharedPreferences(PREFS, MODE_PRIVATE);
+            boolean waiting = p.getBoolean("auto_claim_enabled", false);
+            long startedAt = p.getLong("attempt_started_at", 0L);
+            if (waiting && startedAt > 0L && System.currentTimeMillis() - startedAt > 180000L) {
+                p.edit()
+                    .putBoolean("auto_claim_enabled", false)
+                    .putString("last_result", "识别等待超过3分钟，已自动停止；请重新打开对应京东页面后再试")
+                    .apply();
+                waiting = false;
+            }
             return p.getString("last_result", "尚未执行") +
-                (p.getBoolean("auto_claim_enabled", false) ? "（正在等待领取按钮）" : "");
+                (waiting ? "（正在等待领取按钮，最长3分钟）" : "");
         }
     }
 
