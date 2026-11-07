@@ -54,7 +54,7 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
-        public boolean startOneClaimAttempt(String taskName) {
+        public boolean startOneClaimAttempt(String taskName, String accountId) {
             if (!isAccessibilityServiceEnabled()) {
                 getSharedPreferences(PREFS, MODE_PRIVATE).edit()
                     .putBoolean("auto_claim_enabled", false)
@@ -68,6 +68,7 @@ public class MainActivity extends Activity {
             long now = System.currentTimeMillis();
             getSharedPreferences(PREFS, MODE_PRIVATE).edit()
                 .putString("selected_task", selected)
+                .putString("attempt_account_id", accountId == null ? "" : accountId)
                 .putLong("attempt_id", now)
                 .putLong("attempt_started_at", now)
                 .putBoolean("auto_claim_enabled", true)
@@ -95,9 +96,10 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
-        public void markUserVerified(String unit, String incomeName) {
+        public void markUserVerified(String unit, String incomeName, String accountId) {
             SharedPreferences p = getSharedPreferences(PREFS, MODE_PRIVATE);
             String task = p.getString("selected_task", "");
+            String attemptAccountId = p.getString("attempt_account_id", "");
             String source = incomeName == null ? "" : incomeName.trim();
             boolean matchingIncome =
                 ("京豆签到".equals(task) && "beans".equals(unit)
@@ -110,7 +112,8 @@ public class MainActivity extends Activity {
                 || ("游戏福利".equals(task)
                     && ("beans".equals(unit) || "redpacket".equals(unit) || "yuan".equals(unit))
                     && source.contains("游戏"));
-            if (matchingIncome && "clicked_unverified".equals(p.getString("claim_state", ""))) {
+            if (matchingIncome && accountId != null && accountId.equals(attemptAccountId)
+                    && "clicked_unverified".equals(p.getString("claim_state", ""))) {
                 p.edit()
                     .putString("claim_state", "user_verified")
                     .putString("last_result", task + "：用户已手动登记对应类型的实际到账")
