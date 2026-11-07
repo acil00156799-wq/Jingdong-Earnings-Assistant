@@ -169,10 +169,14 @@ public class MainActivity extends Activity {
         webView.addJavascriptInterface(new AndroidBridge(), "AndroidBridge");
         webView.setWebViewClient(new WebViewClient() {
             private boolean isAppAssetUrl(Uri uri) {
+                // file:///android_asset/... has a null URI host on Android;
+                // the asset directory is part of the path, not the authority.
+                String assetPath = uri == null ? null : uri.getPath();
                 return uri != null && "file".equalsIgnoreCase(uri.getScheme())
-                    && "android_asset".equalsIgnoreCase(uri.getHost())
-                    && uri.getPath() != null
-                    && (uri.getPath().equals("/index.html") || uri.getPath().startsWith("/"));
+                    && uri.getHost() == null
+                    && assetPath != null
+                    && assetPath.startsWith("/android_asset/")
+                    && !assetPath.contains("/../");
             }
 
             @Override
