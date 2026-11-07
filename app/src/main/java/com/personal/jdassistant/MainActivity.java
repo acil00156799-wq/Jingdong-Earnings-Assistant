@@ -86,6 +86,7 @@ public class MainActivity extends Activity {
                 return false;
             }
             prefs.edit().putString("active_task_id", taskId)
+                .putLong("active_task_started_at", System.currentTimeMillis())
                 .putBoolean("auto_claim_enabled", true)
                 .putString("last_result", "京豆签到辅助已启动：等待京东前台出现本模块指定的签到按钮")
                 .apply();
