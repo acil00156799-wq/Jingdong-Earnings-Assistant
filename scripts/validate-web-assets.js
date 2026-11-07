@@ -74,6 +74,12 @@ for (const label of claimLabels) {
 }
 if (!accessibilityService.includes('if (!prefs.getBoolean("auto_claim_enabled", false) || actionAttempted) return;')) throw new Error('One-shot claim guard is missing');
 if (!accessibilityService.includes('actionAttempted = true;')) throw new Error('Claim attempt is not locked before clicking');
+if (!accessibilityService.includes('prefs.getLong("attempt_action_generation", 0L) == startedAt')) throw new Error('One-shot lock must survive accessibility service recreation');
+if (!accessibilityService.includes('.putLong("attempt_action_generation", startedAt)\\n            .commit()')) throw new Error('One-shot lock must be synchronously persisted before clicking');
+const persistedLockIndex = accessibilityService.indexOf('.putLong("attempt_action_generation", startedAt)');
+const clickActionIndex = accessibilityService.indexOf('target.performAction(AccessibilityNodeInfo.ACTION_CLICK)');
+if (persistedLockIndex < 0 || clickActionIndex < 0 || persistedLockIndex > clickActionIndex) throw new Error('Persistent one-shot lock must be saved before ACTION_CLICK');
+if (!accessibilityService.includes('if (!lockSaved)')) throw new Error('Claim click must fail closed if the one-shot lock cannot be persisted');
 if (!accessibilityService.includes('MAX_TREE_DEPTH = 40')) throw new Error('Accessibility tree traversal depth must be bounded');
 if (!accessibilityService.includes('MAX_CLICKABLE_ANCESTORS = 4')) throw new Error('Claim click target must be limited to nearby ancestors');
 if (!accessibilityService.includes('candidateBounds.contains(labelBounds)')) throw new Error('Claim click target must geometrically contain the exact claim label');
