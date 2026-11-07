@@ -41,7 +41,8 @@ footer{text-align:center;color:#aaa;font-size:11px;padding:16px}
 <div class="rowbtn"><button class="secondary" onclick="renameAccount()">修改备注</button><button class="danger" onclick="deleteAccount()">删除当前账号</button></div>
 <input id="newAccountName" placeholder="输入账号备注，例如：主账号、家人账号">
 <button onclick="addAccount()">＋ 添加账号</button>
-<div class="note">这里仅保存账号备注和各自的统计数据，不保存京东密码、短信验证码或登录凭据。切换统计账号不会自动切换京东 App 的登录身份；请在京东官方 App 内自行确认当前登录账号。</div>
+<div class="rowbtn"><button class="secondary" onclick="exportBackup()">导出数据备份</button><button class="secondary" onclick="importBackup()">导入数据备份</button></div>
+<div class="note">这里仅保存账号备注和各自的统计数据，不保存京东密码、短信验证码或登录凭据。切换统计账号不会自动切换京东 App 的登录身份；请在京东官方 App 内自行确认当前登录账号。更换或重装应用前，请先导出备份。</div>
 </details>
 <section class="card"><h3>我的收益</h3><div class="big" id="activeTotal">¥0.00</div><div class="muted">累计登记收益</div><div class="grid" style="margin-top:12px"><div class="item">本月收益<strong id="activeMonth">¥0.00</strong></div><div class="item">收益记录<strong id="activeCount">0</strong></div><div class="item">京豆到账<strong id="activeBeans">0 个</strong></div><div class="item">红包到账<strong id="activeRedpackets">0 个</strong></div></div></section>
 <details><summary>所有账号收益汇总</summary><h3>所有账号汇总</h3><div class="big" id="allTotal">¥0.00</div><div class="muted">全部账号累计登记收益（仅汇总本工具中保存的数据）</div><div id="accountSummary" class="muted"></div></details>
@@ -81,6 +82,30 @@ function switchAccount(id){if(!accounts.some(a=>a.id===id))return;activeId=id;sa
 function addAccount(){const el=document.getElementById('newAccountName'),name=el.value.trim();if(!name){alert('请先填写账号备注');return}if(accounts.some(a=>a.name===name)){alert('已有同名备注，请换一个名称');return}const a=makeAccount(name);accounts.push(a);activeId=a.id;el.value='';save()}
 function renameAccount(){const a=current(),name=prompt('修改账号备注',a.name);if(name===null)return;const v=name.trim();if(!v){alert('备注不能为空');return}if(accounts.some(x=>x.id!==a.id&&x.name===v)){alert('已有同名账号备注');return}a.name=v;save()}
 function deleteAccount(){if(accounts.length===1){alert('至少保留一个账号');return}const a=current();if(!confirm('确定删除“'+a.name+'”及其本工具中的任务和收益记录吗？此操作不可撤销。'))return;accounts=accounts.filter(x=>x.id!==a.id);activeId=accounts[0].id;save()}
+function exportBackup(){
+ const payload={format:'jd-assistant-backup',version:1,exportedAt:new Date().toISOString(),activeId,accounts};
+ const json=JSON.stringify(payload);
+ try{
+  if(!window.AndroidBridge||!AndroidBridge.shareBackup(json)){alert('无法打开系统分享菜单，请稍后重试');return}
+  setTaskHint('已准备好数据备份，请在系统分享菜单中选择“保存到文件”或发送到你自己的安全位置');
+ }catch(e){alert('导出失败，请稍后重试')}
+}
+function importBackup(){
+ const raw=prompt('粘贴之前导出的京东福利助手备份 JSON。导入会覆盖本设备当前保存的账号、任务和收益记录。','');
+ if(raw===null)return;
+ let data;
+ try{data=JSON.parse(raw)}catch(e){alert('备份内容不是有效的 JSON');return}
+ if(!data||data.format!=='jd-assistant-backup'||data.version!==1||!Array.isArray(data.accounts)||!data.accounts.length){
+  alert('备份格式不正确或版本不受支持');return;
+ }
+ const valid=data.accounts.every(a=>a&&typeof a.id==='string'&&a.id.length>0&&typeof a.name==='string'&&a.name.trim()&&Array.isArray(a.tasks)&&Array.isArray(a.incomes));
+ const ids=data.accounts.map(a=>a.id);
+ if(!valid||new Set(ids).size!==ids.length){alert('备份中的账号数据不完整或账号编号重复');return}
+ if(!confirm('确认导入 '+data.accounts.length+' 个账号？这会覆盖本设备当前保存的账号、任务和收益记录。建议先导出当前备份。'))return;
+ accounts=JSON.parse(JSON.stringify(data.accounts));
+ activeId=ids.includes(data.activeId)?data.activeId:accounts[0].id;
+ try{localStorage.setItem(KEY,JSON.stringify(accounts));localStorage.setItem(ACTIVE,activeId);save();alert('数据备份导入成功')}catch(e){alert('导入失败：设备可用存储空间可能不足')}
+}
 function openJd(){try{const ok=!!(window.AndroidBridge&&AndroidBridge.openJdApp());if(!ok)alert('没有检测到京东 App，请先安装京东官方 App。');return ok}catch(e){alert('暂时无法打开京东 App，请确认已安装。');return false}}
 function openAccessibility(){try{if(window.AndroidBridge)AndroidBridge.openAccessibilitySettings();else alert('请在系统设置中开启本助手的无障碍服务。')}catch(e){alert('请在系统设置中开启本助手的无障碍服务。')}}
 function requestClaimStart(label){
