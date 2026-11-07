@@ -126,3 +126,5 @@ if (!script.includes("verify.onclick=()=>verifyBeanTaskIncome(t.id)")) throw new
 if (!script.includes("if(/京豆/.test(t.name))")) throw new Error('Bean receipt verification action is not limited to bean tasks');
 
 if (!mainActivity.includes('long attemptGeneration = Math.max(now, previousAttempt + 1L)')) throw new Error('Consecutive claim attempts must use a unique generation timestamp');
+
+if (!script.includes("if(activeTaskAccountId===a.id){if(window.AndroidBridge)AndroidBridge.stopClaimAttempt();localStorage.removeItem('jd_active_task_id');localStorage.removeItem('jd_active_task_account_id')}")) throw new Error('Deleting an account with an active claim must stop and clear that attempt');
