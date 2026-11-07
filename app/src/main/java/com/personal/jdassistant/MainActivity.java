@@ -12,6 +12,7 @@ import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import java.util.Locale;
 
 public class MainActivity extends Activity {
     private WebView webView;
@@ -33,9 +34,16 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public boolean openJdUrl(String value) {
             try {
-                Uri uri = Uri.parse(value);
+                if (value == null || value.trim().isEmpty()) return false;
+                Uri uri = Uri.parse(value.trim());
                 String scheme = uri.getScheme();
-                if (scheme == null || !(scheme.equals("https") || scheme.equals("http"))) return false;
+                String host = uri.getHost();
+                if (scheme == null || !"https".equalsIgnoreCase(scheme) || host == null) return false;
+                String normalizedHost = host.toLowerCase(Locale.ROOT);
+                if (!(normalizedHost.equals("jd.com") || normalizedHost.endsWith(".jd.com")
+                        || normalizedHost.equals("jingdong.com") || normalizedHost.endsWith(".jingdong.com")
+                        || normalizedHost.equals("jd.hk") || normalizedHost.endsWith(".jd.hk"))) return false;
+                if (uri.getUserInfo() != null) return false;
                 Intent intent = new Intent(Intent.ACTION_VIEW, uri);
                 intent.setPackage(JD_PACKAGE);
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
