@@ -34,14 +34,27 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: Restore persistent debug signing key
-        uses: actions/cache@v4
-        with:
-          path: ~/.android/debug.keystore
-          key: jd-assistant-debug-signing-v1-${{ runner.os }}
-
       - name: Validate web asset JavaScript and JD links
         run: node scripts/validate-web-assets.js
+
+      - name: Configure private stable signing key when available
+        env:
+          ANDROID_SIGNING_KEYSTORE_BASE64: ${{ secrets.ANDROID_SIGNING_KEYSTORE_BASE64 }}
+          ANDROID_SIGNING_STORE_PASSWORD: ${{ secrets.ANDROID_SIGNING_STORE_PASSWORD }}
+          ANDROID_SIGNING_KEY_ALIAS: ${{ secrets.ANDROID_SIGNING_KEY_ALIAS }}
+          ANDROID_SIGNING_KEY_PASSWORD: ${{ secrets.ANDROID_SIGNING_KEY_PASSWORD }}
+        run: |
+          if [ -n "$ANDROID_SIGNING_KEYSTORE_BASE64" ] && [ -n "$ANDROID_SIGNING_STORE_PASSWORD" ] && [ -n "$ANDROID_SIGNING_KEY_ALIAS" ] && [ -n "$ANDROID_SIGNING_KEY_PASSWORD" ]; then
+            mkdir -p "$RUNNER_TEMP/android-signing"
+            printf '%s' "$ANDROID_SIGNING_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/android-signing/release.jks"
+            echo "ANDROID_SIGNING_STORE_FILE=$RUNNER_TEMP/android-signing/release.jks" >> "$GITHUB_ENV"
+            echo "ANDROID_SIGNING_STORE_PASSWORD=$ANDROID_SIGNING_STORE_PASSWORD" >> "$GITHUB_ENV"
+            echo "ANDROID_SIGNING_KEY_ALIAS=$ANDROID_SIGNING_KEY_ALIAS" >> "$GITHUB_ENV"
+            echo "ANDROID_SIGNING_KEY_PASSWORD=$ANDROID_SIGNING_KEY_PASSWORD" >> "$GITHUB_ENV"
+            echo "Private stable signing key configured."
+          else
+            echo "::warning::Stable signing secrets are not configured; this APK uses a temporary CI debug key and may not update-install over a previous build."
+          fi
 
       - name: Build debug APK
         run: gradle --no-daemon assembleDebug
