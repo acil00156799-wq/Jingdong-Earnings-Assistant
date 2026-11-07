@@ -104,3 +104,7 @@ if (!mainActivity.includes('public boolean shareBackup(String backupJson)')) thr
 if (!mainActivity.includes('Intent.createChooser(share, "保存或发送数据备份")')) throw new Error('Native backup share-sheet action is missing');
 
 console.log('Web asset JavaScript syntax, 10 JD URL cases, saved-task execution, verified shortcut routing, timeout, status-refresh, task-link editor, private stable-signing configuration and local data backup/restore checks passed.');
+
+if (!accessibilityService.includes('matchedClaimLabel = CLAIM_LABELS.contains(text) ? text : description;')) throw new Error('Matched claim label is not captured');
+if (!accessibilityService.includes('.putString("last_claim_label", matchedClaimLabel)')) throw new Error('Matched claim label is not saved');
+if (!mainActivity.includes('p.getString("last_claim_label", "")')) throw new Error('Matched claim label is not exposed in status');
