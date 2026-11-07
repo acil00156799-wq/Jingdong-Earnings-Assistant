@@ -105,6 +105,29 @@ if (!script.includes('if(raw.length>5000000)')) throw new Error('Backup input-si
 if (!script.includes('const nextAccounts=JSON.parse(JSON.stringify(data.accounts))')) throw new Error('Backup import must stage data before applying it');
 if (!script.includes('const previousAccounts=localStorage.getItem(KEY),previousActive=localStorage.getItem(ACTIVE)')) throw new Error('Backup import must retain the previous local data for rollback');
 if (!script.includes('accounts=nextAccounts;activeId=nextActiveId;render()')) throw new Error('Backup import must update in-memory state only after storage succeeds');
+const backupValidatorStart = script.indexOf('function validateBackupData(data)');
+const backupImportStart = script.indexOf('\\nfunction importBackup()', backupValidatorStart);
+if (backupValidatorStart < 0 || backupImportStart < 0) throw new Error('Backup validator boundaries are missing');
+const backupValidatorSource = script.slice(backupValidatorStart, backupImportStart);
+const validateBackupData = new Function(backupValidatorSource + '; return validateBackupData;')();
+const validBackup = {
+  format: 'jd-assistant-backup', version: 1, activeId: 'a1',
+  accounts: [{ id: 'a1', name: '主账号', tasks: [{ id: 1, name: '京豆签到', url: '' }],
+    incomes: [{ name: '京豆到账', amount: 20, unit: 'beans' }] }]
+};
+if (!validateBackupData(validBackup)) throw new Error('A valid backup was rejected');
+const duplicateBackup = JSON.parse(JSON.stringify(validBackup));
+duplicateBackup.accounts.push(JSON.parse(JSON.stringify(duplicateBackup.accounts[0])));
+if (validateBackupData(duplicateBackup)) throw new Error('Duplicate account IDs must be rejected');
+const malformedTaskBackup = JSON.parse(JSON.stringify(validBackup));
+malformedTaskBackup.accounts[0].tasks[0].name = '';
+if (validateBackupData(malformedTaskBackup)) throw new Error('Malformed task records must be rejected');
+const unsupportedUnitBackup = JSON.parse(JSON.stringify(validBackup));
+unsupportedUnitBackup.accounts[0].incomes[0].unit = 'unknown';
+if (validateBackupData(unsupportedUnitBackup)) throw new Error('Unsupported income units must be rejected');
+const excessiveBackup = JSON.parse(JSON.stringify(validBackup));
+excessiveBackup.accounts = Array.from({ length: 51 }, (_, i) => ({ id: 'a' + i, name: '账号' + i, tasks: [], incomes: [] }));
+if (validateBackupData(excessiveBackup)) throw new Error('Excessive account counts must be rejected');
 if (!html.includes('onclick="exportBackup()"')) throw new Error('Backup export control is not visible');
 if (!html.includes('onclick="importBackup()"')) throw new Error('Backup import control is not visible');
 if (!mainActivity.includes('public boolean shareBackup(String backupJson)')) throw new Error('Native backup share-sheet bridge is missing');
