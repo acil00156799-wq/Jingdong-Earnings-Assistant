@@ -108,10 +108,10 @@ public class JdClaimAccessibilityService extends AccessibilityService {
             if (pageText.contains("红包") && (pageText.contains("每日") || pageText.contains("签到"))) {
                 labels.add("领取红包");
             }
-        } else if ("宠汪汪".equals(task)) {
-            if (pageText.contains("宠汪汪")) labels.add("领取奖励");
-        } else if ("游戏福利".equals(task)) {
-            if (pageText.contains("游戏") && pageText.contains("福利")) labels.add("领取奖励");
+        } else if ("宠汪汪".equals(task) || "游戏福利".equals(task)) {
+            // These pages may contain several unrelated “领取奖励” controls.
+            // Keep recognition status visible, but do not auto-click until the
+            // exact claim control has been verified against a real page sample.
         }
         // “其他活动” intentionally remains manual until its page and button
         // semantics are identified, preventing a generic button from being clicked.
