@@ -73,11 +73,11 @@ public class JdClaimAccessibilityService extends AccessibilityService {
         Set<String> labels = new HashSet<>();
         if ("京豆签到".equals(task)) {
             if (pageText.contains("京豆") && (pageText.contains("签到") || pageText.contains("领豆"))) {
-                labels.addAll(Arrays.asList("签到领京豆", "立即签到", "领取京豆"));
+                labels.addAll(Arrays.asList("签到领京豆", "领取京豆"));
             }
         } else if ("每日红包".equals(task) || "京东红包".equals(task)) {
             if (pageText.contains("红包") && (pageText.contains("每日") || pageText.contains("签到"))) {
-                labels.addAll(Arrays.asList("领取红包", "立即领取", "收下"));
+                labels.add("领取红包");
             }
         } else if ("宠汪汪".equals(task)) {
             if (pageText.contains("宠汪汪")) labels.add("领取奖励");
