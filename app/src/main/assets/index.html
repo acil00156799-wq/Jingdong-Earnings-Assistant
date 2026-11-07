@@ -81,7 +81,7 @@ function money(n){return '¥'+Number(n||0).toFixed(2)}
 function switchAccount(id){if(!accounts.some(a=>a.id===id))return;activeId=id;save()}
 function addAccount(){const el=document.getElementById('newAccountName'),name=el.value.trim();if(!name){alert('请先填写账号备注');return}if(accounts.some(a=>a.name===name)){alert('已有同名备注，请换一个名称');return}const a=makeAccount(name);accounts.push(a);activeId=a.id;el.value='';save()}
 function renameAccount(){const a=current(),name=prompt('修改账号备注',a.name);if(name===null)return;const v=name.trim();if(!v){alert('备注不能为空');return}if(accounts.some(x=>x.id!==a.id&&x.name===v)){alert('已有同名账号备注');return}a.name=v;save()}
-function deleteAccount(){if(accounts.length===1){alert('至少保留一个账号');return}const a=current();if(!confirm('确定删除“'+a.name+'”及其本工具中的任务和收益记录吗？此操作不可撤销。'))return;accounts=accounts.filter(x=>x.id!==a.id);activeId=accounts[0].id;save()}
+function deleteAccount(){if(accounts.length===1){alert('至少保留一个账号');return}const a=current();if(!confirm('确定删除“'+a.name+'”及其本工具中的任务和收益记录吗？此操作不可撤销。'))return;const activeTaskAccountId=localStorage.getItem('jd_active_task_account_id');if(activeTaskAccountId===a.id){if(window.AndroidBridge)AndroidBridge.stopClaimAttempt();localStorage.removeItem('jd_active_task_id');localStorage.removeItem('jd_active_task_account_id')}accounts=accounts.filter(x=>x.id!==a.id);activeId=accounts[0].id;save()}
 function exportBackup(){
  const payload={format:'jd-assistant-backup',version:1,exportedAt:new Date().toISOString(),activeId,accounts};
  const json=JSON.stringify(payload);
