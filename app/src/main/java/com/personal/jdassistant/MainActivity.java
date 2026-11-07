@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.ComponentName;
 import android.net.Uri;
 import android.os.Bundle;
+import android.view.WindowInsets;
 import android.provider.Settings;
 import android.content.SharedPreferences;
 import android.webkit.JavascriptInterface;
@@ -140,6 +141,18 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         webView = new WebView(this);
         setContentView(webView);
+        // Android 15+ enforces edge-to-edge for apps targeting SDK 35.
+        // Keep the local WebView UI clear of status/navigation bars on phones
+        // and tablets while retaining the system's normal inset dispatch.
+        webView.setOnApplyWindowInsetsListener((view, insets) -> {
+            view.setPadding(
+                insets.getSystemWindowInsetLeft(),
+                insets.getSystemWindowInsetTop(),
+                insets.getSystemWindowInsetRight(),
+                insets.getSystemWindowInsetBottom()
+            );
+            return insets;
+        });
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDefaultTextEncodingName("UTF-8");
