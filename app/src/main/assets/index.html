@@ -52,7 +52,7 @@ footer{text-align:center;color:#aaa;font-size:11px;padding:16px}
 <button class="launch" onclick="startTaskShortcut('京东红包')"><span class="ico">🎁</span><span>京东红包</span></button>
 <button class="launch" onclick="startTaskShortcut('游戏福利')"><span class="ico">🎮</span><span>游戏福利</span></button>
 <button class="launch" onclick="startTaskShortcut('其他活动')"><span class="ico">⭐</span><span>其他活动</span></button>
-</div><button class="primary-action" onclick="startOneClaim()">一键启动领取识别</button><div class="status" id="claimStatus">状态：等待启动</div>
+</div><button class="primary-action" onclick="startOneClaim()">一键启动领取识别</button><button class="secondary" style="margin-top:8px" onclick="openAccessibility()">开启/检查无障碍权限</button><div class="status" id="claimStatus">状态：等待启动</div>
 <div class="note">当前版本会打开京东并识别页面上明确的领取按钮；单次点击不代表全部任务已完成或奖励已到账。</div></section>
 <details><summary>任务记录与自定义任务</summary><h3>当前账号任务记录</h3>
 <input id="taskName" placeholder="任务名称，例如：京豆购物返豆领取">
@@ -83,8 +83,8 @@ function renameAccount(){const a=current(),name=prompt('修改账号备注',a.na
 function deleteAccount(){if(accounts.length===1){alert('至少保留一个账号');return}const a=current();if(!confirm('确定删除“'+a.name+'”及其本工具中的任务和收益记录吗？此操作不可撤销。'))return;accounts=accounts.filter(x=>x.id!==a.id);activeId=accounts[0].id;save()}
 function openJd(){try{const ok=window.AndroidBridge&&AndroidBridge.openJdApp();if(!ok)alert('没有检测到京东 App，请先安装京东官方 App。')}catch(e){alert('暂时无法打开京东 App，请确认已安装。')}}
 function openAccessibility(){try{if(window.AndroidBridge)AndroidBridge.openAccessibilitySettings();else alert('请在系统设置中开启本助手的无障碍服务。')}catch(e){alert('请在系统设置中开启本助手的无障碍服务。')}}
-function startTaskShortcut(name){try{if(!window.AndroidBridge){alert('请安装本助手 APK 后使用');return}AndroidBridge.startOneClaimAttempt(name);setTaskHint(name+'：已启动对应模块识别，正在打开京东');openJd()}catch(e){setTaskHint(name+'：启动失败，请检查无障碍权限')}}
-function startOneClaim(){try{if(!window.AndroidBridge){alert('请安装 Android APK 后使用自动化功能。');return}AndroidBridge.startOneClaimAttempt('其他活动');setTaskHint('已启动安全识别；其他活动仍需人工核对');openJd()}catch(e){setTaskHint('启动失败，请检查无障碍权限')}}
+function startTaskShortcut(name){try{if(!window.AndroidBridge){alert('请安装本助手 APK 后使用');return}if(!AndroidBridge.startOneClaimAttempt(name)){setTaskHint('请先开启本助手的无障碍权限，再启动'+name);openAccessibility();return}setTaskHint(name+'：已启动对应模块识别，正在打开京东');openJd()}catch(e){setTaskHint(name+'：启动失败，请检查无障碍权限')}}
+function startOneClaim(){try{if(!window.AndroidBridge){alert('请安装 Android APK 后使用自动化功能。');return}if(!AndroidBridge.startOneClaimAttempt('其他活动')){setTaskHint('请先开启本助手的无障碍权限');openAccessibility();return}setTaskHint('已启动安全识别；其他活动仍需人工核对');openJd()}catch(e){setTaskHint('启动失败，请检查无障碍权限')}}
 function stopClaim(){try{if(window.AndroidBridge)AndroidBridge.stopClaimAttempt();setTaskHint('已停止')}catch(e){setTaskHint('停止请求已发送')}}
 function setTaskHint(message){const el=document.getElementById('claimStatus');if(el)el.textContent='任务辅助状态：'+message;}
 function refreshClaimStatus(){try{if(window.AndroidBridge&&document.getElementById('claimStatus'))document.getElementById('claimStatus').textContent='任务辅助状态：'+AndroidBridge.getClaimStatus()}catch(e){}}
