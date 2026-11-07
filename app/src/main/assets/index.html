@@ -160,14 +160,39 @@ function goTask(id){
   setTaskHint('请先开启无障碍权限，返回后重新点击该任务');
   AndroidBridge.openAccessibilitySettings();return;
  }
+ // For shortcuts without a verified deep link, let the user navigate to the activity first.
+ // Start the 180-second one-shot window only after they return here and explicitly arm it.
+ if(!t.url){
+  let opened=false;try{opened=openJd()}catch(e){opened=false}
+  if(!opened){t.status='打开京东失败';save();setTaskHint('无法打开京东，请确认已安装官方 App');return}
+  t.status='已打开京东：请先手动进入目标活动，再返回助手点击“进入活动后启动识别”';
+  t.lastOpenedAt=new Date().toISOString();save();
+  setTaskHint('先在京东进入目标活动页，再返回助手启动识别；不会提前消耗等待时间');
+  return;
+ }
  if(!AndroidBridge.startOneClaimAttempt()){localStorage.removeItem('jd_active_task_id');localStorage.removeItem('jd_active_task_account_id');t.status='领取识别未能启动';save();setTaskHint('启动失败，请检查无障碍权限');return}
  localStorage.setItem('jd_active_task_id',String(t.id));localStorage.setItem('jd_active_task_account_id',activeId);
- let opened=false;
- try{opened=t.url?AndroidBridge.openJdUrl(t.url):openJd()}catch(e){opened=false}
+ let opened=false;try{opened=AndroidBridge.openJdUrl(t.url)}catch(e){opened=false}
  if(!opened){localStorage.removeItem('jd_active_task_id');localStorage.removeItem('jd_active_task_account_id');AndroidBridge.stopClaimAttempt();t.status='打开失败，识别已停止';save();setTaskHint('无法打开京东活动入口，本次已停止');return}
- t.status=t.url?'已打开活动链接，正在识别一次领取按钮':'已打开京东，等待你进入对应活动页面';
+ t.status='已打开活动链接，正在识别一次领取按钮';
  t.lastOpenedAt=new Date().toISOString();save();
  setTaskHint('任务“'+t.name+'”已启动；只会尝试点击一个明确的领取按钮');
+}
+function startRecognitionForTask(id){
+ const t=current().tasks.find(x=>String(x.id)===String(id));if(!t)return;
+ if(t.url){goTask(t.id);return}
+ if(!window.AndroidBridge){alert('请安装本助手 APK 后使用领取识别功能');return}
+ if(!AndroidBridge.isAccessibilityEnabled()){setTaskHint('请先开启无障碍权限');AndroidBridge.openAccessibilitySettings();return}
+ if(!AndroidBridge.startOneClaimAttempt()){t.status='领取识别未能启动';save();setTaskHint('启动失败，请检查无障碍权限');return}
+ localStorage.setItem('jd_active_task_id',String(t.id));
+ localStorage.setItem('jd_active_task_account_id',activeId);
+ if(!openJd()){
+  localStorage.removeItem('jd_active_task_id');localStorage.removeItem('jd_active_task_account_id');
+  AndroidBridge.stopClaimAttempt();t.status='重新打开京东失败，识别已停止';save();return;
+ }
+ t.status='已进入活动页，正在识别一次领取按钮';
+ t.lastStartedAt=new Date().toISOString();save();
+ setTaskHint('已启动一次识别；最长等待180秒，只尝试点击一个明确领取按钮');
 }
 function confirmTask(id){const t=current().tasks.find(x=>x.id===id);if(!t)return;t.status='已检查任务，到账需另行核验';t.confirmed=new Date().toISOString();save()}
 function removeTask(id){current().tasks=current().tasks.filter(x=>x.id!==id);save()}
@@ -178,7 +203,7 @@ const yuanOnly=x=>(x.unit||'yuan')==='yuan',total=a.incomes.filter(yuanOnly).red
 document.getElementById('activeTotal').textContent=money(total);document.getElementById('activeMonth').textContent=money(month);document.getElementById('activeCount').textContent=a.incomes.length;
 const beansEl=document.getElementById('activeBeans');if(beansEl)beansEl.textContent=beans.toLocaleString()+' 个';const packetsEl=document.getElementById('activeRedpackets');if(packetsEl)packetsEl.textContent=redpackets.toLocaleString()+' 个';
 const all=accounts.reduce((s,x)=>s+x.incomes.filter(yuanOnly).reduce((q,r)=>q+r.amount,0),0);document.getElementById('allTotal').textContent=money(all);const summary=document.getElementById('accountSummary');summary.innerHTML='';accounts.forEach(x=>{const p=document.createElement('p');const yuan=x.incomes.filter(yuanOnly).reduce((s,r)=>s+r.amount,0),beanCount=x.incomes.filter(r=>r.unit==='beans').reduce((s,r)=>s+r.amount,0),packetCount=x.incomes.filter(r=>r.unit==='redpacket').reduce((s,r)=>s+r.amount,0);p.textContent=x.name+'：现金 '+money(yuan)+' · 京豆 '+beanCount.toLocaleString()+' 个 · 红包 '+packetCount.toLocaleString()+' 个（'+x.incomes.length+'笔）';summary.append(p)});
-const taskBox=document.getElementById('tasks');taskBox.innerHTML='';if(!a.tasks.length)taskBox.textContent='当前账号暂无任务';a.tasks.forEach(t=>{const d=document.createElement('div');d.className='task';const b=document.createElement('b');b.textContent=t.name;const s=document.createElement('div');s.className='status';s.textContent=t.status+(t.confirmed?' · '+new Date(t.confirmed).toLocaleString():'');const go=document.createElement('button');go.textContent='打开任务并启动领取识别';go.onclick=()=>goTask(t.id);const done=document.createElement('button');done.className='secondary';done.textContent='我已检查任务（不代表到账）';done.onclick=()=>confirmTask(t.id);const edit=document.createElement('button');edit.className='secondary';edit.textContent=t.url?'修改活动链接':'设置活动链接';edit.onclick=()=>editTask(t.id);const del=document.createElement('button');del.className='danger';del.textContent='删除任务';del.onclick=()=>removeTask(t.id);d.append(b,s,go,done,edit,del);taskBox.append(d)});
+const taskBox=document.getElementById('tasks');taskBox.innerHTML='';if(!a.tasks.length)taskBox.textContent='当前账号暂无任务';a.tasks.forEach(t=>{const d=document.createElement('div');d.className='task';const b=document.createElement('b');b.textContent=t.name;const s=document.createElement('div');s.className='status';s.textContent=t.status+(t.confirmed?' · '+new Date(t.confirmed).toLocaleString():'');const go=document.createElement('button');go.textContent=t.url?'打开活动并启动识别':(t.status.includes('已打开京东')?'进入活动后启动识别':'打开京东（先进入活动）');go.onclick=()=>t.url?goTask(t.id):(t.status.includes('已打开京东')?startRecognitionForTask(t.id):goTask(t.id));const done=document.createElement('button');done.className='secondary';done.textContent='我已检查任务（不代表到账）';done.onclick=()=>confirmTask(t.id);const edit=document.createElement('button');edit.className='secondary';edit.textContent=t.url?'修改活动链接':'设置活动链接';edit.onclick=()=>editTask(t.id);const del=document.createElement('button');del.className='danger';del.textContent='删除任务';del.onclick=()=>removeTask(t.id);d.append(b,s,go,done,edit,del);taskBox.append(d)});
 const rb=document.getElementById('records');rb.innerHTML='';if(!a.incomes.length)rb.textContent='当前账号暂无收益记录';a.incomes.forEach(x=>{const p=document.createElement('p');const unit=x.unit||'yuan',shown=unit==='beans'?Number(x.amount).toLocaleString()+' 京豆':unit==='redpacket'?Number(x.amount).toLocaleString()+' 个红包':money(x.amount);p.textContent=x.name+'  +'+shown+'  '+new Date(x.date).toLocaleDateString();rb.append(p)})}
 render();
 </script></body></html>
