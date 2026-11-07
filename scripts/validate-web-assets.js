@@ -75,7 +75,7 @@ for (const label of claimLabels) {
 if (!accessibilityService.includes('if (!prefs.getBoolean("auto_claim_enabled", false) || actionAttempted) return;')) throw new Error('One-shot claim guard is missing');
 if (!accessibilityService.includes('actionAttempted = true;')) throw new Error('Claim attempt is not locked before clicking');
 if (!accessibilityService.includes('prefs.getLong("attempt_action_generation", 0L) == startedAt')) throw new Error('One-shot lock must survive accessibility service recreation');
-if (!accessibilityService.includes('.putLong("attempt_action_generation", startedAt)\\n            .commit()')) throw new Error('One-shot lock must be synchronously persisted before clicking');
+if (!accessibilityService.includes('.putLong("attempt_action_generation", startedAt)') || !accessibilityService.includes('.commit();')) throw new Error('One-shot lock must be synchronously persisted before clicking');
 const persistedLockIndex = accessibilityService.indexOf('.putLong("attempt_action_generation", startedAt)');
 const clickActionIndex = accessibilityService.indexOf('target.performAction(AccessibilityNodeInfo.ACTION_CLICK)');
 if (persistedLockIndex < 0 || clickActionIndex < 0 || persistedLockIndex > clickActionIndex) throw new Error('Persistent one-shot lock must be saved before ACTION_CLICK');
