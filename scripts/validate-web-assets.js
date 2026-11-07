@@ -110,3 +110,8 @@ if (!accessibilityService.includes('.putString("last_claim_label", matchedClaimL
 if (!mainActivity.includes('p.getString("last_claim_label", "")')) throw new Error('Matched claim label is not exposed in status');
 
 if (!html.includes("t.lastResult?' · '+t.lastResult:''")) throw new Error('Task history does not show the detailed claim result');
+
+if (!accessibilityService.includes('.putString("last_result", "等待超时：180秒内没有发现符合条件的领取按钮，已自动停止")\n            .remove("last_claim_label")')) throw new Error('Timeout must clear a stale matched claim label');
+if (!accessibilityService.includes('.putString("last_result", "无障碍服务收到系统中断，本次识别已停止")\n            .remove("last_claim_label")')) throw new Error('Interrupt must clear a stale matched claim label');
+if (!mainActivity.includes('.putString("last_result", "已由用户停止")\n                .remove("last_claim_label")')) throw new Error('Manual stop must clear a stale matched claim label');
+if (!mainActivity.includes('.putString("last_result", "等待超时：180秒内没有发现符合条件的领取按钮，已自动停止")\n                        .remove("last_claim_label")')) throw new Error('Status timeout must clear a stale matched claim label');
