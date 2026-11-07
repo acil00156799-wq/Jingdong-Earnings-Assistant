@@ -43,7 +43,7 @@ public class MainActivity extends Activity {
                 if (!(normalizedHost.equals("jd.com") || normalizedHost.endsWith(".jd.com")
                         || normalizedHost.equals("jingdong.com") || normalizedHost.endsWith(".jingdong.com")
                         || normalizedHost.equals("jd.hk") || normalizedHost.endsWith(".jd.hk"))) return false;
-                if (uri.getUserInfo() != null) return false;
+                if (uri.getUserInfo() != null || (uri.getPort() != -1 && uri.getPort() != 443)) return false;
                 Intent intent = new Intent(Intent.ACTION_VIEW, uri);
                 intent.setPackage(JD_PACKAGE);
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
