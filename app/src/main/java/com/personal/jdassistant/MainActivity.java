@@ -108,8 +108,14 @@ public class MainActivity extends Activity {
                     .apply();
                 return false;
             }
-            getSharedPreferences(PREFS, MODE_PRIVATE).edit()
-                .putLong("attempt_started_at", System.currentTimeMillis())
+            SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
+            // The accessibility service uses this value as an attempt generation.
+            // Guarantee it changes even if the user starts two attempts in the same millisecond.
+            long now = System.currentTimeMillis();
+            long previousAttempt = prefs.getLong("attempt_started_at", 0L);
+            long attemptGeneration = Math.max(now, previousAttempt + 1L);
+            prefs.edit()
+                .putLong("attempt_started_at", attemptGeneration)
                 .putBoolean("auto_claim_enabled", true)
                 .remove("last_claim_label")
                 .putString("last_result", "已启动：等待京东前台出现明确的领取按钮（最长等待180秒）")
