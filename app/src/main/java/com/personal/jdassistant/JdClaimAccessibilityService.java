@@ -15,7 +15,7 @@ import java.util.Set;
 public class JdClaimAccessibilityService extends AccessibilityService {
     private static final String PREFS = "jd_claim_assistant";
     private static final Set<String> BEAN_CHECKIN_LABELS = new HashSet<>(Arrays.asList(
-        "签到领京豆", "立即签到", "签到", "领取京豆"
+        "签到领京豆", "领取京豆"
     ));
     private boolean actionAttempted = false;
     private long activeAttemptId = -1L;
