@@ -115,3 +115,12 @@ if (!accessibilityService.includes('.putString("last_result", "等待超时：18
 if (!accessibilityService.includes('.putString("last_result", "无障碍服务收到系统中断，本次识别已停止")\n            .remove("last_claim_label")')) throw new Error('Interrupt must clear a stale matched claim label');
 if (!mainActivity.includes('.putString("last_result", "已由用户停止")\n                .remove("last_claim_label")')) throw new Error('Manual stop must clear a stale matched claim label');
 if (!mainActivity.includes('.putString("last_result", "等待超时：180秒内没有发现符合条件的领取按钮，已自动停止")\n                        .remove("last_claim_label")')) throw new Error('Status timeout must clear a stale matched claim label');
+
+if (!script.includes('function verifyBeanTaskIncome(id)')) throw new Error('User-confirmed JD Beans receipt flow is missing');
+if (!script.includes("verificationSource:'jd_beans_ledger_user_confirmed'")) throw new Error('Bean receipt does not record its manual verification source');
+if (!script.includes('taskId:String(t.id)')) throw new Error('Bean income record is not linked to its originating task');
+if (!script.includes("t.status='用户已核实京豆到账'")) throw new Error('Bean task is not marked verified after explicit user confirmation');
+if (!script.includes("if(t.verifiedIncomeId){alert('这项任务已登记过核验到账，避免重复计入收益。');return}")) throw new Error('Duplicate bean income registration is not blocked');
+if (!script.includes("verify.disabled=!!t.verifiedIncomeId")) throw new Error('Verified bean task action is not disabled');
+if (!script.includes("verify.onclick=()=>verifyBeanTaskIncome(t.id)")) throw new Error('Bean task verification action is not connected');
+if (!script.includes("if(/京豆/.test(t.name))")) throw new Error('Bean receipt verification action is not limited to bean tasks');
