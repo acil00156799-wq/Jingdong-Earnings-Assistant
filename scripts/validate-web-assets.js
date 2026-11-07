@@ -108,3 +108,5 @@ console.log('Web asset JavaScript syntax, 10 JD URL cases, saved-task execution,
 if (!accessibilityService.includes('matchedClaimLabel = CLAIM_LABELS.contains(text) ? text : description;')) throw new Error('Matched claim label is not captured');
 if (!accessibilityService.includes('.putString("last_claim_label", matchedClaimLabel)')) throw new Error('Matched claim label is not saved');
 if (!mainActivity.includes('p.getString("last_claim_label", "")')) throw new Error('Matched claim label is not exposed in status');
+
+if (!html.includes("t.lastResult?' · '+t.lastResult:''")) throw new Error('Task history does not show the detailed claim result');
