@@ -45,7 +45,7 @@ footer{text-align:center;color:#aaa;font-size:11px;padding:16px}
 </details>
 <section class="card"><h3>我的收益</h3><div class="big" id="activeTotal">¥0.00</div><div class="muted">累计登记收益</div><div class="grid" style="margin-top:12px"><div class="item">本月收益<strong id="activeMonth">¥0.00</strong></div><div class="item">收益记录<strong id="activeCount">0</strong></div><div class="item">京豆到账<strong id="activeBeans">0 个</strong></div><div class="item">红包到账<strong id="activeRedpackets">0 个</strong></div></div></section>
 <details><summary>所有账号收益汇总</summary><h3>所有账号汇总</h3><div class="big" id="allTotal">¥0.00</div><div class="muted">全部账号累计登记收益（仅汇总本工具中保存的数据）</div><div id="accountSummary" class="muted"></div></details>
-<section class="card"><h3>福利入口</h3><div class="launch-grid">
+<section class="card"><h3>福利入口</h3><div class="muted" style="margin:-4px 0 10px">以下按钮目前用于打开京东并启动一次领取识别，不代表已直达对应活动页面。</div><div class="launch-grid">
 <button class="launch" onclick="startTaskShortcut('京豆签到')"><span class="ico">🫘</span><span>京豆签到</span></button>
 <button class="launch" onclick="startTaskShortcut('每日红包')"><span class="ico">🧧</span><span>每日红包</span></button>
 <button class="launch" onclick="startTaskShortcut('宠汪汪')"><span class="ico">🐶</span><span>宠汪汪</span></button>
@@ -56,7 +56,7 @@ footer{text-align:center;color:#aaa;font-size:11px;padding:16px}
 <div class="note">当前版本会打开京东并识别页面上明确的领取按钮；单次点击不代表全部任务已完成或奖励已到账。</div></section>
 <details><summary>任务记录与自定义任务</summary><h3>当前账号任务记录</h3>
 <input id="taskName" placeholder="任务名称，例如：京豆购物返豆领取">
-<input id="taskUrl" placeholder="可选：京东活动链接（http/https）">
+<input id="taskUrl" placeholder="可选：京东官方 HTTPS 活动链接">
 <button onclick="addTask()">添加任务</button><div id="tasks" class="muted">暂无任务</div>
 </details>
 <details><summary>到账登记与明细</summary><h3>登记当前账号实际到账</h3><p class="muted">此处由你根据京东页面或账单手动登记。本工具不会自动读取京东账户；只有确认实际到账后才填写。</p>
@@ -116,7 +116,7 @@ function refreshClaimStatus(){
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshClaimStatus()});
 
 function addTask(){const name=document.getElementById('taskName').value.trim(),url=document.getElementById('taskUrl').value.trim();if(!name){alert('请填写任务名称');return}if(url&&!/^https?:\/\//i.test(url)){alert('链接需以 http:// 或 https:// 开头');return}current().tasks.unshift({id:Date.now(),name,url,status:'待核对',created:new Date().toISOString()});document.getElementById('taskName').value='';document.getElementById('taskUrl').value='';save()}
-function goTask(id){const t=current().tasks.find(x=>x.id===id);if(!t)return;if(t.url){try{const ok=window.AndroidBridge&&AndroidBridge.openJdUrl(t.url);if(!ok)alert('无法直接打开京东 App，请手动打开京东查看。')}catch(e){alert('无法调用京东，请手动打开京东 App。')}}else openJd();t.status='已打开入口，待人工核对';save()}
+function goTask(id){const t=current().tasks.find(x=>x.id===id);if(!t)return;if(t.url){if(!isOfficialJdUrl(t.url)){alert('该链接不是允许的京东官方 HTTPS 域名，已阻止打开。');return}try{const ok=window.AndroidBridge&&AndroidBridge.openJdUrl(t.url);if(!ok)alert('无法直接打开京东 App，请手动打开京东查看。')}catch(e){alert('无法调用京东，请手动打开京东 App。')}}else openJd();t.status='已打开入口，待人工核对';save()}
 function confirmTask(id){const t=current().tasks.find(x=>x.id===id);if(!t)return;t.status='已检查任务，到账需另行核验';t.confirmed=new Date().toISOString();save()}
 function removeTask(id){current().tasks=current().tasks.filter(x=>x.id!==id);save()}
 function addIncome(){const name=document.getElementById('incomeName').value.trim(),amount=Number(document.getElementById('incomeAmount').value),unit=document.getElementById('incomeUnit').value;if(!name||!Number.isFinite(amount)||amount<=0){alert('请填写收益来源和有效到账数量');return}const a=current();a.incomes.unshift({name,amount,unit,date:new Date().toISOString(),verifiedByUser:true,verificationSource:'user_confirmed'});if(unit==='beans'){if(!a.moduleChecks)a.moduleChecks={};a.moduleChecks.bean={status:'已登记用户核验到账',updated:new Date().toISOString(),incomeRecordId:a.incomes[0].date}}document.getElementById('incomeName').value='';document.getElementById('incomeAmount').value='';save()}
