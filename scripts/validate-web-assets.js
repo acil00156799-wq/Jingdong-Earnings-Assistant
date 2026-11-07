@@ -36,6 +36,15 @@ if (!goTaskSource.includes('AndroidBridge.startOneClaimAttempt()')) throw new Er
 if (!goTaskSource.includes('AndroidBridge.openJdUrl(t.url)')) throw new Error('Saved task does not open its configured JD link');
 if (!goTaskSource.includes("localStorage.setItem('jd_active_task_id'")) throw new Error('Saved task result tracking is missing');
 if (!goTaskSource.includes("localStorage.setItem('jd_active_task_account_id'")) throw new Error('Saved task account tracking is missing');
+const noUrlBranchStart = goTaskSource.indexOf("if(!t.url){");
+const urlBranchStart = goTaskSource.indexOf("if(!AndroidBridge.startOneClaimAttempt())", noUrlBranchStart);
+if (noUrlBranchStart < 0 || urlBranchStart < 0 || goTaskSource.slice(noUrlBranchStart, urlBranchStart).includes("startOneClaimAttempt")) throw new Error('Tasks without verified deep links must not start the timeout before manual navigation');
+const startRecognitionStart = script.indexOf('function startRecognitionForTask(id)');
+const nextFunctionStart = script.indexOf('function confirmTask(id)', startRecognitionStart);
+if (startRecognitionStart < 0 || nextFunctionStart < 0) throw new Error('Delayed task recognition action is missing');
+const startRecognitionSource = script.slice(startRecognitionStart, nextFunctionStart);
+if (!startRecognitionSource.includes('AndroidBridge.startOneClaimAttempt()') || !startRecognitionSource.includes('openJd()')) throw new Error('Delayed recognition must arm the one-shot attempt and return to JD');
+if (!script.includes("t.status.includes('已打开京东')?'进入活动后启动识别'")) throw new Error('Task UI does not expose delayed recognition after manual navigation');
 if (!script.includes("task.status='已触发一次点击，请人工核对领取结果'")) throw new Error('Claim result is not synchronized to task history');
 const shortcutStart = script.indexOf('function startTaskShortcut(name)');
 const startOneClaimStart = script.indexOf('function startOneClaim()', shortcutStart);
