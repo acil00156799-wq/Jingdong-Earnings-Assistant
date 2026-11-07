@@ -1,12 +1,15 @@
 const fs = require('node:fs');
 const html = fs.readFileSync('app/src/main/assets/index.html', 'utf8');
-const match = html.match(/<script>([\s\S]*?)<\/script>/i);
-if (!match) throw new Error('index.html script block not found');
-new Function(match[1]);
+const scriptStart = html.indexOf('<script>');
+const scriptEnd = html.indexOf('</script>', scriptStart);
+if (scriptStart < 0 || scriptEnd < 0) throw new Error('index.html script block not found');
+const script = html.slice(scriptStart + 8, scriptEnd);
+new Function(script);
 
-const validatorMatch = match[1].match(/function isOfficialJdUrl\(value\)\{[\s\S]*?\nfunction addTask/);
-if (!validatorMatch) throw new Error('JD URL validator not found');
-const validatorSource = validatorMatch[0].replace(/\nfunction addTask$/, '');
+const validatorStart = script.indexOf('function isOfficialJdUrl(value)');
+const addTaskStart = script.indexOf('\nfunction addTask', validatorStart);
+if (validatorStart < 0 || addTaskStart < 0) throw new Error('JD URL validator not found');
+const validatorSource = script.slice(validatorStart, addTaskStart);
 const isOfficialJdUrl = new Function('URL', validatorSource + '; return isOfficialJdUrl;')(URL);
 
 const cases = [
