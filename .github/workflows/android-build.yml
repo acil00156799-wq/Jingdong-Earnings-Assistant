@@ -34,6 +34,9 @@ jobs:
         with:
           gradle-version: '8.9'
 
+      - name: Validate web asset JavaScript and JD links
+        run: node scripts/validate-web-assets.js
+
       - name: Build debug APK
         run: gradle --no-daemon assembleDebug
 
