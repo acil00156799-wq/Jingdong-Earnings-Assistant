@@ -52,10 +52,14 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
-        public void startOneClaimAttempt() {
+        public void startOneClaimAttempt(String taskName) {
+            String selected = taskName == null ? "其他活动" : taskName.trim();
+            if (selected.isEmpty()) selected = "其他活动";
             getSharedPreferences(PREFS, MODE_PRIVATE).edit()
+                .putString("selected_task", selected)
+                .putLong("attempt_id", System.currentTimeMillis())
                 .putBoolean("auto_claim_enabled", true)
-                .putString("last_result", "已启动：等待京东前台出现明确的领取按钮")
+                .putString("last_result", selected + "：已启动一次识别，等待对应页面的明确领取按钮")
                 .apply();
         }
 
