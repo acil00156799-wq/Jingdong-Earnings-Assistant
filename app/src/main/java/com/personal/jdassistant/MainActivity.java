@@ -1,6 +1,9 @@
 package com.personal.jdassistant;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.text.InputType;
+import android.widget.EditText;
 import android.content.Intent;
 import android.content.ComponentName;
 import android.text.TextUtils;
@@ -9,6 +12,9 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.content.SharedPreferences;
 import android.webkit.JavascriptInterface;
+import android.webkit.JsPromptResult;
+import android.webkit.JsResult;
+import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -130,6 +136,45 @@ public class MainActivity extends Activity {
         settings.setAllowContentAccess(true);
         webView.addJavascriptInterface(new AndroidBridge(), "AndroidBridge");
         webView.setWebViewClient(new WebViewClient());
+        // Handle the app's existing alert/confirm/prompt UI (account rename and task-link editing).
+        webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public boolean onJsAlert(WebView view, String url, String message, JsResult result) {
+                new AlertDialog.Builder(MainActivity.this)
+                    .setMessage(message)
+                    .setPositiveButton(android.R.string.ok, (dialog, which) -> result.confirm())
+                    .setOnCancelListener(dialog -> result.cancel())
+                    .show();
+                return true;
+            }
+
+            @Override
+            public boolean onJsConfirm(WebView view, String url, String message, JsResult result) {
+                new AlertDialog.Builder(MainActivity.this)
+                    .setMessage(message)
+                    .setPositiveButton("确定", (dialog, which) -> result.confirm())
+                    .setNegativeButton("取消", (dialog, which) -> result.cancel())
+                    .setOnCancelListener(dialog -> result.cancel())
+                    .show();
+                return true;
+            }
+
+            @Override
+            public boolean onJsPrompt(WebView view, String url, String message,
+                                      String defaultValue, JsPromptResult result) {
+                EditText input = new EditText(MainActivity.this);
+                input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+                input.setText(defaultValue == null ? "" : defaultValue);
+                new AlertDialog.Builder(MainActivity.this)
+                    .setTitle(message)
+                    .setView(input)
+                    .setPositiveButton("确定", (dialog, which) -> result.confirm(input.getText().toString()))
+                    .setNegativeButton("取消", (dialog, which) -> result.cancel())
+                    .setOnCancelListener(dialog -> result.cancel())
+                    .show();
+                return true;
+            }
+        });
         webView.loadUrl("file:///android_asset/index.html");
     }
 
