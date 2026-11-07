@@ -45,14 +45,14 @@ footer{text-align:center;color:#aaa;font-size:11px;padding:16px}
 </details>
 <section class="card"><h3>我的收益</h3><div class="big" id="activeTotal">¥0.00</div><div class="muted">累计登记收益</div><div class="grid" style="margin-top:12px"><div class="item">本月收益<strong id="activeMonth">¥0.00</strong></div><div class="item">收益记录<strong id="activeCount">0</strong></div><div class="item">京豆到账<strong id="activeBeans">0 个</strong></div><div class="item">红包到账<strong id="activeRedpackets">0 个</strong></div></div></section>
 <details><summary>所有账号收益汇总</summary><h3>所有账号汇总</h3><div class="big" id="allTotal">¥0.00</div><div class="muted">全部账号累计登记收益（仅汇总本工具中保存的数据）</div><div id="accountSummary" class="muted"></div></details>
-<section class="card"><h3>福利入口</h3><div class="muted" style="margin:-4px 0 10px">京豆中心直达京东官方“我的京豆”页面；其他入口暂时打开京东首页，需自行进入对应活动。识别只会尝试点击一个明确的领取按钮。</div><div class="launch-grid">
+<section class="card"><h3>福利入口</h3><div class="muted" style="margin:-4px 0 10px">京豆中心直达京东官方“我的京豆”页面；符合条件的购物返豆需在订单完成后手动领取，领取有效期30天。其他入口暂时打开京东首页，需自行进入对应活动。识别只会尝试点击一个明确的领取按钮。</div><div class="launch-grid">
 <button class="launch" onclick="startTaskShortcut('京豆中心')"><span class="ico">🫘</span><span>京豆中心</span></button>
 <button class="launch" onclick="startTaskShortcut('每日红包')"><span class="ico">🧧</span><span>每日红包</span></button>
 <button class="launch" onclick="startTaskShortcut('宠汪汪')"><span class="ico">🐶</span><span>宠汪汪</span></button>
 <button class="launch" onclick="startTaskShortcut('京东红包')"><span class="ico">🎁</span><span>京东红包</span></button>
 <button class="launch" onclick="startTaskShortcut('游戏福利')"><span class="ico">🎮</span><span>游戏福利</span></button>
 <button class="launch" onclick="startTaskShortcut('其他活动')"><span class="ico">⭐</span><span>其他活动</span></button>
-</div><button class="primary-action" onclick="startOneClaim()">一键启动领取识别</button><div class="rowbtn"><button class="secondary" onclick="openAccessibility()">开启/检查无障碍权限</button><button class="secondary" onclick="stopClaim()">停止本次识别</button></div><div class="status" id="claimStatus">状态：等待启动</div>
+</div><button class="primary-action" onclick="startOneClaim()">一键启动领取识别</button><div class="rowbtn"><button class="secondary" onclick="openAccessibility()">开启/检查无障碍权限</button><button class="secondary" onclick="stopClaim()">停止本次识别</button></div><button class="secondary" style="margin-top:7px" onclick="refreshClaimStatus()">刷新领取状态</button><div class="status" id="claimStatus">状态：等待启动</div>
 <div class="note">当前版本会打开京东并识别页面上明确的领取按钮；单次点击不代表全部任务已完成或奖励已到账。</div></section>
 <details><summary>任务记录与自定义任务</summary><h3>当前账号任务记录</h3>
 <input id="taskName" placeholder="任务名称，例如：京豆购物返豆领取">
@@ -146,6 +146,8 @@ function refreshClaimStatus(){
  }catch(e){}
 }
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshClaimStatus()});
+// Keep the status current while the assistant is visible; Android onResume and visibilitychange cover app returns.
+setInterval(()=>{if(!document.hidden)refreshClaimStatus()},2000);
 
 function isOfficialJdUrl(value){try{const u=new URL(value);const h=u.hostname.toLowerCase();return u.protocol==='https:'&&(u.port===''||u.port==='443')&&!u.username&&!u.password&&(h==='jd.com'||h.endsWith('.jd.com')||h==='jingdong.com'||h.endsWith('.jingdong.com')||h==='jd.hk'||h.endsWith('.jd.hk'))}catch(e){return false}}
 function addTask(){const name=document.getElementById('taskName').value.trim(),url=document.getElementById('taskUrl').value.trim();if(!name){alert('请填写任务名称');return}if(url&&!isOfficialJdUrl(url)){alert('仅支持京东官方域名的 HTTPS 链接（jd.com、jingdong.com、jd.hk）');return}current().tasks.unshift({id:Date.now(),name,url,status:'待核对',created:new Date().toISOString()});document.getElementById('taskName').value='';document.getElementById('taskUrl').value='';save()}
