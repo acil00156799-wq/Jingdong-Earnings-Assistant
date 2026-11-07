@@ -54,6 +54,21 @@ jobs:
           Path("/tmp/jd-assistant-inline.js").write_text(scripts[0], encoding="utf-8")
           PY
           node --check /tmp/jd-assistant-inline.js
+          python3 - <<'PY'
+          from pathlib import Path
+          service = Path("app/src/main/java/com/personal/jdassistant/JdClaimAccessibilityService.java").read_text(encoding="utf-8")
+          required = ['"签到领京豆", "领取京豆"']
+          if not all(item in service for item in required):
+              raise SystemExit("Accessibility service labels do not match the approved bean check-in labels")
+          for item in ['"签到成功", "今日已签到", "已签到"']:
+              if item not in service:
+                  raise SystemExit("Missing explicit check-in success verification label: " + item)
+          if "VERIFY_WINDOW_MS = 12000L" not in service or "verification_pending" not in service:
+              raise SystemExit("Missing bounded passive verification state/window")
+          if "已点击签到按钮，但未检测到明确的签到成功提示" not in service:
+              raise SystemExit("Missing honest verification timeout result")
+          print("Accessibility service exact labels and bounded verification checks passed")
+          PY
       - name: Build installable debug APK
         run: gradle --no-daemon assembleDebug
       - name: Upload APK
