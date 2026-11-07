@@ -21,6 +21,7 @@ public class JdClaimAccessibilityService extends AccessibilityService {
     private static final long ATTEMPT_TIMEOUT_MS = 180_000L;
     private boolean actionAttempted = false;
     private long activeAttemptStartedAt = -1L;
+    private String matchedClaimLabel = "";
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
@@ -32,6 +33,7 @@ public class JdClaimAccessibilityService extends AccessibilityService {
         if (startedAt != activeAttemptStartedAt) {
             activeAttemptStartedAt = startedAt;
             actionAttempted = false;
+            matchedClaimLabel = "";
         }
         if (!prefs.getBoolean("auto_claim_enabled", false) || actionAttempted) return;
         if (startedAt <= 0L || System.currentTimeMillis() - startedAt > ATTEMPT_TIMEOUT_MS) {
@@ -57,6 +59,7 @@ public class JdClaimAccessibilityService extends AccessibilityService {
             .putString("last_result", clicked
                 ? "已点击一个明确的领取按钮；请核对京东是否显示领取成功"
                 : "已找到领取按钮，但点击未成功；本次已停止")
+            .putString("last_claim_label", matchedClaimLabel)
             .putLong("last_action_time", System.currentTimeMillis())
             .apply();
     }
@@ -84,7 +87,10 @@ public class JdClaimAccessibilityService extends AccessibilityService {
             AccessibilityNodeInfo candidate = node;
             while (candidate != null) {
                 if (candidate.isVisibleToUser() && candidate.isEnabled()
-                        && candidate.isClickable()) return candidate;
+                        && candidate.isClickable()) {
+                    matchedClaimLabel = CLAIM_LABELS.contains(text) ? text : description;
+                    return candidate;
+                }
                 candidate = candidate.getParent();
             }
         }
