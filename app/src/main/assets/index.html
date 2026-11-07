@@ -102,7 +102,15 @@ function requestClaimStart(label){
   }
  }catch(e){setTaskHint('启动失败，请检查无障碍权限和京东 App')}
 }
-function startTaskShortcut(name){requestClaimStart(name)}
+function startTaskShortcut(name){
+ const a=current();
+ let task=a.tasks.find(x=>x.shortcut===true&&x.name===name);
+ if(!task){
+  task={id:'quick_'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),name,url:'',status:'待启动',shortcut:true,created:new Date().toISOString()};
+  a.tasks.unshift(task);save();
+ }
+ goTask(task.id);
+}
 function startOneClaim(){requestClaimStart('一键领取识别')}
 function stopClaim(){try{if(window.AndroidBridge)AndroidBridge.stopClaimAttempt();setTaskHint('已停止')}catch(e){setTaskHint('停止请求已发送')}}
 function setTaskHint(message){const el=document.getElementById('claimStatus');if(el)el.textContent='任务辅助状态：'+message;}
