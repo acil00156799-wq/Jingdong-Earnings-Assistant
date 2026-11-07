@@ -16,6 +16,7 @@ import java.util.Set;
  */
 public class JdClaimAccessibilityService extends AccessibilityService {
     private static final String PREFS = "jd_claim_assistant";
+    private static final String JD_PACKAGE = "com.jingdong.app.mall";
     private static final Set<String> CLAIM_LABELS = new HashSet<>(Arrays.asList(
         "立即领取", "点击领取", "去领取", "领取京豆", "立即领取京豆", "领取红包", "立即领取红包", "立即收下", "收下红包", "领取奖励", "立即领取奖励"
     ));
@@ -29,7 +30,7 @@ public class JdClaimAccessibilityService extends AccessibilityService {
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
         if (event == null || event.getPackageName() == null) return;
-        if (!"com.jingdong.app.mall".contentEquals(event.getPackageName())) return;
+        if (!JD_PACKAGE.contentEquals(event.getPackageName())) return;
 
         SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
         long startedAt = prefs.getLong("attempt_started_at", 0L);
@@ -57,7 +58,8 @@ public class JdClaimAccessibilityService extends AccessibilityService {
                 && type != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return;
 
         AccessibilityNodeInfo root = getRootInActiveWindow();
-        if (root == null) return;
+        if (root == null || root.getPackageName() == null
+                || !JD_PACKAGE.contentEquals(root.getPackageName())) return;
         AccessibilityNodeInfo target = findClaimNode(root, 0);
         if (target == null) return;
 
