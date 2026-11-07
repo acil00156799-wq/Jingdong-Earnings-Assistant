@@ -2,6 +2,8 @@ package com.personal.jdassistant;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.ComponentName;
+import android.text.TextUtils;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -47,16 +49,39 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public boolean isAccessibilityEnabled() {
+            String enabled = Settings.Secure.getString(
+                getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
+            if (TextUtils.isEmpty(enabled)) return false;
+            ComponentName expected = new ComponentName(
+                MainActivity.this, JdClaimAccessibilityService.class);
+            TextUtils.SimpleStringSplitter splitter = new TextUtils.SimpleStringSplitter(':');
+            splitter.setString(enabled);
+            while (splitter.hasNext()) {
+                if (expected.flattenToString().equalsIgnoreCase(splitter.next())) return true;
+            }
+            return false;
+        }
+
+        @JavascriptInterface
         public void openAccessibilitySettings() {
             runOnUiThread(() -> startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)));
         }
 
         @JavascriptInterface
-        public void startOneClaimAttempt() {
+        public boolean startOneClaimAttempt() {
+            if (!isAccessibilityEnabled()) {
+                getSharedPreferences(PREFS, MODE_PRIVATE).edit()
+                    .putBoolean("auto_claim_enabled", false)
+                    .putString("last_result", "尚未开启无障碍权限，请先开启后再启动")
+                    .apply();
+                return false;
+            }
             getSharedPreferences(PREFS, MODE_PRIVATE).edit()
                 .putBoolean("auto_claim_enabled", true)
                 .putString("last_result", "已启动：等待京东前台出现明确的领取按钮")
                 .apply();
+            return true;
         }
 
         @JavascriptInterface
