@@ -88,4 +88,13 @@ if (!gradleBuild.includes('signingConfig signingConfigs.stable')) throw new Erro
 if (!workflow.includes('base64 --decode')) throw new Error('Workflow does not decode the private signing keystore');
 if (workflow.includes('actions/cache@v4')) throw new Error('Do not cache a signing private key in a public repository');
 
-console.log('Web asset JavaScript syntax, 10 JD URL cases, saved-task execution, verified shortcut routing, timeout, status-refresh, task-link editor and private stable-signing configuration checks passed.');
+if (!script.includes("function exportBackup()")) throw new Error('Local data backup export is missing');
+if (!script.includes("format:'jd-assistant-backup'")) throw new Error('Backup export format marker is missing');
+if (!script.includes("function importBackup()")) throw new Error('Local data backup import is missing');
+if (!script.includes("data.format!=='jd-assistant-backup'")) throw new Error('Backup import format validation is missing');
+if (!script.includes("onclick=" + '"exportBackup()"')) throw new Error('Backup export control is not visible');
+if (!script.includes("onclick=" + '"importBackup()"')) throw new Error('Backup import control is not visible');
+if (!mainActivity.includes('public boolean shareBackup(String backupJson)')) throw new Error('Native backup share-sheet bridge is missing');
+if (!mainActivity.includes('Intent.createChooser(share, "保存或发送数据备份")')) throw new Error('Native backup share-sheet action is missing');
+
+console.log('Web asset JavaScript syntax, 10 JD URL cases, saved-task execution, verified shortcut routing, timeout, status-refresh, task-link editor, private stable-signing configuration and local data backup/restore checks passed.');
