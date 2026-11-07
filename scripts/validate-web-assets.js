@@ -48,7 +48,7 @@ if (shortcutUrlStart < 0 || shortcutHandlerStart < 0 || startOneClaimForShortcut
 const shortcutRouting = script.slice(shortcutUrlStart, shortcutHandlerStart);
 if (!shortcutRouting.includes('https://my.m.jd.com/jingdou/index.html?fromori=redirect&sceneval=2')) throw new Error('Verified JD My Beans route is missing');
 if (!shortcutRouting.includes("if(name==='京豆中心')")) throw new Error('Unverified shortcuts must not receive invented deep links');
-if (!script.includes("startTaskShortcut('京豆中心')")) throw new Error('My Beans shortcut label is missing');
+if (!html.includes("startTaskShortcut('京豆中心')")) throw new Error('My Beans shortcut label is missing');
 
 const mainActivity = fs.readFileSync('app/src/main/java/com/personal/jdassistant/MainActivity.java', 'utf8');
 const accessibilityService = fs.readFileSync('app/src/main/java/com/personal/jdassistant/JdClaimAccessibilityService.java', 'utf8');
