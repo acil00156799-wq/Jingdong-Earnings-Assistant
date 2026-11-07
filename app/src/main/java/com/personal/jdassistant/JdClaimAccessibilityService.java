@@ -15,6 +15,7 @@ import java.util.Set;
  */
 public class JdClaimAccessibilityService extends AccessibilityService {
     private static final String PREFS = "jd_claim_assistant";
+    private static final long MAX_ATTEMPT_MS = 180000L;
     private long lastAttemptId = -1L;
     private boolean actionAttempted = false;
 
@@ -25,6 +26,15 @@ public class JdClaimAccessibilityService extends AccessibilityService {
 
         SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
         if (!prefs.getBoolean("auto_claim_enabled", false)) return;
+
+        long startedAt = prefs.getLong("attempt_started_at", 0L);
+        if (startedAt > 0L && System.currentTimeMillis() - startedAt > MAX_ATTEMPT_MS) {
+            prefs.edit()
+                .putBoolean("auto_claim_enabled", false)
+                .putString("last_result", "识别等待超过3分钟，已自动停止；未执行领取点击")
+                .apply();
+            return;
+        }
 
         long attemptId = prefs.getLong("attempt_id", -1L);
         if (attemptId != lastAttemptId) {
