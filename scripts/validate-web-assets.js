@@ -74,6 +74,10 @@ for (const label of claimLabels) {
 }
 if (!accessibilityService.includes('if (!prefs.getBoolean("auto_claim_enabled", false) || actionAttempted) return;')) throw new Error('One-shot claim guard is missing');
 if (!accessibilityService.includes('actionAttempted = true;')) throw new Error('Claim attempt is not locked before clicking');
+if (!accessibilityService.includes('MAX_TREE_DEPTH = 40')) throw new Error('Accessibility tree traversal depth must be bounded');
+if (!accessibilityService.includes('MAX_CLICKABLE_ANCESTORS = 4')) throw new Error('Claim click target must be limited to nearby ancestors');
+if (!accessibilityService.includes('candidateBounds.contains(labelBounds)')) throw new Error('Claim click target must geometrically contain the exact claim label');
+if (!accessibilityService.includes('findClaimNode(node.getChild(i), depth + 1)')) throw new Error('Accessibility tree traversal must apply the depth bound recursively');
 
 if (!html.includes('onclick="refreshClaimStatus()"')) throw new Error('Manual claim status refresh control is missing');
 if (!script.includes("setInterval(()=>{if(!document.hidden)refreshClaimStatus()},2000)")) throw new Error('Foreground claim status polling is missing');
