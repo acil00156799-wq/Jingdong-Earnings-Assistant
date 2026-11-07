@@ -76,4 +76,13 @@ if (!script.includes('function editTask(id)')) throw new Error('Task link editor
 if (!script.includes('isOfficialJdUrl(url)')) throw new Error('Task link editor does not validate official JD HTTPS URLs');
 if (!script.includes("edit.textContent=t.url?'修改活动链接':'设置活动链接'")) throw new Error('Task link editor is not exposed in task history');
 
-console.log('Web asset JavaScript syntax, 10 JD URL cases, saved-task execution, verified shortcut routing, timeout, status-refresh and task-link editor checks passed.');
+const gradleBuild = fs.readFileSync('app/build.gradle', 'utf8');
+const workflow = fs.readFileSync('.github/workflows/android-build.yml', 'utf8');
+for (const secretName of ['ANDROID_SIGNING_KEYSTORE_BASE64','ANDROID_SIGNING_STORE_PASSWORD','ANDROID_SIGNING_KEY_ALIAS','ANDROID_SIGNING_KEY_PASSWORD']) {
+  if (!gradleBuild.includes(secretName) || !workflow.includes('secrets.' + secretName)) throw new Error('Private stable signing configuration is incomplete: ' + secretName);
+}
+if (!gradleBuild.includes('signingConfig signingConfigs.stable')) throw new Error('Stable signing is not applied to APK build types');
+if (!workflow.includes('base64 --decode')) throw new Error('Workflow does not decode the private signing keystore');
+if (workflow.includes('actions/cache@v4')) throw new Error('Do not cache a signing private key in a public repository');
+
+console.log('Web asset JavaScript syntax, 10 JD URL cases, saved-task execution, verified shortcut routing, timeout, status-refresh, task-link editor and private stable-signing configuration checks passed.');
