@@ -35,8 +35,16 @@ public class JdClaimAccessibilityService extends AccessibilityService {
         long startedAt = prefs.getLong("attempt_started_at", 0L);
         if (startedAt != activeAttemptStartedAt) {
             activeAttemptStartedAt = startedAt;
-            actionAttempted = false;
+            actionAttempted = prefs.getLong("attempt_action_generation", 0L) == startedAt;
             matchedClaimLabel = "";
+            // If Android recreated this service after the one-shot lock was saved,
+            // stop rather than risk repeating an action whose result is unknown.
+            if (actionAttempted && prefs.getBoolean("auto_claim_enabled", false)) {
+                prefs.edit().putBoolean("auto_claim_enabled", false)
+                    .putString("last_result", "本次识别已处理过动作，为避免重复点击已停止")
+                    .remove("last_claim_label")
+                    .apply();
+            }
         }
         if (!prefs.getBoolean("auto_claim_enabled", false) || actionAttempted) return;
         if (startedAt <= 0L || System.currentTimeMillis() - startedAt > ATTEMPT_TIMEOUT_MS) {
@@ -56,6 +64,18 @@ public class JdClaimAccessibilityService extends AccessibilityService {
         // Lock this attempt before performing the click: rapid accessibility
         // events must never cause a second click for the same user action.
         actionAttempted = true;
+        // Persist the one-shot lock before ACTION_CLICK so a service/process restart
+        // cannot repeat the same click for this attempt generation.
+        boolean lockSaved = prefs.edit()
+            .putLong("attempt_action_generation", startedAt)
+            .commit();
+        if (!lockSaved) {
+            prefs.edit().putBoolean("auto_claim_enabled", false)
+                .putString("last_result", "无法保存单次操作保护，本次未执行点击")
+                .remove("last_claim_label")
+                .apply();
+            return;
+        }
         boolean clicked = target.performAction(AccessibilityNodeInfo.ACTION_CLICK);
         prefs.edit()
             .putBoolean("auto_claim_enabled", false)
