@@ -40,4 +40,14 @@ if (!script.includes("task.status='已触发一次点击，请人工核对领取
 const shortcutStart = script.indexOf('function startTaskShortcut(name)');
 const startOneClaimStart = script.indexOf('function startOneClaim()', shortcutStart);
 if (shortcutStart < 0 || startOneClaimStart < 0 || !script.slice(shortcutStart, startOneClaimStart).includes('goTask(task.id)')) throw new Error('Welfare shortcuts do not use the saved-task execution flow');
-console.log('Web asset JavaScript syntax and 10 JD URL cases and saved-task execution checks passed.');
+
+const shortcutUrlStart = script.indexOf('function shortcutOfficialUrl(name)');
+const shortcutHandlerStart = script.indexOf('function startTaskShortcut(name)', shortcutUrlStart);
+const startOneClaimForShortcutStart = script.indexOf('function startOneClaim()', shortcutHandlerStart);
+if (shortcutUrlStart < 0 || shortcutHandlerStart < 0 || startOneClaimForShortcutStart < 0) throw new Error('Shortcut URL routing is missing');
+const shortcutRouting = script.slice(shortcutUrlStart, shortcutHandlerStart);
+if (!shortcutRouting.includes('https://my.m.jd.com/jingdou/index.html?fromori=redirect&sceneval=2')) throw new Error('Verified JD My Beans route is missing');
+if (!shortcutRouting.includes("if(name==='京豆中心')")) throw new Error('Unverified shortcuts must not receive invented deep links');
+if (!script.includes("startTaskShortcut('京豆中心')")) throw new Error('My Beans shortcut label is missing');
+
+console.log('Web asset JavaScript syntax, 10 JD URL cases, saved-task execution and verified shortcut routing checks passed.');
