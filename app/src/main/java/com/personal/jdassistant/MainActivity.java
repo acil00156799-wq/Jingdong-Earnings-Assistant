@@ -63,6 +63,23 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public boolean shareBackup(String backupJson) {
+            try {
+                if (backupJson == null || backupJson.trim().isEmpty()) return false;
+                Intent share = new Intent(Intent.ACTION_SEND);
+                share.setType("application/json");
+                share.putExtra(Intent.EXTRA_SUBJECT, "京东福利助手数据备份");
+                share.putExtra(Intent.EXTRA_TEXT, backupJson);
+                runOnUiThread(() -> {
+                    try {
+                        startActivity(Intent.createChooser(share, "保存或发送数据备份"));
+                    } catch (Exception ignored) { }
+                });
+                return true;
+            } catch (Exception e) { return false; }
+        }
+
+        @JavascriptInterface
         public boolean isAccessibilityEnabled() {
             String enabled = Settings.Secure.getString(
                 getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
