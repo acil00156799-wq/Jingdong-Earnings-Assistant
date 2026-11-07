@@ -50,4 +50,9 @@ if (!shortcutRouting.includes('https://my.m.jd.com/jingdou/index.html?fromori=re
 if (!shortcutRouting.includes("if(name==='京豆中心')")) throw new Error('Unverified shortcuts must not receive invented deep links');
 if (!script.includes("startTaskShortcut('京豆中心')")) throw new Error('My Beans shortcut label is missing');
 
-console.log('Web asset JavaScript syntax, 10 JD URL cases, saved-task execution and verified shortcut routing checks passed.');
+const mainActivity = fs.readFileSync('app/src/main/java/com/personal/jdassistant/MainActivity.java', 'utf8');
+const accessibilityService = fs.readFileSync('app/src/main/java/com/personal/jdassistant/JdClaimAccessibilityService.java', 'utf8');
+if (!mainActivity.includes('System.currentTimeMillis() - startedAt > 180_000L')) throw new Error('Native attempt timeout is not 180 seconds');
+if (!accessibilityService.includes('ATTEMPT_TIMEOUT_MS = 180_000L')) throw new Error('Accessibility timeout is not 180 seconds');
+
+console.log('Web asset JavaScript syntax, 10 JD URL cases, saved-task execution, verified shortcut routing and timeout checks passed.');
