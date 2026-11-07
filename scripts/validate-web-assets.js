@@ -65,6 +65,13 @@ const accessibilityService = fs.readFileSync('app/src/main/java/com/personal/jda
 if (!mainActivity.includes('setWebChromeClient(new WebChromeClient()')) throw new Error('WebView JavaScript dialog handler is missing');
 if (!mainActivity.includes('onJsPrompt(WebView view')) throw new Error('WebView prompt handler is missing');
 if (!mainActivity.includes('onJsConfirm(WebView view')) throw new Error('WebView confirm handler is missing');
+if (!mainActivity.includes('settings.setAllowFileAccessFromFileURLs(false)')) throw new Error('WebView file-to-file access must be disabled');
+if (!mainActivity.includes('settings.setAllowUniversalAccessFromFileURLs(false)')) throw new Error('WebView universal file-origin access must be disabled');
+if (!mainActivity.includes('WebSettings.MIXED_CONTENT_NEVER_ALLOW')) throw new Error('WebView mixed content must be blocked');
+if (!mainActivity.includes('settings.setAllowContentAccess(false)')) throw new Error('WebView content-provider access must be disabled');
+if (!mainActivity.includes('return request == null || !isAppAssetUrl(request.getUrl())')) throw new Error('WebView must block navigation outside local app assets');
+if (!mainActivity.includes('return !isAppAssetUrl(Uri.parse(url))')) throw new Error('Legacy WebView navigation must also block external pages');
+if (!mainActivity.includes('"android_asset".equalsIgnoreCase(uri.getHost())')) throw new Error('WebView local navigation must be restricted to the Android asset host');
 
 if (!mainActivity.includes('System.currentTimeMillis() - startedAt > 180_000L')) throw new Error('Native attempt timeout is not 180 seconds');
 if (!accessibilityService.includes('ATTEMPT_TIMEOUT_MS = 180_000L')) throw new Error('Accessibility timeout is not 180 seconds');
