@@ -99,8 +99,11 @@ public class MainActivity extends Activity {
             String task = p.getString("selected_task", "");
             boolean matchingIncome =
                 ("京豆签到".equals(task) && "beans".equals(unit))
+                || ("宠汪汪".equals(task) && "beans".equals(unit))
                 || (("每日红包".equals(task) || "京东红包".equals(task))
-                    && ("redpacket".equals(unit) || "yuan".equals(unit)));
+                    && ("redpacket".equals(unit) || "yuan".equals(unit)))
+                || ("游戏福利".equals(task)
+                    && ("beans".equals(unit) || "redpacket".equals(unit) || "yuan".equals(unit)));
             if (matchingIncome && "clicked_unverified".equals(p.getString("claim_state", ""))) {
                 p.edit()
                     .putString("claim_state", "user_verified")
