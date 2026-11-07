@@ -109,8 +109,22 @@ function setTaskHint(message){const el=document.getElementById('claimStatus');if
 function refreshClaimStatus(){
  try{
   if(!window.AndroidBridge)return;
+  const status=AndroidBridge.getClaimStatus();
   const el=document.getElementById('claimStatus');
-  if(el)el.textContent='任务辅助状态：'+AndroidBridge.getClaimStatus();
+  if(el)el.textContent='任务辅助状态：'+status;
+  const taskId=localStorage.getItem('jd_active_task_id');
+  if(!taskId||status.includes('正在等待领取按钮'))return;
+  const task=current().tasks.find(x=>String(x.id)===taskId);
+  if(task){
+   if(status.includes('已点击一个明确的领取按钮'))task.status='已触发一次点击，请人工核对领取结果';
+   else if(status.includes('已找到领取按钮'))task.status='找到领取按钮但点击未成功';
+   else if(status.includes('等待超时'))task.status='等待超时，未识别到领取按钮';
+   else if(status.includes('中断'))task.status='识别被系统中断';
+   else if(status.includes('已由用户停止'))task.status='用户已停止识别';
+   else return;
+   task.lastResult=status;task.lastCheckedAt=new Date().toISOString();
+   localStorage.removeItem('jd_active_task_id');save();
+  }else localStorage.removeItem('jd_active_task_id');
  }catch(e){}
 }
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshClaimStatus()});
@@ -126,10 +140,11 @@ function goTask(id){
   setTaskHint('请先开启无障碍权限，返回后重新点击该任务');
   AndroidBridge.openAccessibilitySettings();return;
  }
- if(!AndroidBridge.startOneClaimAttempt()){t.status='领取识别未能启动';save();setTaskHint('启动失败，请检查无障碍权限');return}
+ if(!AndroidBridge.startOneClaimAttempt()){localStorage.removeItem('jd_active_task_id');t.status='领取识别未能启动';save();setTaskHint('启动失败，请检查无障碍权限');return}
+ localStorage.setItem('jd_active_task_id',String(t.id));
  let opened=false;
  try{opened=t.url?AndroidBridge.openJdUrl(t.url):openJd()}catch(e){opened=false}
- if(!opened){AndroidBridge.stopClaimAttempt();t.status='打开失败，识别已停止';save();setTaskHint('无法打开京东活动入口，本次已停止');return}
+ if(!opened){localStorage.removeItem('jd_active_task_id');AndroidBridge.stopClaimAttempt();t.status='打开失败，识别已停止';save();setTaskHint('无法打开京东活动入口，本次已停止');return}
  t.status=t.url?'已打开活动链接，正在识别一次领取按钮':'已打开京东，等待你进入对应活动页面';
  t.lastOpenedAt=new Date().toISOString();save();
  setTaskHint('任务“'+t.name+'”已启动；只会尝试点击一个明确的领取按钮');
