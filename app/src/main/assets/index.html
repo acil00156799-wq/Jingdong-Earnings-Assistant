@@ -46,8 +46,8 @@ footer{text-align:center;color:#aaa;font-size:11px;padding:16px}
 <section class="card"><h3>我的收益</h3><div class="big" id="activeTotal">¥0.00</div><div class="muted">累计登记收益</div><div class="grid" style="margin-top:12px"><div class="item">本月收益<strong id="activeMonth">¥0.00</strong></div><div class="item">收益记录<strong id="activeCount">0</strong></div><div class="item">京豆到账<strong id="activeBeans">0 个</strong></div><div class="item">红包到账<strong id="activeRedpackets">0 个</strong></div></div></section>
 <details><summary>所有账号收益汇总</summary><h3>所有账号汇总</h3><div class="big" id="allTotal">¥0.00</div><div class="muted">全部账号累计登记收益（仅汇总本工具中保存的数据）</div><div id="accountSummary" class="muted"></div></details>
 <section class="card"><h3>福利入口</h3><div class="launch-grid" id="taskModuleGrid" aria-label="福利任务模块"></div><button class="primary-action" onclick="startOneClaim()">启动京豆签到辅助</button><div class="status" id="claimStatus">状态：等待启动</div>
-<div class="rowbtn"><button class="secondary" onclick="openAccessibility()">检查/开启无障碍权限</button><button class="secondary" onclick="refreshClaimStatus()">刷新执行状态</button></div>
-<div class="note">福利入口目前负责打开京东，具体活动由你在京东内选择。下方“一键领取识别”是独立的单次辅助：只尝试点击明确可见的领取按钮，不会自动完成签到、游戏或多步骤任务，也不代表奖励到账。</div></section>
+<div class="rowbtn"><button class="secondary" onclick="openAccessibility()">检查/开启无障碍权限</button><button class="secondary" onclick="refreshClaimStatus()">刷新执行状态</button></div><button class="danger" onclick="stopClaim()">停止当前辅助</button>
+<div class="note">福利入口目前负责打开京东，具体活动由你在京东内选择。“启动京豆签到辅助”是独立的单次辅助：仅在京东前台查找“签到领京豆”或“领取京豆”这两个明确文字，不会点击普通“签到”按钮；不会自动完成多步骤任务，也不代表奖励到账。启动前请先确认京东显示的是京豆签到页面。</div></section>
 <details><summary>任务记录与自定义任务</summary><h3>当前账号任务记录</h3>
 <input id="taskName" placeholder="任务名称，例如：京豆购物返豆领取">
 <input id="taskUrl" placeholder="可选：京东活动链接（http/https）">
