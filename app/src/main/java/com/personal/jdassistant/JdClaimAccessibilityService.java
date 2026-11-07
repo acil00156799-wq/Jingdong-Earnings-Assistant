@@ -18,14 +18,15 @@ public class JdClaimAccessibilityService extends AccessibilityService {
     private static final Set<String> CLAIM_LABELS = new HashSet<>(Arrays.asList(
         "立即领取", "领取京豆", "领取红包", "立即收下", "领取奖励"
     ));
+    private static final long ATTEMPT_TIMEOUT_MS = 90_000L;
     private boolean actionAttempted = false;
     private long activeAttemptStartedAt = -1L;
-    private static final long ATTEMPT_TIMEOUT_MS = 90_000L;
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
         if (event == null || event.getPackageName() == null) return;
         if (!"com.jingdong.app.mall".contentEquals(event.getPackageName())) return;
+
         SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
         long startedAt = prefs.getLong("attempt_started_at", 0L);
         if (startedAt != activeAttemptStartedAt) {
@@ -34,12 +35,10 @@ public class JdClaimAccessibilityService extends AccessibilityService {
         }
         if (!prefs.getBoolean("auto_claim_enabled", false) || actionAttempted) return;
         if (startedAt <= 0L || System.currentTimeMillis() - startedAt > ATTEMPT_TIMEOUT_MS) {
-            prefs.edit().putBoolean("auto_claim_enabled", false)
-                .putString("last_result", "等待超时：90秒内没有发现符合条件的领取按钮，已自动停止")
-                .apply();
-            actionAttempted = true;
+            stopForTimeout(prefs);
             return;
         }
+
         int type = event.getEventType();
         if (type != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
                 && type != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return;
@@ -49,29 +48,47 @@ public class JdClaimAccessibilityService extends AccessibilityService {
         AccessibilityNodeInfo target = findClaimNode(root);
         if (target == null) return;
 
+        // Lock this attempt before performing the click: rapid accessibility
+        // events must never cause a second click for the same user action.
         actionAttempted = true;
         boolean clicked = target.performAction(AccessibilityNodeInfo.ACTION_CLICK);
         prefs.edit()
             .putBoolean("auto_claim_enabled", false)
             .putString("last_result", clicked
                 ? "已点击一个明确的领取按钮；请核对京东是否显示领取成功"
-                : "已找到领取按钮，但点击未成功")
+                : "已找到领取按钮，但点击未成功；本次已停止")
             .putLong("last_action_time", System.currentTimeMillis())
             .apply();
     }
 
+    private void stopForTimeout(SharedPreferences prefs) {
+        actionAttempted = true;
+        prefs.edit().putBoolean("auto_claim_enabled", false)
+            .putString("last_result", "等待超时：90秒内没有发现符合条件的领取按钮，已自动停止")
+            .apply();
+    }
+
+    private String normalize(CharSequence value) {
+        if (value == null) return "";
+        return value.toString().trim().replaceAll("\\s+", "");
+    }
+
     private AccessibilityNodeInfo findClaimNode(AccessibilityNodeInfo node) {
         if (node == null || !node.isVisibleToUser() || !node.isEnabled()) return null;
-        CharSequence t = node.getText();
-        CharSequence d = node.getContentDescription();
-        String label = t != null ? t.toString().trim() : "";
-        if (label.isEmpty() && d != null) label = d.toString().trim();
 
-        if (CLAIM_LABELS.contains(label)) {
+        // Check text and accessibility description independently. Some JD
+        // controls expose only one of these fields.
+        String text = normalize(node.getText());
+        String description = normalize(node.getContentDescription());
+        if (CLAIM_LABELS.contains(text) || CLAIM_LABELS.contains(description)) {
             AccessibilityNodeInfo candidate = node;
-            while (candidate != null && !candidate.isClickable()) candidate = candidate.getParent();
-            if (candidate != null && candidate.isClickable()) return candidate;
+            while (candidate != null) {
+                if (candidate.isVisibleToUser() && candidate.isEnabled()
+                        && candidate.isClickable()) return candidate;
+                candidate = candidate.getParent();
+            }
         }
+
         for (int i = 0; i < node.getChildCount(); i++) {
             AccessibilityNodeInfo found = findClaimNode(node.getChild(i));
             if (found != null) return found;
@@ -83,7 +100,8 @@ public class JdClaimAccessibilityService extends AccessibilityService {
     public void onInterrupt() {
         getSharedPreferences(PREFS, MODE_PRIVATE).edit()
             .putBoolean("auto_claim_enabled", false)
-            .putString("last_result", "自动领取已中断")
+            .putString("last_result", "无障碍服务收到系统中断，本次识别已停止")
             .apply();
+        actionAttempted = true;
     }
 }
