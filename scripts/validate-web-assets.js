@@ -98,6 +98,13 @@ if (!script.includes("function exportBackup()")) throw new Error('Local data bac
 if (!script.includes("format:'jd-assistant-backup'")) throw new Error('Backup export format marker is missing');
 if (!script.includes("function importBackup()")) throw new Error('Local data backup import is missing');
 if (!script.includes("data.format!=='jd-assistant-backup'")) throw new Error('Backup import format validation is missing');
+if (!script.includes('function validateBackupData(data)')) throw new Error('Backup schema validation is missing');
+if (!script.includes('data.accounts.length>50')) throw new Error('Backup account-count limit is missing');
+if (!script.includes('a.tasks.length>2000||a.incomes.length>10000')) throw new Error('Backup record-count limits are missing');
+if (!script.includes('if(raw.length>5000000)')) throw new Error('Backup input-size limit is missing');
+if (!script.includes('const nextAccounts=JSON.parse(JSON.stringify(data.accounts))')) throw new Error('Backup import must stage data before applying it');
+if (!script.includes('const previousAccounts=localStorage.getItem(KEY),previousActive=localStorage.getItem(ACTIVE)')) throw new Error('Backup import must retain the previous local data for rollback');
+if (!script.includes('accounts=nextAccounts;activeId=nextActiveId;render()')) throw new Error('Backup import must update in-memory state only after storage succeeds');
 if (!html.includes('onclick="exportBackup()"')) throw new Error('Backup export control is not visible');
 if (!html.includes('onclick="importBackup()"')) throw new Error('Backup import control is not visible');
 if (!mainActivity.includes('public boolean shareBackup(String backupJson)')) throw new Error('Native backup share-sheet bridge is missing');
