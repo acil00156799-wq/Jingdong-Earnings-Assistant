@@ -122,6 +122,7 @@ public class MainActivity extends Activity {
             getSharedPreferences(PREFS, MODE_PRIVATE).edit()
                 .putBoolean("auto_claim_enabled", false)
                 .putString("last_result", "已由用户停止")
+                .remove("last_claim_label")
                 .apply();
         }
 
@@ -133,6 +134,7 @@ public class MainActivity extends Activity {
                 if (startedAt <= 0L || System.currentTimeMillis() - startedAt > 180_000L) {
                     p.edit().putBoolean("auto_claim_enabled", false)
                         .putString("last_result", "等待超时：180秒内没有发现符合条件的领取按钮，已自动停止")
+                        .remove("last_claim_label")
                         .apply();
                 }
             }
