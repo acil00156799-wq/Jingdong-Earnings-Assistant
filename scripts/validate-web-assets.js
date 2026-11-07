@@ -58,4 +58,8 @@ if (!accessibilityService.includes('ATTEMPT_TIMEOUT_MS = 180_000L')) throw new E
 if (!html.includes('onclick="refreshClaimStatus()"')) throw new Error('Manual claim status refresh control is missing');
 if (!script.includes("setInterval(()=>{if(!document.hidden)refreshClaimStatus()},2000)")) throw new Error('Foreground claim status polling is missing');
 
-console.log('Web asset JavaScript syntax, 10 JD URL cases, saved-task execution, verified shortcut routing, timeout and status-refresh checks passed.');
+if (!script.includes('function editTask(id)')) throw new Error('Task link editor is missing');
+if (!script.includes('isOfficialJdUrl(url)')) throw new Error('Task link editor does not validate official JD HTTPS URLs');
+if (!script.includes("edit.textContent=t.url?'修改活动链接':'设置活动链接'")) throw new Error('Task link editor is not exposed in task history');
+
+console.log('Web asset JavaScript syntax, 10 JD URL cases, saved-task execution, verified shortcut routing, timeout, status-refresh and task-link editor checks passed.');
