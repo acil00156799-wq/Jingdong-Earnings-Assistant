@@ -2,6 +2,7 @@ package com.personal.jdassistant;
 
 import android.accessibilityservice.AccessibilityService;
 import android.view.accessibility.AccessibilityEvent;
+import android.graphics.Rect;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.content.SharedPreferences;
 import java.util.Arrays;
@@ -19,6 +20,8 @@ public class JdClaimAccessibilityService extends AccessibilityService {
         "立即领取", "点击领取", "去领取", "领取京豆", "立即领取京豆", "领取红包", "立即领取红包", "立即收下", "收下红包", "领取奖励", "立即领取奖励"
     ));
     private static final long ATTEMPT_TIMEOUT_MS = 180_000L;
+    private static final int MAX_TREE_DEPTH = 40;
+    private static final int MAX_CLICKABLE_ANCESTORS = 4;
     private boolean actionAttempted = false;
     private long activeAttemptStartedAt = -1L;
     private String matchedClaimLabel = "";
@@ -47,7 +50,7 @@ public class JdClaimAccessibilityService extends AccessibilityService {
 
         AccessibilityNodeInfo root = getRootInActiveWindow();
         if (root == null) return;
-        AccessibilityNodeInfo target = findClaimNode(root);
+        AccessibilityNodeInfo target = findClaimNode(root, 0);
         if (target == null) return;
 
         // Lock this attempt before performing the click: rapid accessibility
@@ -77,18 +80,26 @@ public class JdClaimAccessibilityService extends AccessibilityService {
         return value.toString().trim().replaceAll("\\s+", "");
     }
 
-    private AccessibilityNodeInfo findClaimNode(AccessibilityNodeInfo node) {
-        if (node == null || !node.isVisibleToUser() || !node.isEnabled()) return null;
+    private AccessibilityNodeInfo findClaimNode(AccessibilityNodeInfo node, int depth) {
+        if (node == null || depth > MAX_TREE_DEPTH
+                || !node.isVisibleToUser() || !node.isEnabled()) return null;
 
         // Check text and accessibility description independently. Some JD
         // controls expose only one of these fields.
         String text = normalize(node.getText());
         String description = normalize(node.getContentDescription());
         if (CLAIM_LABELS.contains(text) || CLAIM_LABELS.contains(description)) {
+            Rect labelBounds = new Rect();
+            node.getBoundsInScreen(labelBounds);
             AccessibilityNodeInfo candidate = node;
-            while (candidate != null) {
+            for (int ancestorDepth = 0;
+                    candidate != null && ancestorDepth < MAX_CLICKABLE_ANCESTORS;
+                    ancestorDepth++) {
+                Rect candidateBounds = new Rect();
+                candidate.getBoundsInScreen(candidateBounds);
                 if (candidate.isVisibleToUser() && candidate.isEnabled()
-                        && candidate.isClickable()) {
+                        && candidate.isClickable() && candidateBounds.contains(labelBounds)
+                        && !candidateBounds.isEmpty()) {
                     matchedClaimLabel = CLAIM_LABELS.contains(text) ? text : description;
                     return candidate;
                 }
@@ -97,7 +108,7 @@ public class JdClaimAccessibilityService extends AccessibilityService {
         }
 
         for (int i = 0; i < node.getChildCount(); i++) {
-            AccessibilityNodeInfo found = findClaimNode(node.getChild(i));
+            AccessibilityNodeInfo found = findClaimNode(node.getChild(i), depth + 1);
             if (found != null) return found;
         }
         return null;
