@@ -34,6 +34,12 @@ jobs:
         with:
           gradle-version: '8.9'
 
+      - name: Restore persistent debug signing key
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: jd-assistant-debug-signing-v1-${{ runner.os }}
+
       - name: Validate web asset JavaScript and JD links
         run: node scripts/validate-web-assets.js
 
