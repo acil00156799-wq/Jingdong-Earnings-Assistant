@@ -33,7 +33,7 @@ jobs:
           from pathlib import Path
           import re
           html = Path("app/src/main/assets/index.html").read_text(encoding="utf-8")
-          scripts = re.findall(r"<script>([\\s\\S]*?)</script>", html)
+          scripts = re.findall(r"<script>(.*?)</script>", html, re.S)
           if len(scripts) != 1:
               raise SystemExit(f"Expected one inline script, found {len(scripts)}")
           Path("/tmp/jd-assistant-inline.js").write_text(scripts[0], encoding="utf-8")
