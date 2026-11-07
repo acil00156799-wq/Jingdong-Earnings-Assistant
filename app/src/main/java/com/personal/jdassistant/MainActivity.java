@@ -94,12 +94,17 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
-        public void markUserVerified() {
+        public void markUserVerified(String unit, String incomeName) {
             SharedPreferences p = getSharedPreferences(PREFS, MODE_PRIVATE);
-            if ("clicked_unverified".equals(p.getString("claim_state", ""))) {
+            String task = p.getString("selected_task", "");
+            boolean matchingIncome =
+                ("京豆签到".equals(task) && "beans".equals(unit))
+                || (("每日红包".equals(task) || "京东红包".equals(task))
+                    && ("redpacket".equals(unit) || "yuan".equals(unit)));
+            if (matchingIncome && "clicked_unverified".equals(p.getString("claim_state", ""))) {
                 p.edit()
                     .putString("claim_state", "user_verified")
-                    .putString("last_result", p.getString("selected_task", "本次任务") + "：用户已手动确认实际到账并登记")
+                    .putString("last_result", task + "：用户已手动登记对应类型的实际到账")
                     .apply();
             }
         }
