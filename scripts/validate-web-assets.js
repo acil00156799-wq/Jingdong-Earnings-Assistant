@@ -90,6 +90,8 @@ if (!accessibilityService.includes('if (!lockSaved)')) throw new Error('Claim cl
 if (!accessibilityService.includes('MAX_TREE_DEPTH = 40')) throw new Error('Accessibility tree traversal depth must be bounded');
 if (!accessibilityService.includes('MAX_CLICKABLE_ANCESTORS = 4')) throw new Error('Claim click target must be limited to nearby ancestors');
 if (!accessibilityService.includes('candidateBounds.contains(labelBounds)')) throw new Error('Claim click target must geometrically contain the exact claim label');
+if (!accessibilityService.includes('root.getPackageName() == null')) throw new Error('Active accessibility root must have a verifiable package name');
+if (!accessibilityService.includes('!JD_PACKAGE.contentEquals(root.getPackageName())')) throw new Error('Claim recognition must only inspect the JD foreground window');
 if (!accessibilityService.includes('findClaimNode(node.getChild(i), depth + 1)')) throw new Error('Accessibility tree traversal must apply the depth bound recursively');
 
 if (!html.includes('onclick="refreshClaimStatus()"')) throw new Error('Manual claim status refresh control is missing');
