@@ -9,14 +9,13 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * User-started, one-shot helper. It clicks at most one exact, visible claim
- * label in the foreground JD app. It does not solve challenges, play games,
- * interact with ads, or repeat actions.
+ * User-armed, one-shot helper. It only clicks a task-specific, exact visible
+ * label in the foreground JD app. It never repeats or claims reward settlement.
  */
 public class JdClaimAccessibilityService extends AccessibilityService {
     private static final String PREFS = "jd_claim_assistant";
-    private static final Set<String> CLAIM_LABELS = new HashSet<>(Arrays.asList(
-        "立即领取", "领取京豆", "领取红包", "立即收下", "收下", "领取奖励"
+    private static final Set<String> BEAN_CHECKIN_LABELS = new HashSet<>(Arrays.asList(
+        "签到领京豆", "立即签到", "签到", "领取京豆"
     ));
     private boolean actionAttempted = false;
 
@@ -24,17 +23,19 @@ public class JdClaimAccessibilityService extends AccessibilityService {
     public void onAccessibilityEvent(AccessibilityEvent event) {
         if (event == null || event.getPackageName() == null) return;
         if (!"com.jingdong.app.mall".contentEquals(event.getPackageName())) return;
-        if (event.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) actionAttempted = false;
 
         SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
         if (!prefs.getBoolean("auto_claim_enabled", false) || actionAttempted) return;
+        String taskId = prefs.getString("active_task_id", "");
+        if (!"bean_checkin".equals(taskId)) return;
+
         int type = event.getEventType();
         if (type != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
                 && type != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return;
 
         AccessibilityNodeInfo root = getRootInActiveWindow();
         if (root == null) return;
-        AccessibilityNodeInfo target = findClaimNode(root);
+        AccessibilityNodeInfo target = findExactTaskNode(root, BEAN_CHECKIN_LABELS);
         if (target == null) return;
 
         actionAttempted = true;
@@ -42,26 +43,27 @@ public class JdClaimAccessibilityService extends AccessibilityService {
         prefs.edit()
             .putBoolean("auto_claim_enabled", false)
             .putString("last_result", clicked
-                ? "已点击一个明确的领取按钮；请核对京东是否显示领取成功"
-                : "已找到领取按钮，但点击未成功")
+                ? "京豆签到辅助：已点击一个可见签到按钮；请在京东页面核对签到结果和到账"
+                : "京豆签到辅助：找到签到按钮，但点击未成功")
+            .putString("last_task_id", taskId)
             .putLong("last_action_time", System.currentTimeMillis())
             .apply();
     }
 
-    private AccessibilityNodeInfo findClaimNode(AccessibilityNodeInfo node) {
+    private AccessibilityNodeInfo findExactTaskNode(AccessibilityNodeInfo node, Set<String> allowedLabels) {
         if (node == null || !node.isVisibleToUser() || !node.isEnabled()) return null;
         CharSequence t = node.getText();
         CharSequence d = node.getContentDescription();
         String label = t != null ? t.toString().trim() : "";
         if (label.isEmpty() && d != null) label = d.toString().trim();
 
-        if (CLAIM_LABELS.contains(label)) {
+        if (allowedLabels.contains(label)) {
             AccessibilityNodeInfo candidate = node;
             while (candidate != null && !candidate.isClickable()) candidate = candidate.getParent();
             if (candidate != null && candidate.isClickable()) return candidate;
         }
         for (int i = 0; i < node.getChildCount(); i++) {
-            AccessibilityNodeInfo found = findClaimNode(node.getChild(i));
+            AccessibilityNodeInfo found = findExactTaskNode(node.getChild(i), allowedLabels);
             if (found != null) return found;
         }
         return null;
@@ -71,7 +73,7 @@ public class JdClaimAccessibilityService extends AccessibilityService {
     public void onInterrupt() {
         getSharedPreferences(PREFS, MODE_PRIVATE).edit()
             .putBoolean("auto_claim_enabled", false)
-            .putString("last_result", "自动领取已中断")
+            .putString("last_result", "任务辅助已中断")
             .apply();
     }
 }
