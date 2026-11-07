@@ -26,9 +26,10 @@ public class JdClaimAccessibilityService extends AccessibilityService {
         if (!"com.jingdong.app.mall".contentEquals(event.getPackageName())) return;
 
         SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
-        if (!prefs.getBoolean("auto_claim_enabled", false) || actionAttempted) return;
+        if (!prefs.getBoolean("auto_claim_enabled", false)) return;
         long attemptId = prefs.getLong("active_task_started_at", 0L);
         if (attemptId != activeAttemptId) { activeAttemptId = attemptId; actionAttempted = false; }
+        if (actionAttempted) return;
         String taskId = prefs.getString("active_task_id", "");
         if (!"bean_checkin".equals(taskId)) return;
 
