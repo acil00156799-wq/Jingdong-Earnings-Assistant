@@ -96,6 +96,14 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public String getClaimStatus() {
             SharedPreferences p = getSharedPreferences(PREFS, MODE_PRIVATE);
+            if (p.getBoolean("auto_claim_enabled", false)) {
+                long startedAt = p.getLong("attempt_started_at", 0L);
+                if (startedAt <= 0L || System.currentTimeMillis() - startedAt > 90_000L) {
+                    p.edit().putBoolean("auto_claim_enabled", false)
+                        .putString("last_result", "等待超时：90秒内没有发现符合条件的领取按钮，已自动停止")
+                        .apply();
+                }
+            }
             return p.getString("last_result", "尚未执行") +
                 (p.getBoolean("auto_claim_enabled", false) ? "（正在等待领取按钮）" : "");
         }
