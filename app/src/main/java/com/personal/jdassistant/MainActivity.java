@@ -87,6 +87,7 @@ public class MainActivity extends Activity {
             }
             prefs.edit().putString("active_task_id", taskId)
                 .putLong("active_task_started_at", System.currentTimeMillis())
+                .putBoolean("verification_pending", false)
                 .putBoolean("auto_claim_enabled", true)
                 .putString("last_result", "京豆签到辅助已启动：等待京东前台出现本模块指定的签到按钮")
                 .apply();
@@ -102,6 +103,7 @@ public class MainActivity extends Activity {
         public void stopClaimAttempt() {
             getSharedPreferences(PREFS, MODE_PRIVATE).edit()
                 .putBoolean("auto_claim_enabled", false)
+                .putBoolean("verification_pending", false)
                 .putString("last_result", "已由用户停止")
                 .apply();
         }
@@ -111,7 +113,9 @@ public class MainActivity extends Activity {
             SharedPreferences p = getSharedPreferences(PREFS, MODE_PRIVATE);
             String result = p.getString("last_result", "尚未执行");
             if (!isClaimServiceEnabled()) result += "；无障碍服务未开启";
-            return result + (p.getBoolean("auto_claim_enabled", false) ? "（等待领取按钮）" : "");
+            if (p.getBoolean("verification_pending", false)) result += "（等待页面成功提示，尚未确认）";
+            else if (p.getBoolean("auto_claim_enabled", false)) result += "（等待领取按钮）";
+            return result;
         }
     }
 
