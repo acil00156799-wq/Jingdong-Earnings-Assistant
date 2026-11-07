@@ -79,7 +79,10 @@ if (!script.includes("edit.textContent=t.url?'修改活动链接':'设置活动�
 const gradleBuild = fs.readFileSync('app/build.gradle', 'utf8');
 const workflow = fs.readFileSync('.github/workflows/android-build.yml', 'utf8');
 for (const secretName of ['ANDROID_SIGNING_KEYSTORE_BASE64','ANDROID_SIGNING_STORE_PASSWORD','ANDROID_SIGNING_KEY_ALIAS','ANDROID_SIGNING_KEY_PASSWORD']) {
-  if (!gradleBuild.includes(secretName) || !workflow.includes('secrets.' + secretName)) throw new Error('Private stable signing configuration is incomplete: ' + secretName);
+  if (!workflow.includes('secrets.' + secretName)) throw new Error('Workflow signing secret is missing: ' + secretName);
+}
+for (const envName of ['ANDROID_SIGNING_STORE_FILE','ANDROID_SIGNING_STORE_PASSWORD','ANDROID_SIGNING_KEY_ALIAS','ANDROID_SIGNING_KEY_PASSWORD']) {
+  if (!gradleBuild.includes(envName)) throw new Error('Gradle stable signing environment variable is missing: ' + envName);
 }
 if (!gradleBuild.includes('signingConfig signingConfigs.stable')) throw new Error('Stable signing is not applied to APK build types');
 if (!workflow.includes('base64 --decode')) throw new Error('Workflow does not decode the private signing keystore');
