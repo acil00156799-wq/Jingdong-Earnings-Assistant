@@ -5,8 +5,8 @@
  */
 window.JD_TASK_MODULES = [
   { id: "bean_checkin", name: "京豆签到", icon: "🫘", capability: "assisted_click",
-    labels: ["签到领京豆", "立即签到", "签到", "领取京豆"],
-    guidance: "已进入京豆签到辅助流程：请确认京东打开的是签到页面；助手只会尝试点击本模块列出的可见按钮。" },
+    labels: ["签到领京豆", "领取京豆"],
+    guidance: "已进入京豆签到辅助流程：请确认京东打开的是签到页面；助手只会尝试点击“签到领京豆”或“领取京豆”两个明确按钮。" },
   { id: "daily_redpacket", name: "每日红包", icon: "🧧", capability: "manual_only",
     guidance: "当前仅打开京东。请自行找到每日红包活动并操作；自动领取规则尚未验证。" },
   { id: "pet_dog", name: "宠汪汪", icon: "🐶", capability: "manual_only",
