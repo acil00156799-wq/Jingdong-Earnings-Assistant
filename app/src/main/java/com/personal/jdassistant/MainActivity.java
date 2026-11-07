@@ -97,13 +97,18 @@ public class MainActivity extends Activity {
         public void markUserVerified(String unit, String incomeName) {
             SharedPreferences p = getSharedPreferences(PREFS, MODE_PRIVATE);
             String task = p.getString("selected_task", "");
+            String source = incomeName == null ? "" : incomeName.trim();
             boolean matchingIncome =
-                ("京豆签到".equals(task) && "beans".equals(unit))
-                || ("宠汪汪".equals(task) && "beans".equals(unit))
+                ("京豆签到".equals(task) && "beans".equals(unit)
+                    && source.contains("京豆") && source.contains("签到"))
+                || ("宠汪汪".equals(task) && "beans".equals(unit)
+                    && source.contains("宠汪汪"))
                 || (("每日红包".equals(task) || "京东红包".equals(task))
-                    && ("redpacket".equals(unit) || "yuan".equals(unit)))
+                    && ("redpacket".equals(unit) || "yuan".equals(unit))
+                    && source.contains("红包"))
                 || ("游戏福利".equals(task)
-                    && ("beans".equals(unit) || "redpacket".equals(unit) || "yuan".equals(unit)));
+                    && ("beans".equals(unit) || "redpacket".equals(unit) || "yuan".equals(unit))
+                    && source.contains("游戏"));
             if (matchingIncome && "clicked_unverified".equals(p.getString("claim_state", ""))) {
                 p.edit()
                     .putString("claim_state", "user_verified")
