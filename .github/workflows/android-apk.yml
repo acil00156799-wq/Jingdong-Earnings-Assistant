@@ -37,8 +37,8 @@ jobs:
           const ids = tasks.map(task => task.id);
           if (new Set(ids).size !== ids.length) throw new Error("Task IDs must be unique");
           const bean = tasks.find(task => task.id === "bean_checkin");
-          if (!bean || bean.capability !== "assisted_click" || !Array.isArray(bean.labels) || bean.labels.length === 0) {
-            throw new Error("Bean check-in must declare its explicit assisted-click rule");
+          if (!bean || bean.capability !== "assisted_click" || JSON.stringify(bean.labels) !== JSON.stringify(["签到领京豆", "领取京豆"])) {
+            throw new Error("Bean check-in must use only the two approved exact labels");
           }
           if (tasks.filter(task => task.id !== "bean_checkin").some(task => task.capability !== "manual_only")) {
             throw new Error("Unverified modules must remain manual-only");
