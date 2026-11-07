@@ -81,7 +81,7 @@ function switchAccount(id){if(!accounts.some(a=>a.id===id))return;activeId=id;sa
 function addAccount(){const el=document.getElementById('newAccountName'),name=el.value.trim();if(!name){alert('请先填写账号备注');return}if(accounts.some(a=>a.name===name)){alert('已有同名备注，请换一个名称');return}const a=makeAccount(name);accounts.push(a);activeId=a.id;el.value='';save()}
 function renameAccount(){const a=current(),name=prompt('修改账号备注',a.name);if(name===null)return;const v=name.trim();if(!v){alert('备注不能为空');return}if(accounts.some(x=>x.id!==a.id&&x.name===v)){alert('已有同名账号备注');return}a.name=v;save()}
 function deleteAccount(){if(accounts.length===1){alert('至少保留一个账号');return}const a=current();if(!confirm('确定删除“'+a.name+'”及其本工具中的任务和收益记录吗？此操作不可撤销。'))return;accounts=accounts.filter(x=>x.id!==a.id);activeId=accounts[0].id;save()}
-function openJd(){try{const ok=window.AndroidBridge&&AndroidBridge.openJdApp();if(!ok)alert('没有检测到京东 App，请先安装京东官方 App。')}catch(e){alert('暂时无法打开京东 App，请确认已安装。')}}
+function openJd(){try{const ok=!!(window.AndroidBridge&&AndroidBridge.openJdApp());if(!ok)alert('没有检测到京东 App，请先安装京东官方 App。');return ok}catch(e){alert('暂时无法打开京东 App，请确认已安装。');return false}}
 function openAccessibility(){try{if(window.AndroidBridge)AndroidBridge.openAccessibilitySettings();else alert('请在系统设置中开启本助手的无障碍服务。')}catch(e){alert('请在系统设置中开启本助手的无障碍服务。')}}
 function requestClaimStart(label){
  try{
@@ -96,12 +96,14 @@ function requestClaimStart(label){
    return;
   }
   setTaskHint(label+'：已启动一次识别，正在打开京东');
-  openJd();
+  if(!openJd()){
+   AndroidBridge.stopClaimAttempt();
+   setTaskHint('未能打开京东，已停止本次识别');
+  }
  }catch(e){setTaskHint('启动失败，请检查无障碍权限和京东 App')}
 }
 function startTaskShortcut(name){requestClaimStart(name)}
 function startOneClaim(){requestClaimStart('一键领取识别')}
-function openAccessibility(){try{if(window.AndroidBridge)AndroidBridge.openAccessibilitySettings();else alert('请安装本助手 APK 后使用')}catch(e){alert('无法打开系统设置，请手动开启本助手的无障碍服务')}}
 function stopClaim(){try{if(window.AndroidBridge)AndroidBridge.stopClaimAttempt();setTaskHint('已停止')}catch(e){setTaskHint('停止请求已发送')}}
 function setTaskHint(message){const el=document.getElementById('claimStatus');if(el)el.textContent='任务辅助状态：'+message;}
 function refreshClaimStatus(){
