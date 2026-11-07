@@ -45,7 +45,7 @@ footer{text-align:center;color:#aaa;font-size:11px;padding:16px}
 </details>
 <section class="card"><h3>我的收益</h3><div class="big" id="activeTotal">¥0.00</div><div class="muted">累计登记收益</div><div class="grid" style="margin-top:12px"><div class="item">本月收益<strong id="activeMonth">¥0.00</strong></div><div class="item">收益记录<strong id="activeCount">0</strong></div><div class="item">京豆到账<strong id="activeBeans">0 个</strong></div><div class="item">红包到账<strong id="activeRedpackets">0 个</strong></div></div></section>
 <details><summary>所有账号收益汇总</summary><h3>所有账号汇总</h3><div class="big" id="allTotal">¥0.00</div><div class="muted">全部账号累计登记收益（仅汇总本工具中保存的数据）</div><div id="accountSummary" class="muted"></div></details>
-<section class="card"><h3>福利入口</h3><div class="launch-grid" id="taskModuleGrid" aria-label="福利任务模块"></div><button class="primary-action" onclick="startOneClaim()">一键启动领取识别</button><div class="status" id="claimStatus">状态：等待启动</div>
+<section class="card"><h3>福利入口</h3><div class="launch-grid" id="taskModuleGrid" aria-label="福利任务模块"></div><button class="primary-action" onclick="startOneClaim()">启动京豆签到辅助</button><div class="status" id="claimStatus">状态：等待启动</div>
 <div class="rowbtn"><button class="secondary" onclick="openAccessibility()">检查/开启无障碍权限</button><button class="secondary" onclick="refreshClaimStatus()">刷新执行状态</button></div>
 <div class="note">福利入口目前负责打开京东，具体活动由你在京东内选择。下方“一键领取识别”是独立的单次辅助：只尝试点击明确可见的领取按钮，不会自动完成签到、游戏或多步骤任务，也不代表奖励到账。</div></section>
 <details><summary>任务记录与自定义任务</summary><h3>当前账号任务记录</h3>
@@ -85,13 +85,25 @@ modules.forEach(module=>{
 const button=document.createElement('button');button.className='launch';button.type='button';
 const icon=document.createElement('span');icon.className='ico';icon.textContent=module.icon;
 const name=document.createElement('span');name.textContent=module.name;
-const state=document.createElement('small');state.textContent=module.capability==='manual_only'?'手动入口':'可执行';
+const state=document.createElement('small');state.textContent=module.capability==='assisted_click'?'辅助执行':'手动入口';
 state.style.cssText='font-size:10px;color:#999;font-weight:400';
 button.append(icon,name,state);button.addEventListener('click',()=>startTaskShortcut(module.id));grid.append(button);
 });
 }
 function startTaskShortcut(taskId){
 const module=(window.JD_TASK_MODULES||[]).find(item=>item.id===taskId);if(!module)return;
+if(module.capability==='assisted_click'){
+try{
+if(!window.AndroidBridge){alert('请安装本助手 APK 后使用任务辅助');return}
+if(!AndroidBridge.isAccessibilityEnabled()){setTaskHint('未启动：请先开启无障碍权限');alert('请先开启本助手的无障碍服务，再启动京豆签到辅助。');openAccessibility();return}
+const started=AndroidBridge.startTaskModule(taskId);
+if(!started){setTaskHint(module.name+'：未启动，请查看无障碍权限或任务状态');return}
+setTaskHint(module.name+'：辅助已启动。请确认京东当前显示的是签到页面；仅会尝试点击本模块指定的可见按钮。');
+openJd();
+}catch(e){setTaskHint(module.name+'：启动失败，请检查无障碍权限')}
+return;
+}
+if(window.AndroidBridge)AndroidBridge.stopClaimAttempt();
 setTaskHint(module.name+'：'+module.guidance);openJd();
 }
 function startOneClaim(){try{if(!window.AndroidBridge){alert('请安装 Android APK 后使用自动化功能。');return}if(!AndroidBridge.isAccessibilityEnabled()){setTaskHint('未启动：请先开启本助手的无障碍服务');alert('需要先开启无障碍权限。接下来会打开系统设置，请找到“京东福利助手自动领取辅助”并手动开启。');openAccessibility();return}const started=AndroidBridge.startOneClaimAttempt();if(!started){setTaskHint('未启动：无障碍服务不可用');return}setTaskHint('已启动单次识别；正在打开京东');openJd()}catch(e){setTaskHint('启动失败：请检查无障碍权限')}}
