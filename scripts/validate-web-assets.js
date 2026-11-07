@@ -55,4 +55,7 @@ const accessibilityService = fs.readFileSync('app/src/main/java/com/personal/jda
 if (!mainActivity.includes('System.currentTimeMillis() - startedAt > 180_000L')) throw new Error('Native attempt timeout is not 180 seconds');
 if (!accessibilityService.includes('ATTEMPT_TIMEOUT_MS = 180_000L')) throw new Error('Accessibility timeout is not 180 seconds');
 
-console.log('Web asset JavaScript syntax, 10 JD URL cases, saved-task execution, verified shortcut routing and timeout checks passed.');
+if (!html.includes('onclick="refreshClaimStatus()"')) throw new Error('Manual claim status refresh control is missing');
+if (!script.includes("setInterval(()=>{if(!document.hidden)refreshClaimStatus()},2000)")) throw new Error('Foreground claim status polling is missing');
+
+console.log('Web asset JavaScript syntax, 10 JD URL cases, saved-task execution, verified shortcut routing, timeout and status-refresh checks passed.');
