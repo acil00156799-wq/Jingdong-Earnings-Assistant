@@ -124,3 +124,5 @@ if (!script.includes("if(t.verifiedIncomeId){alert('这项任务已登记过核�
 if (!script.includes("verify.disabled=!!t.verifiedIncomeId")) throw new Error('Verified bean task action is not disabled');
 if (!script.includes("verify.onclick=()=>verifyBeanTaskIncome(t.id)")) throw new Error('Bean task verification action is not connected');
 if (!script.includes("if(/京豆/.test(t.name))")) throw new Error('Bean receipt verification action is not limited to bean tasks');
+
+if (!mainActivity.includes('long attemptGeneration = Math.max(now, previousAttempt + 1L)')) throw new Error('Consecutive claim attempts must use a unique generation timestamp');
