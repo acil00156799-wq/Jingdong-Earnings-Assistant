@@ -37,4 +37,7 @@ if (!goTaskSource.includes('AndroidBridge.openJdUrl(t.url)')) throw new Error('S
 if (!goTaskSource.includes("localStorage.setItem('jd_active_task_id'")) throw new Error('Saved task result tracking is missing');
 if (!goTaskSource.includes("localStorage.setItem('jd_active_task_account_id'")) throw new Error('Saved task account tracking is missing');
 if (!script.includes("task.status='已触发一次点击，请人工核对领取结果'")) throw new Error('Claim result is not synchronized to task history');
+const shortcutStart = script.indexOf('function startTaskShortcut(name)');
+const startOneClaimStart = script.indexOf('function startOneClaim()', shortcutStart);
+if (shortcutStart < 0 || startOneClaimStart < 0 || !script.slice(shortcutStart, startOneClaimStart).includes('goTask(task.id)')) throw new Error('Welfare shortcuts do not use the saved-task execution flow');
 console.log('Web asset JavaScript syntax and 10 JD URL cases and saved-task execution checks passed.');
