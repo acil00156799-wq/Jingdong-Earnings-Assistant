@@ -68,6 +68,7 @@ public class JdClaimAccessibilityService extends AccessibilityService {
         actionAttempted = true;
         prefs.edit().putBoolean("auto_claim_enabled", false)
             .putString("last_result", "等待超时：180秒内没有发现符合条件的领取按钮，已自动停止")
+            .remove("last_claim_label")
             .apply();
     }
 
@@ -107,6 +108,7 @@ public class JdClaimAccessibilityService extends AccessibilityService {
         getSharedPreferences(PREFS, MODE_PRIVATE).edit()
             .putBoolean("auto_claim_enabled", false)
             .putString("last_result", "无障碍服务收到系统中断，本次识别已停止")
+            .remove("last_claim_label")
             .apply();
         actionAttempted = true;
     }
