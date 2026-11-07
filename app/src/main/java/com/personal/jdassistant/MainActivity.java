@@ -70,18 +70,31 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
-        public boolean startOneClaimAttempt() {
+        public boolean startTaskModule(String taskId) {
             SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
+            if (!"bean_checkin".equals(taskId)) {
+                prefs.edit().putBoolean("auto_claim_enabled", false)
+                    .putString("last_result", "该任务目前为手动入口，尚无经过验证的自动执行规则")
+                    .putString("active_task_id", taskId == null ? "" : taskId)
+                    .apply();
+                return false;
+            }
             if (!isClaimServiceEnabled()) {
                 prefs.edit().putBoolean("auto_claim_enabled", false)
                     .putString("last_result", "未启动：请先在系统设置中开启本助手的无障碍服务")
                     .apply();
                 return false;
             }
-            prefs.edit().putBoolean("auto_claim_enabled", true)
-                .putString("last_result", "已启动单次识别：等待京东前台出现明确的领取按钮")
+            prefs.edit().putString("active_task_id", taskId)
+                .putBoolean("auto_claim_enabled", true)
+                .putString("last_result", "京豆签到辅助已启动：等待京东前台出现本模块指定的签到按钮")
                 .apply();
             return true;
+        }
+
+        @JavascriptInterface
+        public boolean startOneClaimAttempt() {
+            return startTaskModule("bean_checkin");
         }
 
         @JavascriptInterface
