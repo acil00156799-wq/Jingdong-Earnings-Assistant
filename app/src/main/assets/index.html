@@ -90,21 +90,48 @@ function exportBackup(){
   setTaskHint('已准备好数据备份，请在系统分享菜单中选择“保存到文件”或发送到你自己的安全位置');
  }catch(e){alert('导出失败，请稍后重试')}
 }
+function validateBackupData(data){
+ if(!data||data.format!=='jd-assistant-backup'||data.version!==1||!Array.isArray(data.accounts)||!data.accounts.length||data.accounts.length>50)return false;
+ const ids=new Set(),names=new Set();
+ for(const a of data.accounts){
+  if(!a||typeof a.id!=='string'||!a.id.trim()||a.id.length>100||typeof a.name!=='string'||!a.name.trim()||a.name.length>100||!Array.isArray(a.tasks)||!Array.isArray(a.incomes))return false;
+  if(ids.has(a.id))return false;
+  ids.add(a.id);
+  if(a.tasks.length>2000||a.incomes.length>10000)return false;
+  for(const t of a.tasks){
+   if(!t||typeof t!=='object'||Array.isArray(t)||!(typeof t.id==='string'||typeof t.id==='number')||typeof t.name!=='string'||!t.name.trim()||t.name.length>200)return false;
+   if(t.url!==undefined&&typeof t.url!=='string')return false;
+  }
+  for(const x of a.incomes){
+   if(!x||typeof x!=='object'||Array.isArray(x)||typeof x.name!=='string'||!x.name.trim()||!Number.isFinite(Number(x.amount))||Number(x.amount)<=0)return false;
+   if(x.unit!==undefined&&!['yuan','beans','redpacket'].includes(x.unit))return false;
+  }
+ }
+ return true;
+}
 function importBackup(){
  const raw=prompt('粘贴之前导出的京东福利助手备份 JSON。导入会覆盖本设备当前保存的账号、任务和收益记录。','');
  if(raw===null)return;
+ if(raw.length>5000000){alert('备份文件过大，已取消导入');return}
  let data;
  try{data=JSON.parse(raw)}catch(e){alert('备份内容不是有效的 JSON');return}
- if(!data||data.format!=='jd-assistant-backup'||data.version!==1||!Array.isArray(data.accounts)||!data.accounts.length){
-  alert('备份格式不正确或版本不受支持');return;
+ if(!validateBackupData(data)){alert('备份格式不正确、数据不完整或包含不支持的记录，已取消导入');return}
+ const nextAccounts=JSON.parse(JSON.stringify(data.accounts));
+ const ids=nextAccounts.map(a=>a.id);
+ const nextActiveId=ids.includes(data.activeId)?data.activeId:nextAccounts[0].id;
+ if(!confirm('确认导入 '+nextAccounts.length+' 个账号？这会覆盖本设备当前保存的账号、任务和收益记录。建议先导出当前备份。'))return;
+ const previousAccounts=localStorage.getItem(KEY),previousActive=localStorage.getItem(ACTIVE);
+ try{
+  localStorage.setItem(KEY,JSON.stringify(nextAccounts));
+  localStorage.setItem(ACTIVE,nextActiveId);
+ }catch(e){
+  try{
+   if(previousAccounts===null)localStorage.removeItem(KEY);else localStorage.setItem(KEY,previousAccounts);
+   if(previousActive===null)localStorage.removeItem(ACTIVE);else localStorage.setItem(ACTIVE,previousActive);
+  }catch(restoreError){}
+  alert('导入失败：设备存储空间不足或无法写入，原有数据已尽力保留');return;
  }
- const valid=data.accounts.every(a=>a&&typeof a.id==='string'&&a.id.length>0&&typeof a.name==='string'&&a.name.trim()&&Array.isArray(a.tasks)&&Array.isArray(a.incomes));
- const ids=data.accounts.map(a=>a.id);
- if(!valid||new Set(ids).size!==ids.length){alert('备份中的账号数据不完整或账号编号重复');return}
- if(!confirm('确认导入 '+data.accounts.length+' 个账号？这会覆盖本设备当前保存的账号、任务和收益记录。建议先导出当前备份。'))return;
- accounts=JSON.parse(JSON.stringify(data.accounts));
- activeId=ids.includes(data.activeId)?data.activeId:accounts[0].id;
- try{localStorage.setItem(KEY,JSON.stringify(accounts));localStorage.setItem(ACTIVE,activeId);save();alert('数据备份导入成功')}catch(e){alert('导入失败：设备可用存储空间可能不足')}
+ accounts=nextAccounts;activeId=nextActiveId;render();alert('数据备份导入成功');
 }
 function openJd(){try{const ok=!!(window.AndroidBridge&&AndroidBridge.openJdApp());if(!ok)alert('没有检测到京东 App，请先安装京东官方 App。');return ok}catch(e){alert('暂时无法打开京东 App，请确认已安装。');return false}}
 function openAccessibility(){try{if(window.AndroidBridge)AndroidBridge.openAccessibilitySettings();else alert('请在系统设置中开启本助手的无障碍服务。')}catch(e){alert('请在系统设置中开启本助手的无障碍服务。')}}
