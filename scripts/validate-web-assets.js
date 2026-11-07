@@ -98,8 +98,8 @@ if (!script.includes("function exportBackup()")) throw new Error('Local data bac
 if (!script.includes("format:'jd-assistant-backup'")) throw new Error('Backup export format marker is missing');
 if (!script.includes("function importBackup()")) throw new Error('Local data backup import is missing');
 if (!script.includes("data.format!=='jd-assistant-backup'")) throw new Error('Backup import format validation is missing');
-if (!script.includes("onclick=" + '"exportBackup()"')) throw new Error('Backup export control is not visible');
-if (!script.includes("onclick=" + '"importBackup()"')) throw new Error('Backup import control is not visible');
+if (!html.includes('onclick="exportBackup()"')) throw new Error('Backup export control is not visible');
+if (!html.includes('onclick="importBackup()"')) throw new Error('Backup import control is not visible');
 if (!mainActivity.includes('public boolean shareBackup(String backupJson)')) throw new Error('Native backup share-sheet bridge is missing');
 if (!mainActivity.includes('Intent.createChooser(share, "保存或发送数据备份")')) throw new Error('Native backup share-sheet action is missing');
 
