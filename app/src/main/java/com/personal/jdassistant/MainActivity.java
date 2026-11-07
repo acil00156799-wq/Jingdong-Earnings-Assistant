@@ -88,7 +88,7 @@ public class MainActivity extends Activity {
             getSharedPreferences(PREFS, MODE_PRIVATE).edit()
                 .putLong("attempt_started_at", System.currentTimeMillis())
                 .putBoolean("auto_claim_enabled", true)
-                .putString("last_result", "已启动：等待京东前台出现明确的领取按钮（最长等待90秒）")
+                .putString("last_result", "已启动：等待京东前台出现明确的领取按钮（最长等待180秒）")
                 .apply();
             return true;
         }
@@ -106,9 +106,9 @@ public class MainActivity extends Activity {
             SharedPreferences p = getSharedPreferences(PREFS, MODE_PRIVATE);
             if (p.getBoolean("auto_claim_enabled", false)) {
                 long startedAt = p.getLong("attempt_started_at", 0L);
-                if (startedAt <= 0L || System.currentTimeMillis() - startedAt > 90_000L) {
+                if (startedAt <= 0L || System.currentTimeMillis() - startedAt > 180_000L) {
                     p.edit().putBoolean("auto_claim_enabled", false)
-                        .putString("last_result", "等待超时：90秒内没有发现符合条件的领取按钮，已自动停止")
+                        .putString("last_result", "等待超时：180秒内没有发现符合条件的领取按钮，已自动停止")
                         .apply();
                 }
             }
