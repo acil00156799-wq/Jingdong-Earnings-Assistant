@@ -68,6 +68,12 @@ if (!mainActivity.includes('onJsConfirm(WebView view')) throw new Error('WebView
 
 if (!mainActivity.includes('System.currentTimeMillis() - startedAt > 180_000L')) throw new Error('Native attempt timeout is not 180 seconds');
 if (!accessibilityService.includes('ATTEMPT_TIMEOUT_MS = 180_000L')) throw new Error('Accessibility timeout is not 180 seconds');
+const claimLabels = ['立即领取','点击领取','去领取','领取京豆','立即领取京豆','领取红包','立即领取红包','立即收下','收下红包','领取奖励','立即领取奖励'];
+for (const label of claimLabels) {
+  if (!accessibilityService.includes('"' + label + '"')) throw new Error('Accessibility claim label is missing: ' + label);
+}
+if (!accessibilityService.includes('if (!prefs.getBoolean("auto_claim_enabled", false) || actionAttempted) return;')) throw new Error('One-shot claim guard is missing');
+if (!accessibilityService.includes('actionAttempted = true;')) throw new Error('Claim attempt is not locked before clicking');
 
 if (!html.includes('onclick="refreshClaimStatus()"')) throw new Error('Manual claim status refresh control is missing');
 if (!script.includes("setInterval(()=>{if(!document.hidden)refreshClaimStatus()},2000)")) throw new Error('Foreground claim status polling is missing');
