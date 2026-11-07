@@ -29,6 +29,21 @@ jobs:
       - name: Validate task module and embedded JavaScript
         run: |
           node --check app/src/main/assets/task-modules.js
+          node - <<'NODE'
+          global.window = global;
+          require("./app/src/main/assets/task-modules.js");
+          const tasks = global.JD_TASK_MODULES;
+          if (!Array.isArray(tasks) || tasks.length !== 6) throw new Error("Expected six registered task modules");
+          const ids = tasks.map(task => task.id);
+          if (new Set(ids).size !== ids.length) throw new Error("Task IDs must be unique");
+          const bean = tasks.find(task => task.id === "bean_checkin");
+          if (!bean || bean.capability !== "assisted_click" || !Array.isArray(bean.labels) || bean.labels.length === 0) {
+            throw new Error("Bean check-in must declare its explicit assisted-click rule");
+          }
+          if (tasks.filter(task => task.id !== "bean_checkin").some(task => task.capability !== "manual_only")) {
+            throw new Error("Unverified modules must remain manual-only");
+          }
+          NODE
           python3 - <<'PY'
           from pathlib import Path
           import re
