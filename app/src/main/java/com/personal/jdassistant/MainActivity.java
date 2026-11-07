@@ -78,8 +78,9 @@ public class MainActivity extends Activity {
                 return false;
             }
             getSharedPreferences(PREFS, MODE_PRIVATE).edit()
+                .putLong("attempt_started_at", System.currentTimeMillis())
                 .putBoolean("auto_claim_enabled", true)
-                .putString("last_result", "已启动：等待京东前台出现明确的领取按钮")
+                .putString("last_result", "已启动：等待京东前台出现明确的领取按钮（最长等待90秒）")
                 .apply();
             return true;
         }
@@ -114,6 +115,15 @@ public class MainActivity extends Activity {
         webView.addJavascriptInterface(new AndroidBridge(), "AndroidBridge");
         webView.setWebViewClient(new WebViewClient());
         webView.loadUrl("file:///android_asset/index.html");
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (webView != null) {
+            webView.post(() -> webView.evaluateJavascript(
+                "if(typeof refreshClaimStatus==='function')refreshClaimStatus();", null));
+        }
     }
 
     @Override
