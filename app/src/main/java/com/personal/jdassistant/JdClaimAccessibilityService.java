@@ -18,6 +18,7 @@ public class JdClaimAccessibilityService extends AccessibilityService {
         "签到领京豆", "立即签到", "签到", "领取京豆"
     ));
     private boolean actionAttempted = false;
+    private long activeAttemptId = -1L;
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
@@ -26,6 +27,8 @@ public class JdClaimAccessibilityService extends AccessibilityService {
 
         SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
         if (!prefs.getBoolean("auto_claim_enabled", false) || actionAttempted) return;
+        long attemptId = prefs.getLong("active_task_started_at", 0L);
+        if (attemptId != activeAttemptId) { activeAttemptId = attemptId; actionAttempted = false; }
         String taskId = prefs.getString("active_task_id", "");
         if (!"bean_checkin".equals(taskId)) return;
 
