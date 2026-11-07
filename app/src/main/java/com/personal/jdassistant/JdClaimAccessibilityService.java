@@ -16,18 +16,30 @@ import java.util.Set;
 public class JdClaimAccessibilityService extends AccessibilityService {
     private static final String PREFS = "jd_claim_assistant";
     private static final Set<String> CLAIM_LABELS = new HashSet<>(Arrays.asList(
-        "立即领取", "领取京豆", "领取红包", "立即收下", "收下", "领取奖励"
+        "立即领取", "领取京豆", "领取红包", "立即收下", "领取奖励"
     ));
     private boolean actionAttempted = false;
+    private long activeAttemptStartedAt = -1L;
+    private static final long ATTEMPT_TIMEOUT_MS = 90_000L;
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
         if (event == null || event.getPackageName() == null) return;
         if (!"com.jingdong.app.mall".contentEquals(event.getPackageName())) return;
-        if (event.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) actionAttempted = false;
-
         SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
+        long startedAt = prefs.getLong("attempt_started_at", 0L);
+        if (startedAt != activeAttemptStartedAt) {
+            activeAttemptStartedAt = startedAt;
+            actionAttempted = false;
+        }
         if (!prefs.getBoolean("auto_claim_enabled", false) || actionAttempted) return;
+        if (startedAt <= 0L || System.currentTimeMillis() - startedAt > ATTEMPT_TIMEOUT_MS) {
+            prefs.edit().putBoolean("auto_claim_enabled", false)
+                .putString("last_result", "等待超时：90秒内没有发现符合条件的领取按钮，已自动停止")
+                .apply();
+            actionAttempted = true;
+            return;
+        }
         int type = event.getEventType();
         if (type != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
                 && type != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return;
