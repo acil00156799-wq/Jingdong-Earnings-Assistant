@@ -45,8 +45,8 @@ footer{text-align:center;color:#aaa;font-size:11px;padding:16px}
 </details>
 <section class="card"><h3>我的收益</h3><div class="big" id="activeTotal">¥0.00</div><div class="muted">累计登记收益</div><div class="grid" style="margin-top:12px"><div class="item">本月收益<strong id="activeMonth">¥0.00</strong></div><div class="item">收益记录<strong id="activeCount">0</strong></div><div class="item">京豆到账<strong id="activeBeans">0 个</strong></div><div class="item">红包到账<strong id="activeRedpackets">0 个</strong></div></div></section>
 <details><summary>所有账号收益汇总</summary><h3>所有账号汇总</h3><div class="big" id="allTotal">¥0.00</div><div class="muted">全部账号累计登记收益（仅汇总本工具中保存的数据）</div><div id="accountSummary" class="muted"></div></details>
-<section class="card"><h3>福利入口</h3><div class="muted" style="margin:-4px 0 10px">以下按钮目前用于打开京东并启动一次领取识别，不代表已直达对应活动页面。</div><div class="launch-grid">
-<button class="launch" onclick="startTaskShortcut('京豆签到')"><span class="ico">🫘</span><span>京豆签到</span></button>
+<section class="card"><h3>福利入口</h3><div class="muted" style="margin:-4px 0 10px">京豆中心直达京东官方“我的京豆”页面；其他入口暂时打开京东首页，需自行进入对应活动。识别只会尝试点击一个明确的领取按钮。</div><div class="launch-grid">
+<button class="launch" onclick="startTaskShortcut('京豆中心')"><span class="ico">🫘</span><span>京豆中心</span></button>
 <button class="launch" onclick="startTaskShortcut('每日红包')"><span class="ico">🧧</span><span>每日红包</span></button>
 <button class="launch" onclick="startTaskShortcut('宠汪汪')"><span class="ico">🐶</span><span>宠汪汪</span></button>
 <button class="launch" onclick="startTaskShortcut('京东红包')"><span class="ico">🎁</span><span>京东红包</span></button>
@@ -102,12 +102,20 @@ function requestClaimStart(label){
   }
  }catch(e){setTaskHint('启动失败，请检查无障碍权限和京东 App')}
 }
+function shortcutOfficialUrl(name){
+ // This route is published by JD as its mobile My Beans page. Do not guess routes for other activities.
+ if(name==='京豆中心')return 'https://my.m.jd.com/jingdou/index.html?fromori=redirect&sceneval=2';
+ return '';
+}
 function startTaskShortcut(name){
  const a=current();
  let task=a.tasks.find(x=>x.shortcut===true&&x.name===name);
  if(!task){
-  task={id:'quick_'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),name,url:'',status:'待启动',shortcut:true,created:new Date().toISOString()};
+  task={id:'quick_'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),name,url:shortcutOfficialUrl(name),status:'待启动',shortcut:true,created:new Date().toISOString()};
   a.tasks.unshift(task);save();
+ }else{
+  const officialUrl=shortcutOfficialUrl(name);
+  if(officialUrl&&task.url!==officialUrl){task.url=officialUrl;save();}
  }
  goTask(task.id);
 }
