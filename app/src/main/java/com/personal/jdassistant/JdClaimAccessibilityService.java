@@ -31,6 +31,7 @@ public class JdClaimAccessibilityService extends AccessibilityService {
         if (startedAt > 0L && System.currentTimeMillis() - startedAt > MAX_ATTEMPT_MS) {
             prefs.edit()
                 .putBoolean("auto_claim_enabled", false)
+                .putString("claim_state", "timeout")
                 .putString("last_result", "识别等待超过3分钟，已自动停止；未执行领取点击")
                 .apply();
             return;
@@ -52,21 +53,49 @@ public class JdClaimAccessibilityService extends AccessibilityService {
         if (root == null) return;
 
         String pageText = collectVisibleText(root);
-        Set<String> labels = allowedLabelsFor(task, pageText);
-        if (labels.isEmpty()) return;
+        boolean pageMatched = isTargetPage(task, pageText);
+        if (!pageMatched) {
+            updateStateIfChanged(prefs, "page_not_matched",
+                task + "：当前页面尚未识别为对应福利页面，未执行点击；请停留在该模块页面");
+            return;
+        }
 
+        Set<String> labels = allowedLabelsFor(task, pageText);
         AccessibilityNodeInfo target = findClaimNode(root, labels);
-        if (target == null) return;
+        if (target == null) {
+            updateStateIfChanged(prefs, "button_not_found",
+                task + "：已识别到对应页面，但暂未发现明确的领取按钮；继续等待页面加载，未执行点击");
+            return;
+        }
 
         actionAttempted = true;
         boolean clicked = target.performAction(AccessibilityNodeInfo.ACTION_CLICK);
         prefs.edit()
             .putBoolean("auto_claim_enabled", false)
+            .putString("claim_state", clicked ? "clicked_unverified" : "click_failed")
             .putString("last_result", clicked
-                ? task + "：已点击一个匹配的领取按钮，请核对京东页面是否显示领取成功"
+                ? task + "：已点击一个匹配的领取按钮，尚未确认领取成功或到账"
                 : task + "：找到匹配按钮，但点击未成功；未确认到账")
             .putLong("last_action_time", System.currentTimeMillis())
             .apply();
+    }
+
+    private boolean isTargetPage(String task, String pageText) {
+        if ("京豆签到".equals(task)) {
+            return pageText.contains("京豆") && (pageText.contains("签到") || pageText.contains("领豆"));
+        }
+        if ("每日红包".equals(task) || "京东红包".equals(task)) {
+            return pageText.contains("红包") && (pageText.contains("每日") || pageText.contains("签到"));
+        }
+        if ("宠汪汪".equals(task)) return pageText.contains("宠汪汪");
+        if ("游戏福利".equals(task)) return pageText.contains("游戏") && pageText.contains("福利");
+        return false;
+    }
+
+    private void updateStateIfChanged(SharedPreferences prefs, String state, String message) {
+        if (!state.equals(prefs.getString("claim_state", ""))) {
+            prefs.edit().putString("claim_state", state).putString("last_result", message).apply();
+        }
     }
 
     private Set<String> allowedLabelsFor(String task, String pageText) {
