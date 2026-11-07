@@ -18,7 +18,7 @@ public class JdClaimAccessibilityService extends AccessibilityService {
     private static final Set<String> CLAIM_LABELS = new HashSet<>(Arrays.asList(
         "立即领取", "领取京豆", "领取红包", "立即收下", "领取奖励"
     ));
-    private static final long ATTEMPT_TIMEOUT_MS = 90_000L;
+    private static final long ATTEMPT_TIMEOUT_MS = 180_000L;
     private boolean actionAttempted = false;
     private long activeAttemptStartedAt = -1L;
 
@@ -64,7 +64,7 @@ public class JdClaimAccessibilityService extends AccessibilityService {
     private void stopForTimeout(SharedPreferences prefs) {
         actionAttempted = true;
         prefs.edit().putBoolean("auto_claim_enabled", false)
-            .putString("last_result", "等待超时：90秒内没有发现符合条件的领取按钮，已自动停止")
+            .putString("last_result", "等待超时：180秒内没有发现符合条件的领取按钮，已自动停止")
             .apply();
     }
 
