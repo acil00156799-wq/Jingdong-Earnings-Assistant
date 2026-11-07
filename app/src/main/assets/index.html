@@ -104,6 +104,14 @@ function startOneClaim(){requestClaimStart('一键领取识别')}
 function openAccessibility(){try{if(window.AndroidBridge)AndroidBridge.openAccessibilitySettings();else alert('请安装本助手 APK 后使用')}catch(e){alert('无法打开系统设置，请手动开启本助手的无障碍服务')}}
 function stopClaim(){try{if(window.AndroidBridge)AndroidBridge.stopClaimAttempt();setTaskHint('已停止')}catch(e){setTaskHint('停止请求已发送')}}
 function setTaskHint(message){const el=document.getElementById('claimStatus');if(el)el.textContent='任务辅助状态：'+message;}
+function refreshClaimStatus(){
+ try{
+  if(!window.AndroidBridge)return;
+  const el=document.getElementById('claimStatus');
+  if(el)el.textContent='任务辅助状态：'+AndroidBridge.getClaimStatus();
+ }catch(e){}
+}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshClaimStatus()});
 
 function addTask(){const name=document.getElementById('taskName').value.trim(),url=document.getElementById('taskUrl').value.trim();if(!name){alert('请填写任务名称');return}if(url&&!/^https?:\/\//i.test(url)){alert('链接需以 http:// 或 https:// 开头');return}current().tasks.unshift({id:Date.now(),name,url,status:'待核对',created:new Date().toISOString()});document.getElementById('taskName').value='';document.getElementById('taskUrl').value='';save()}
 function goTask(id){const t=current().tasks.find(x=>x.id===id);if(!t)return;if(t.url){try{const ok=window.AndroidBridge&&AndroidBridge.openJdUrl(t.url);if(!ok)alert('无法直接打开京东 App，请手动打开京东查看。')}catch(e){alert('无法调用京东，请手动打开京东 App。')}}else openJd();t.status='已打开入口，待人工核对';save()}
