@@ -26,6 +26,19 @@ jobs:
           java-version: "17"
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
+      - name: Validate task module and embedded JavaScript
+        run: |
+          node --check app/src/main/assets/task-modules.js
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          html = Path("app/src/main/assets/index.html").read_text(encoding="utf-8")
+          scripts = re.findall(r"<script>([\\s\\S]*?)</script>", html)
+          if len(scripts) != 1:
+              raise SystemExit(f"Expected one inline script, found {len(scripts)}")
+          Path("/tmp/jd-assistant-inline.js").write_text(scripts[0], encoding="utf-8")
+          PY
+          node --check /tmp/jd-assistant-inline.js
       - name: Build installable debug APK
         run: gradle --no-daemon assembleDebug
       - name: Upload APK
