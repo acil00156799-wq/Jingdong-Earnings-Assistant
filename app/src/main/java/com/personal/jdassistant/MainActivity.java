@@ -57,6 +57,7 @@ public class MainActivity extends Activity {
             if (!isAccessibilityServiceEnabled()) {
                 getSharedPreferences(PREFS, MODE_PRIVATE).edit()
                     .putBoolean("auto_claim_enabled", false)
+                    .putString("claim_state", "idle")
                     .putString("last_result", "请先开启本助手的无障碍服务")
                     .apply();
                 return false;
@@ -69,7 +70,8 @@ public class MainActivity extends Activity {
                 .putLong("attempt_id", now)
                 .putLong("attempt_started_at", now)
                 .putBoolean("auto_claim_enabled", true)
-                .putString("last_result", selected + "：已启动一次识别，等待对应页面的明确领取按钮")
+                .putString("claim_state", "waiting_page")
+                .putString("last_result", selected + "：已启动识别，等待对应福利页面")
                 .apply();
             return true;
         }
@@ -86,8 +88,20 @@ public class MainActivity extends Activity {
         public void stopClaimAttempt() {
             getSharedPreferences(PREFS, MODE_PRIVATE).edit()
                 .putBoolean("auto_claim_enabled", false)
+                .putString("claim_state", "stopped")
                 .putString("last_result", "已由用户停止")
                 .apply();
+        }
+
+        @JavascriptInterface
+        public void markUserVerified() {
+            SharedPreferences p = getSharedPreferences(PREFS, MODE_PRIVATE);
+            if ("clicked_unverified".equals(p.getString("claim_state", ""))) {
+                p.edit()
+                    .putString("claim_state", "user_verified")
+                    .putString("last_result", p.getString("selected_task", "本次任务") + "：用户已手动确认实际到账并登记")
+                    .apply();
+            }
         }
 
         @JavascriptInterface
@@ -98,6 +112,7 @@ public class MainActivity extends Activity {
             if (waiting && startedAt > 0L && System.currentTimeMillis() - startedAt > 180000L) {
                 p.edit()
                     .putBoolean("auto_claim_enabled", false)
+                    .putString("claim_state", "timeout")
                     .putString("last_result", "识别等待超过3分钟，已自动停止；请重新打开对应京东页面后再试")
                     .apply();
                 waiting = false;
