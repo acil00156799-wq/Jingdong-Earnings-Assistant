@@ -52,6 +52,11 @@ if (!html.includes("startTaskShortcut('京豆中心')")) throw new Error('My Bea
 
 const mainActivity = fs.readFileSync('app/src/main/java/com/personal/jdassistant/MainActivity.java', 'utf8');
 const accessibilityService = fs.readFileSync('app/src/main/java/com/personal/jdassistant/JdClaimAccessibilityService.java', 'utf8');
+
+if (!mainActivity.includes('setWebChromeClient(new WebChromeClient()')) throw new Error('WebView JavaScript dialog handler is missing');
+if (!mainActivity.includes('onJsPrompt(WebView view')) throw new Error('WebView prompt handler is missing');
+if (!mainActivity.includes('onJsConfirm(WebView view')) throw new Error('WebView confirm handler is missing');
+
 if (!mainActivity.includes('System.currentTimeMillis() - startedAt > 180_000L')) throw new Error('Native attempt timeout is not 180 seconds');
 if (!accessibilityService.includes('ATTEMPT_TIMEOUT_MS = 180_000L')) throw new Error('Accessibility timeout is not 180 seconds');
 
