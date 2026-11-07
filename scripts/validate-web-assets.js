@@ -106,7 +106,7 @@ if (!script.includes('const nextAccounts=JSON.parse(JSON.stringify(data.accounts
 if (!script.includes('const previousAccounts=localStorage.getItem(KEY),previousActive=localStorage.getItem(ACTIVE)')) throw new Error('Backup import must retain the previous local data for rollback');
 if (!script.includes('accounts=nextAccounts;activeId=nextActiveId;render()')) throw new Error('Backup import must update in-memory state only after storage succeeds');
 const backupValidatorStart = script.indexOf('function validateBackupData(data)');
-const backupImportStart = script.indexOf('\\nfunction importBackup()', backupValidatorStart);
+const backupImportStart = script.indexOf('\nfunction importBackup()', backupValidatorStart);
 if (backupValidatorStart < 0 || backupImportStart < 0) throw new Error('Backup validator boundaries are missing');
 const backupValidatorSource = script.slice(backupValidatorStart, backupImportStart);
 const validateBackupData = new Function(backupValidatorSource + '; return validateBackupData;')();
