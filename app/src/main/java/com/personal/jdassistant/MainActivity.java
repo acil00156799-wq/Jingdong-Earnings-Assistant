@@ -111,6 +111,7 @@ public class MainActivity extends Activity {
             getSharedPreferences(PREFS, MODE_PRIVATE).edit()
                 .putLong("attempt_started_at", System.currentTimeMillis())
                 .putBoolean("auto_claim_enabled", true)
+                .remove("last_claim_label")
                 .putString("last_result", "已启动：等待京东前台出现明确的领取按钮（最长等待180秒）")
                 .apply();
             return true;
@@ -135,8 +136,10 @@ public class MainActivity extends Activity {
                         .apply();
                 }
             }
-            return p.getString("last_result", "尚未执行") +
-                (p.getBoolean("auto_claim_enabled", false) ? "（正在等待领取按钮）" : "");
+            String result = p.getString("last_result", "尚未执行");
+            String matchedLabel = p.getString("last_claim_label", "");
+            if (!matchedLabel.isEmpty()) result += "（识别按钮：" + matchedLabel + "）";
+            return result + (p.getBoolean("auto_claim_enabled", false) ? "（正在等待领取按钮）" : "");
         }
     }
 
