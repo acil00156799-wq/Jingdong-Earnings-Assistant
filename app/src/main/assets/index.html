@@ -53,7 +53,8 @@ footer{text-align:center;color:#aaa;font-size:11px;padding:16px}
 <button class="launch" onclick="startTaskShortcut('游戏福利')"><span class="ico">🎮</span><span>游戏福利</span></button>
 <button class="launch" onclick="startTaskShortcut('其他活动')"><span class="ico">⭐</span><span>其他活动</span></button>
 </div><button class="primary-action" onclick="startOneClaim()">一键启动领取识别</button><div class="status" id="claimStatus">状态：等待启动</div>
-<div class="note">当前版本会打开京东并识别页面上明确的领取按钮；单次点击不代表全部任务已完成或奖励已到账。</div></section>
+<div class="rowbtn"><button class="secondary" onclick="openAccessibility()">检查/开启无障碍权限</button><button class="secondary" onclick="refreshClaimStatus()">刷新执行状态</button></div>
+<div class="note">福利入口目前负责打开京东，具体活动由你在京东内选择。下方“一键领取识别”是独立的单次辅助：只尝试点击明确可见的领取按钮，不会自动完成签到、游戏或多步骤任务，也不代表奖励到账。</div></section>
 <details><summary>任务记录与自定义任务</summary><h3>当前账号任务记录</h3>
 <input id="taskName" placeholder="任务名称，例如：京豆购物返豆领取">
 <input id="taskUrl" placeholder="可选：京东活动链接（http/https）">
@@ -83,8 +84,18 @@ function renameAccount(){const a=current(),name=prompt('修改账号备注',a.na
 function deleteAccount(){if(accounts.length===1){alert('至少保留一个账号');return}const a=current();if(!confirm('确定删除“'+a.name+'”及其本工具中的任务和收益记录吗？此操作不可撤销。'))return;accounts=accounts.filter(x=>x.id!==a.id);activeId=accounts[0].id;save()}
 function openJd(){try{const ok=window.AndroidBridge&&AndroidBridge.openJdApp();if(!ok)alert('没有检测到京东 App，请先安装京东官方 App。')}catch(e){alert('暂时无法打开京东 App，请确认已安装。')}}
 function openAccessibility(){try{if(window.AndroidBridge)AndroidBridge.openAccessibilitySettings();else alert('请在系统设置中开启本助手的无障碍服务。')}catch(e){alert('请在系统设置中开启本助手的无障碍服务。')}}
-function startTaskShortcut(name){try{if(!window.AndroidBridge){alert('请安装本助手 APK 后使用');return}AndroidBridge.startOneClaimAttempt();setTaskHint(name+'：已启动识别，正在打开京东');openJd()}catch(e){setTaskHint(name+'：启动失败，请检查无障碍权限')}}
-function startOneClaim(){try{if(!window.AndroidBridge){alert('请安装 Android APK 后使用自动化功能。');return}AndroidBridge.startOneClaimAttempt();setTaskHint('已启动一次识别；正在打开京东');openJd()}catch(e){setTaskHint('启动失败，请检查无障碍权限')}}
+const shortcutGuidance={
+'京豆签到':'请在京东内找到签到/京豆活动并自行确认签到结果；当前未接入自动签到。',
+'每日红包':'请在京东内打开每日红包活动并按页面提示操作；当前未接入自动领取。',
+'宠汪汪':'请在京东内打开宠汪汪；当前不执行喂养、互动或游戏步骤。',
+'京东红包':'请在京东内查看红包活动；当前未接入活动发现和自动领取。',
+'游戏福利':'请在京东内选择具体游戏活动；当前不自动玩游戏或完成任务。',
+'其他活动':'请在京东内自行选择活动；当前没有通用活动自动执行能力。'
+};
+function startTaskShortcut(name){setTaskHint(name+'：'+(shortcutGuidance[name]||'请在京东内自行查看活动。'));openJd()}
+function startOneClaim(){try{if(!window.AndroidBridge){alert('请安装 Android APK 后使用自动化功能。');return}if(!AndroidBridge.isAccessibilityEnabled()){setTaskHint('未启动：请先开启本助手的无障碍服务');alert('需要先开启无障碍权限。接下来会打开系统设置，请找到“京东福利助手自动领取辅助”并手动开启。');openAccessibility();return}const started=AndroidBridge.startOneClaimAttempt();if(!started){setTaskHint('未启动：无障碍服务不可用');return}setTaskHint('已启动单次识别；正在打开京东');openJd()}catch(e){setTaskHint('启动失败：请检查无障碍权限')}}
+function refreshClaimStatus(){try{if(window.AndroidBridge){const enabled=AndroidBridge.isAccessibilityEnabled();const status=AndroidBridge.getClaimStatus();setTaskHint((enabled?'无障碍服务已开启；':'无障碍服务未开启；')+status)}}catch(e){setTaskHint('暂时无法读取执行状态')}}
+
 function stopClaim(){try{if(window.AndroidBridge)AndroidBridge.stopClaimAttempt();setTaskHint('已停止')}catch(e){setTaskHint('停止请求已发送')}}
 function setTaskHint(message){const el=document.getElementById('claimStatus');if(el)el.textContent='任务辅助状态：'+message;}
 
@@ -101,4 +112,6 @@ const all=accounts.reduce((s,x)=>s+x.incomes.filter(yuanOnly).reduce((q,r)=>q+r.
 const taskBox=document.getElementById('tasks');taskBox.innerHTML='';if(!a.tasks.length)taskBox.textContent='当前账号暂无任务';a.tasks.forEach(t=>{const d=document.createElement('div');d.className='task';const b=document.createElement('b');b.textContent=t.name;const s=document.createElement('div');s.className='status';s.textContent=t.status+(t.confirmed?' · '+new Date(t.confirmed).toLocaleString():'');const go=document.createElement('button');go.textContent='打开京东查看';go.onclick=()=>goTask(t.id);const done=document.createElement('button');done.className='secondary';done.textContent='我已检查任务（不代表到账）';done.onclick=()=>confirmTask(t.id);const del=document.createElement('button');del.className='danger';del.textContent='删除任务';del.onclick=()=>removeTask(t.id);d.append(b,s,go,done,del);taskBox.append(d)});
 const rb=document.getElementById('records');rb.innerHTML='';if(!a.incomes.length)rb.textContent='当前账号暂无收益记录';a.incomes.forEach(x=>{const p=document.createElement('p');const unit=x.unit||'yuan',shown=unit==='beans'?Number(x.amount).toLocaleString()+' 京豆':unit==='redpacket'?Number(x.amount).toLocaleString()+' 个红包':money(x.amount);p.textContent=x.name+'  +'+shown+'  '+new Date(x.date).toLocaleDateString();rb.append(p)})}
 render();
+refreshClaimStatus();
+setInterval(refreshClaimStatus,1500);
 </script></body></html>
