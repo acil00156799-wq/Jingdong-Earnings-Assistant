@@ -18,6 +18,7 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.webkit.WebResourceRequest;
 import java.util.Locale;
 
 public class MainActivity extends Activity {
@@ -161,9 +162,30 @@ public class MainActivity extends Activity {
         settings.setDefaultTextEncodingName("UTF-8");
         settings.setDomStorageEnabled(true);
         settings.setAllowFileAccess(true);
-        settings.setAllowContentAccess(true);
+        settings.setAllowContentAccess(false);
+        settings.setAllowFileAccessFromFileURLs(false);
+        settings.setAllowUniversalAccessFromFileURLs(false);
+        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
         webView.addJavascriptInterface(new AndroidBridge(), "AndroidBridge");
-        webView.setWebViewClient(new WebViewClient());
+        webView.setWebViewClient(new WebViewClient() {
+            private boolean isAppAssetUrl(Uri uri) {
+                return uri != null && "file".equalsIgnoreCase(uri.getScheme())
+                    && "android_asset".equalsIgnoreCase(uri.getHost())
+                    && uri.getPath() != null
+                    && (uri.getPath().equals("/index.html") || uri.getPath().startsWith("/"));
+            }
+
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                return request == null || !isAppAssetUrl(request.getUrl());
+            }
+
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                try { return !isAppAssetUrl(Uri.parse(url)); }
+                catch (Exception e) { return true; }
+            }
+        });
         // Handle the app's existing alert/confirm/prompt UI (account rename and task-link editing).
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
