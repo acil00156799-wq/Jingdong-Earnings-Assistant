@@ -89,6 +89,8 @@ footer{text-align:center;color:#aaa;font-size:11px;padding:16px}
 <details><summary>数据备份与恢复</summary>
 <h3>本机数据备份</h3>
 <p class="muted">备份包含账号备注、任务、每日清单、收益登记、商品价格监测及各模块京东链接。不包含京东登录密码、验证码或登录凭据。建议定期复制备份并保存到手机文件或自己的安全位置。</p>
+<div class="rowbtn"><button class="secondary" onclick="inspectStorageHealth()">检查本机存储</button><span class="muted" style="align-self:center">仅检查，不会上传数据</span></div>
+<div class="module" id="storageHealth" aria-live="polite">尚未检查本机存储。建议定期检查并保存外部备份。</div>
 <div class="rowbtn"><button onclick="exportBackup()">生成备份</button><button class="secondary" onclick="copyBackup()">复制备份内容</button></div>
 <textarea id="backupData" rows="7" placeholder="点击“生成备份”后，这里会显示备份内容；恢复时也可将备份粘贴到这里。" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;font-size:11px;line-height:1.5;resize:vertical"></textarea>
 <div class="module" id="backupPreview" aria-live="polite">生成备份后显示数据概览；粘贴备份后，点击恢复会先核对双方数据数量。</div>
@@ -287,6 +289,30 @@ function backupStats(list,routes={}){
 }
 function backupStatsText(label,s,trashCount=0){
  return label+'：'+s.accounts+' 个账号；回收站 '+trashCount+' 个；任务 '+s.tasks+' 条；收益 '+s.incomes+' 笔（已核验 '+s.verified+'、待核验 '+s.pending+'）；已核验现金 ¥'+s.yuan.toFixed(2)+'、京豆 '+s.beans+' 个、红包 '+s.redpackets+' 个；价格商品 '+s.watches+' 件（历史 '+s.priceRecords+' 条）；每日清单 '+s.daily+' 条；专属入口 '+s.routes+' 个。';
+}
+async function inspectStorageHealth(){
+ const box=document.getElementById('storageHealth');if(!box)return;
+ box.textContent='正在检查本机存储…';
+ try{
+  let total=0,rows=[];
+  for(let i=0;i<localStorage.length;i++){
+   const key=localStorage.key(i);if(!key)continue;
+   const value=localStorage.getItem(key)||'';
+   const bytes=unescape(encodeURIComponent(key+value)).length;
+   total+=bytes;
+   if(key.startsWith('jd_')||key.startsWith('jd-'))rows.push({key,bytes});
+  }
+  rows.sort((a,b)=>b.bytes-a.bytes);
+  const mib=n=>(n/1048576).toFixed(2)+' MB';
+  let message='本工具可识别的本地数据约 '+mib(total)+'（按键名和值的 UTF-8 字节估算）。\n';
+  message+='其中较大的数据项：'+(rows.slice(0,5).map(x=>x.key+' '+(x.bytes/1024).toFixed(1)+' KB').join('；')||'暂无')+'。\n';
+  message+='浏览器/安卓 WebView 的 localStorage 容量因设备而异，不能把估算值当作剩余空间保证。';
+  if(total>=4*1024*1024)message+='\n警告：本工具数据已接近常见 localStorage 容量范围，请立即生成并保存外部备份，避免继续大量增加记录。';
+  if(navigator.storage&&navigator.storage.estimate){
+   try{const estimate=await navigator.storage.estimate();if(Number.isFinite(estimate.quota)&&Number.isFinite(estimate.usage)){message+='\n当前网页来源总存储估算：已用 '+mib(estimate.usage)+' / '+mib(estimate.quota)+'。';if(estimate.quota>0&&estimate.usage/estimate.quota>=0.9)message+='\n警告：网页来源存储使用率已达 90% 以上，请先保存外部备份。'}}catch(e){message+='\n设备未能提供网页存储配额估算。'}
+  }else message+='\n当前 WebView 未提供存储配额估算接口。';
+  box.textContent=message;
+ }catch(e){box.textContent='检查失败：本机存储暂时无法读取。请不要清除应用数据；先尝试生成备份并保存到外部位置。'}
 }
 function exportBackup(){
  const routes=moduleRoutes(),payload={app:'jd-welfare-assistant',formatVersion:1,exportedAt:new Date().toISOString(),activeId,accounts,deletedAccounts,moduleRoutes:routes};
