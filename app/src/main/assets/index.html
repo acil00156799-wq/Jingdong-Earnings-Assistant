@@ -366,11 +366,8 @@ function importBackup(){
   if(typeof url==='string'&&url.length<=2048&&isAllowedJdUrl(url))safeRoutes[name]=url;
   else if(url){alert('模块链接中存在非京东官方 HTTPS 地址或格式异常，已拒绝导入');return}
  }
- const safeDeletedAccounts=safeAccounts.splice(activeAccountCount).map((a,i)=>{
-  const deletedAt=deletedSource[i]&&deletedSource[i].deletedAt;
-  if(typeof deletedAt!=='string'||!Number.isFinite(new Date(deletedAt).getTime()))throw new Error('回收站删除时间无效');
-  return {...a,deletedAt};
- });
+ for(const a of deletedSource){if(!a||typeof a.deletedAt!=='string'||!Number.isFinite(new Date(a.deletedAt).getTime())){alert('回收站账号删除时间无效，未修改本机数据');return}}
+ const safeDeletedAccounts=safeAccounts.splice(activeAccountCount).map((a,i)=>({...a,deletedAt:deletedSource[i].deletedAt}));
  const incomingStats=backupStats(safeAccounts,safeRoutes),currentRoutes=moduleRoutes(),currentStats=backupStats(accounts,currentRoutes);
  const preview=document.getElementById('backupPreview');
  if(preview)preview.textContent=backupStatsText('待恢复备份',incomingStats,safeDeletedAccounts.length)+'当前本机：'+backupStatsText('',currentStats,deletedAccounts.length);
