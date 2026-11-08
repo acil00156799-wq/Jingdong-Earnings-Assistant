@@ -82,6 +82,14 @@ assert.match(html, /function shiftIncomeMonth\(/, 'monthly statistics support pr
 assert.match(html, /function renderMonthlyIncome\(/, 'monthly totals are calculated independently');
 assert.match(html, /function prepareIncomeCsv\(/, 'filtered income records can be exported as CSV text');
 assert.match(html, /function copyIncomeCsv\(/, 'CSV export provides a copy action');
+assert.match(html, /value="all">全部账号/, 'CSV export can include every account');
+assert.match(html, /function selectedIncomeRows\(includeAll=false\)/, 'all-account export is explicitly separated from active-account ledger actions');
+assert.match(html, /selectedIncomeRows\(true\)/, 'CSV export requests the selected account scope');
+assert.match(html, /id="allPending"/, 'all-account dashboard includes pending cash totals');
+assert.match(html, /id="allBeans"/, 'all-account dashboard includes verified bean totals');
+assert.match(html, /id="allRedpackets"/, 'all-account dashboard includes verified red packet totals');
+assert.match(html, /verifiedAt:typeof x\.verifiedAt==='string'\?x\.verifiedAt:undefined/, 'backup restore preserves verification timestamps');
+
 assert.match(html, /不同单位分开统计/, 'monthly totals do not combine incompatible units');
 assert.match(html, /function incomeLocalDay\(/, 'date filters and monthly totals use local calendar dates');
 assert.match(html, /renderIncomeRecords\(\);renderMonthlyIncome\(\)/, 'income summaries refresh after saved changes');
@@ -109,7 +117,7 @@ let writeCount = 0;
 const context = {
   KEY: 'jd_assistant_accounts_v3', ACTIVE: 'jd_assistant_active_v3', ROUTES: 'jd_assistant_module_routes_v1',
   activeId: 'acct1',
-  accounts: [{ id: 'acct1', name: '主账号', tasks: [{ id: 123, name: '签到任务', url: 'https://bean.jd.com/', status: '待核对', created: '2026-11-08' }], incomes: [{ name: '京豆签到', amount: 20, unit: 'beans', date: '2026-11-08', verifiedByUser: true, verificationSource: 'user_confirmed' }], priceWatches: [{ id: 'pwatch1', name: '测试商品', url: 'https://item.jd.com/1.html', targetPrice: 99, records: [{ price: 89, date: '2026-11-08' }], created: '2026-11-08', enabled: true }], dailyChecks: [{ date: '2026-11-08', module: '京豆签到', checkedAt: '2026-11-08T09:00:00.000Z' }], created: '2026-11-01' }],
+  accounts: [{ id: 'acct1', name: '主账号', tasks: [{ id: 123, name: '签到任务', url: 'https://bean.jd.com/', status: '待核对', created: '2026-11-08' }], incomes: [{ name: '京豆签到', amount: 20, unit: 'beans', date: '2026-11-08', verifiedByUser: true, verificationSource: 'user_confirmed', verifiedAt: '2026-11-08T09:30:00.000Z' }], priceWatches: [{ id: 'pwatch1', name: '测试商品', url: 'https://item.jd.com/1.html', targetPrice: 99, records: [{ price: 89, date: '2026-11-08' }], created: '2026-11-08', enabled: true }], dailyChecks: [{ date: '2026-11-08', module: '京豆签到', checkedAt: '2026-11-08T09:00:00.000Z' }], created: '2026-11-01' }],
   localStorage: { getItem(k) { return store.has(k) ? store.get(k) : null; }, setItem(k, v) { writeCount += 1; if (failAtWrite === writeCount) throw new Error('simulated storage full'); store.set(k, String(v)); }, removeItem(k) { store.delete(k); } },
   document: { getElementById(id) { return elements[id]; } },
   alert(message) { alerts.push(String(message)); }, confirm() { return true; },
@@ -130,6 +138,7 @@ context.importBackup();
 assert.equal(context.accounts[0].id, 'acct1');
 assert.equal(context.accounts[0].tasks.length, 1);
 assert.equal(context.accounts[0].incomes[0].amount, 20);
+assert.equal(context.accounts[0].incomes[0].verifiedAt, '2026-11-08T09:30:00.000Z', 'verification timestamps survive backup restore');
 assert.equal(context.accounts[0].priceWatches[0].targetPrice, 99, 'price watches survive backup restore');
 assert.equal(context.accounts[0].priceWatches[0].records[0].price, 89, 'price history survives backup restore');
 assert.equal(context.accounts[0].dailyChecks[0].module, '京豆签到', 'daily checklist survives backup restore');
