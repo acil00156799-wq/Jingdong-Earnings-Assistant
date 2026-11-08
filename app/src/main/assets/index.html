@@ -326,10 +326,10 @@ function importBackup(){
  }
 }
 function incomeLocalDay(value){const d=new Date(value);if(Number.isNaN(d.getTime()))return '';return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
-function selectedIncomeRows(){
+function selectedIncomeRows(includeAll=false){
  const value=id=>{const el=document.getElementById(id);return el?el.value:''};
  const keyword=value('incomeSearch').trim().toLowerCase(),from=value('incomeDateFrom'),to=value('incomeDateTo'),unitFilter=value('incomeFilterUnit')||'all',statusFilter=value('incomeFilterStatus')||'all',scope=value('incomeCsvScope')||'current';
- const sources=scope==='all'?accounts:[current()];
+ const sources=includeAll&&scope==='all'?accounts:[current()];
  return sources.flatMap(account=>account.incomes.map((x,index)=>({x,index,account}))).filter(({x})=>{
   const day=incomeLocalDay(x.date);
   if(keyword&&!String(x.name||'').toLowerCase().includes(keyword))return false;
@@ -362,7 +362,7 @@ function csvCell(value){
  return '"'+v.replace(/"/g,'""')+'"';
 }
 function prepareIncomeCsv(){
- const rows=selectedIncomeRows();
+ const rows=selectedIncomeRows(true);
  const header=['账号备注','日期','收益来源','收益类型','数量','核验状态','核验时间'];
  const type=x=>(x.unit||'yuan')==='beans'?'京豆':(x.unit||'yuan')==='redpacket'?'红包':'元';
  const data=[header,...rows.map(({x,account})=>[account.name,x.date||'',x.name,type(x),x.amount,x.verifiedByUser===true?'用户已核验':'待核验',x.verifiedAt||''])];
