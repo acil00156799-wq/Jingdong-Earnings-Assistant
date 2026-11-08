@@ -43,6 +43,10 @@ assert.match(html, /function togglePriceWatch\(/, 'price watch can be paused and
 assert.match(html, /该商品监测已暂停/, 'paused price watch cannot accept price records');
 assert.match(html, /不会触发目标价提醒/, 'paused price watch clearly discloses alerts are disabled');
 assert.match(html, /修改商品\/目标价/, 'price watch edit control is visible');
+assert.match(html, /function removePriceRecord\(/, 'a mistaken price observation can be removed without deleting its product');
+assert.match(html, /删除最新一条价格记录/, 'price history correction control is visible when records exist');
+assert.match(html, /商品和其他历史记录会保留/, 'price history correction confirms other data is preserved');
+
 
 assert.match(html, /今日福利清单/, 'daily welfare checklist is visible');
 assert.match(html, /function toggleDailyCheck\(/, 'daily checklist supports manual completion toggles');
