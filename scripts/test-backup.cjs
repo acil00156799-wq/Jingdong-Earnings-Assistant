@@ -22,6 +22,8 @@ assert.match(html, /help\.jd\.com\/user\/issue\/167-4224\.html/, 'official JD be
 assert.match(html, /help\.jd\.com\/user\/issue\/168-4458\.html/, 'official JD red packet help source is present');
 assert.match(html, /help\.jd\.com\/user\/issue\/169-335\.html/, 'official JD coupon help source is present');
 assert.match(html, /function openOfficialHelp\(url\)/, 'official help links pass through the JD URL safety check');
+assert.match(html, /用户已核验/, 'income history labels user-verified records');
+assert.match(html, /导入记录\/待核验/, 'income history distinguishes imported unverified records');
 const match = html.match(/<script>([\s\S]*?)<\/script>/i);
 assert.ok(match, 'inline application script exists');
 const script = match[1];
