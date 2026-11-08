@@ -136,7 +136,20 @@ function money(n){return '¥'+Number(n||0).toFixed(2)}
 function switchAccount(id){if(!accounts.some(a=>a.id===id))return;try{if(window.AndroidBridge)AndroidBridge.stopClaimAttempt(current().id)}catch(e){}activeId=id;save()}
 function addAccount(){const el=document.getElementById('newAccountName'),name=el.value.trim();if(!name){alert('请先填写账号备注');return}if(accounts.some(a=>a.name===name)){alert('已有同名备注，请换一个名称');return}const a=makeAccount(name);try{if(window.AndroidBridge)AndroidBridge.stopClaimAttempt(current().id)}catch(e){}accounts.push(a);activeId=a.id;el.value='';save()}
 function renameAccount(){const a=current(),name=prompt('修改账号备注',a.name);if(name===null)return;const v=name.trim();if(!v){alert('备注不能为空');return}if(accounts.some(x=>x.id!==a.id&&x.name===v)){alert('已有同名账号备注');return}a.name=v;save()}
-function deleteAccount(){if(accounts.length===1){alert('至少保留一个账号');return}const a=current();if(!confirm('确定删除“'+a.name+'”及其本工具中的任务和收益记录吗？此操作不可撤销。'))return;try{if(window.AndroidBridge)AndroidBridge.stopClaimAttempt(a.id)}catch(e){}accounts=accounts.filter(x=>x.id!==a.id);activeId=accounts[0].id;save()}
+function accountDeleteSummary(a){
+ const inc=a.incomes||[],w=a.priceWatches||[];
+ return '账号：'+a.name+'\\n任务：'+(a.tasks||[]).length+' 条\\n收益：'+inc.length+' 笔\\n商品监测：'+w.length+' 件，历史价格 '+w.reduce((n,x)=>n+(x.records||[]).length,0)+' 条\\n每日清单：'+(a.dailyChecks||[]).length+' 条';
+}
+function deleteAccount(){
+ if(accounts.length===1){alert('至少保留一个账号');return}
+ const a=current(),summary=accountDeleteSummary(a);
+ if(!confirm('即将删除当前账号及其全部本地数据：\\n\\n'+summary+'\\n\\n删除后无法从本机直接恢复。建议先到“数据备份与恢复”生成并复制完整备份。是否继续？'))return;
+ const typed=prompt('为防止误删，请输入该账号备注以确认：'+a.name);
+ if(typed!==a.name){alert('账号备注不匹配，已取消删除；本机数据未改变。');return}
+ try{if(window.AndroidBridge)AndroidBridge.stopClaimAttempt(a.id)}catch(e){}
+ accounts=accounts.filter(x=>x.id!==a.id);activeId=accounts[0].id;save();
+ alert('账号已删除。其他账号数据未受影响。');
+}
 function openJd(){try{const ok=window.AndroidBridge&&AndroidBridge.openJdApp();if(!ok)alert('没有检测到京东 App，请先安装京东官方 App。')}catch(e){alert('暂时无法打开京东 App，请确认已安装。')}}
 function openOfficialHelp(url){if(!isAllowedJdUrl(url)){alert('官方帮助链接校验失败，已阻止打开');return}try{if(window.AndroidBridge&&AndroidBridge.openJdUrl(url))return}catch(e){}try{window.open(url,'_blank','noopener')}catch(e){alert('无法打开官方帮助页面，请在浏览器访问：'+url)}}
 function moduleRoutes(){try{return JSON.parse(localStorage.getItem(ROUTES)||'{}')}catch(e){return {}}}
