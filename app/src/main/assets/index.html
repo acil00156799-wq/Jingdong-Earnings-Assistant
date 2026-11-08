@@ -430,11 +430,14 @@ function importBackup(){
  const previousMemory={accounts,activeId,deletedAccounts};
  try{
   localStorage.setItem(KEY,JSON.stringify(safeAccounts));localStorage.setItem(ACTIVE,nextActive);localStorage.setItem(ROUTES,JSON.stringify(safeRoutes));localStorage.setItem(TRASH,JSON.stringify(safeDeletedAccounts));
-  accounts=safeAccounts;activeId=nextActive;deletedAccounts=safeDeletedAccounts;render();renderRouteHint();
+  accounts=safeAccounts;activeId=nextActive;deletedAccounts=safeDeletedAccounts;accountsLoadError=false;
+  lastGoodState={accounts:JSON.stringify(accounts),activeId,deletedAccounts:JSON.stringify(deletedAccounts)};
+  render();renderRouteHint();
   document.getElementById('backupHint').textContent='恢复完成。'+backupStatsText('已载入',backupStats(accounts,safeRoutes),deletedAccounts.length)+'请检查各账号数据是否完整。';
  }catch(e){
   try{previous.accounts===null?localStorage.removeItem(KEY):localStorage.setItem(KEY,previous.accounts);previous.active===null?localStorage.removeItem(ACTIVE):localStorage.setItem(ACTIVE,previous.active);previous.routes===null?localStorage.removeItem(ROUTES):localStorage.setItem(ROUTES,previous.routes);previous.trash===null?localStorage.removeItem(TRASH):localStorage.setItem(TRASH,previous.trash)}catch(rollbackError){}
   accounts=previousMemory.accounts;activeId=previousMemory.activeId;deletedAccounts=previousMemory.deletedAccounts;
+  lastGoodState={accounts:JSON.stringify(accounts),activeId,deletedAccounts:JSON.stringify(deletedAccounts)};
   try{render();renderRouteHint()}catch(renderError){}
   alert('写入本机存储失败，已尝试恢复导入前的数据。可能是设备空间不足；请先复制备份文本。')
  }
