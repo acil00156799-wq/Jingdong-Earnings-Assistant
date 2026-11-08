@@ -60,25 +60,33 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public boolean startOneClaimAttempt(String taskName, String accountId) {
+            if (accountId == null || accountId.trim().isEmpty() || accountId.length() > 128) return false;
+            SharedPreferences p = getSharedPreferences(PREFS, MODE_PRIVATE);
+            String prefix = "account." + accountId + ".";
             if (!isAccessibilityServiceEnabled()) {
-                getSharedPreferences(PREFS, MODE_PRIVATE).edit()
-                    .putBoolean("auto_claim_enabled", false)
-                    .putString("claim_state", "idle")
-                    .putString("last_result", "请先开启本助手的无障碍服务")
-                    .apply();
+                p.edit().putBoolean(prefix + "auto_claim_enabled", false)
+                    .putString(prefix + "claim_state", "idle")
+                    .putString(prefix + "last_result", "请先开启本助手的无障碍服务").apply();
                 return false;
+            }
+            String previousId = p.getString("active_attempt_account_id", "");
+            SharedPreferences.Editor edit = p.edit();
+            if (!previousId.isEmpty() && !previousId.equals(accountId)) {
+                String oldPrefix = "account." + previousId + ".";
+                edit.putBoolean(oldPrefix + "auto_claim_enabled", false)
+                    .putString(oldPrefix + "claim_state", "stopped")
+                    .putString(oldPrefix + "last_result", "已被其他账号的新任务替代");
             }
             String selected = taskName == null ? "其他活动" : taskName.trim();
             if (selected.isEmpty()) selected = "其他活动";
             long now = System.currentTimeMillis();
-            getSharedPreferences(PREFS, MODE_PRIVATE).edit()
-                .putString("selected_task", selected)
-                .putString("attempt_account_id", accountId == null ? "" : accountId)
-                .putLong("attempt_id", now)
-                .putLong("attempt_started_at", now)
-                .putBoolean("auto_claim_enabled", true)
-                .putString("claim_state", "waiting_page")
-                .putString("last_result", selected + "：已启动识别，等待对应福利页面")
+            edit.putString("active_attempt_account_id", accountId)
+                .putString(prefix + "selected_task", selected)
+                .putLong(prefix + "attempt_id", now)
+                .putLong(prefix + "attempt_started_at", now)
+                .putBoolean(prefix + "auto_claim_enabled", true)
+                .putString(prefix + "claim_state", "waiting_page")
+                .putString(prefix + "last_result", selected + "：已启动识别，等待对应福利页面")
                 .apply();
             return true;
         }
@@ -92,19 +100,23 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
-        public void stopClaimAttempt() {
-            getSharedPreferences(PREFS, MODE_PRIVATE).edit()
-                .putBoolean("auto_claim_enabled", false)
-                .putString("claim_state", "stopped")
-                .putString("last_result", "已由用户停止")
-                .apply();
+        public void stopClaimAttempt(String accountId) {
+            if (accountId == null || accountId.trim().isEmpty()) return;
+            SharedPreferences p = getSharedPreferences(PREFS, MODE_PRIVATE);
+            String prefix = "account." + accountId + ".";
+            SharedPreferences.Editor edit = p.edit().putBoolean(prefix + "auto_claim_enabled", false)
+                .putString(prefix + "claim_state", "stopped").putString(prefix + "last_result", "已由用户停止");
+            if (accountId.equals(p.getString("active_attempt_account_id", ""))) edit.remove("active_attempt_account_id");
+            edit.apply();
         }
 
         @JavascriptInterface
         public void markUserVerified(String unit, String incomeName, String accountId) {
             SharedPreferences p = getSharedPreferences(PREFS, MODE_PRIVATE);
-            String task = p.getString("selected_task", "");
-            String attemptAccountId = p.getString("attempt_account_id", "");
+            if (accountId == null || accountId.trim().isEmpty()) return;
+            String prefix = "account." + accountId + ".";
+            String task = p.getString(prefix + "selected_task", "");
+            String attemptAccountId = accountId;
             String source = incomeName == null ? "" : incomeName.trim();
             boolean matchingIncome =
                 ("京豆签到".equals(task) && "beans".equals(unit)
@@ -118,28 +130,28 @@ public class MainActivity extends Activity {
                     && ("beans".equals(unit) || "redpacket".equals(unit) || "yuan".equals(unit))
                     && source.contains("游戏"));
             if (matchingIncome && accountId != null && accountId.equals(attemptAccountId)
-                    && "clicked_unverified".equals(p.getString("claim_state", ""))) {
-                p.edit()
-                    .putString("claim_state", "user_verified")
-                    .putString("last_result", task + "：用户已手动登记对应类型的实际到账")
-                    .apply();
+                    && "clicked_unverified".equals(p.getString(prefix + "claim_state", ""))) {
+                p.edit().putString(prefix + "claim_state", "user_verified")
+                    .putString(prefix + "last_result", task + "：用户已手动登记对应类型的实际到账").apply();
             }
         }
 
         @JavascriptInterface
-        public String getClaimStatus() {
+        public String getClaimStatus(String accountId) {
+            if (accountId == null || accountId.trim().isEmpty()) return "尚未执行";
             SharedPreferences p = getSharedPreferences(PREFS, MODE_PRIVATE);
-            boolean waiting = p.getBoolean("auto_claim_enabled", false);
-            long startedAt = p.getLong("attempt_started_at", 0L);
+            String prefix = "account." + accountId + ".";
+            boolean active = accountId.equals(p.getString("active_attempt_account_id", ""));
+            boolean waiting = active && p.getBoolean(prefix + "auto_claim_enabled", false);
+            long startedAt = p.getLong(prefix + "attempt_started_at", 0L);
             if (waiting && startedAt > 0L && System.currentTimeMillis() - startedAt > 180000L) {
-                p.edit()
-                    .putBoolean("auto_claim_enabled", false)
-                    .putString("claim_state", "timeout")
-                    .putString("last_result", "识别等待超过3分钟，已自动停止；请重新打开对应京东页面后再试")
-                    .apply();
-                waiting = false;
+                SharedPreferences.Editor edit = p.edit().putBoolean(prefix + "auto_claim_enabled", false)
+                    .putString(prefix + "claim_state", "timeout")
+                    .putString(prefix + "last_result", "识别等待超过3分钟，已自动停止；请重新打开对应京东页面后再试");
+                if (active) edit.remove("active_attempt_account_id");
+                edit.apply(); waiting = false;
             }
-            return p.getString("last_result", "尚未执行") +
+            return p.getString(prefix + "last_result", "尚未执行") +
                 (waiting ? "（正在等待领取按钮，最长3分钟）" : "");
         }
     }
