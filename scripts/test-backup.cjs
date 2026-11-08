@@ -77,7 +77,9 @@ context.activeId = 'other';
 context.importBackup();
 assert.equal(context.accounts[0].id, 'acct1');
 assert.equal(context.accounts[0].tasks.length, 1);
-assert.equal(context.accounts[0].incomes[0].amount, 20);\nassert.equal(context.accounts[0].priceWatches[0].targetPrice, 99, 'price watches survive backup restore');\nassert.equal(context.accounts[0].priceWatches[0].records[0].price, 89, 'price history survives backup restore');
+assert.equal(context.accounts[0].incomes[0].amount, 20);
+assert.equal(context.accounts[0].priceWatches[0].targetPrice, 99, 'price watches survive backup restore');
+assert.equal(context.accounts[0].priceWatches[0].records[0].price, 89, 'price history survives backup restore');
 assert.equal(JSON.parse(context.localStorage.getItem(context.ROUTES))['京豆签到'], 'https://bean.jd.com/');
 
 // A failed multi-key restore must roll back both persisted data and in-memory state.
