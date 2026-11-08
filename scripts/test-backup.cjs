@@ -38,6 +38,12 @@ assert.match(html, /历史最低/, 'price history shows lowest recorded price');
 assert.match(html, /已达到目标价/, 'target price threshold produces an alert');
 assert.match(html, /不会自动抓取京东价格/, 'price tracking is transparent about manual data entry');
 assert.match(html, /priceWatches/, 'price watches are included in account backup data');
+assert.match(html, /function editPriceWatch\(/, 'price watch product name, target price and official URL can be edited');
+assert.match(html, /function togglePriceWatch\(/, 'price watch can be paused and resumed');
+assert.match(html, /该商品监测已暂停/, 'paused price watch cannot accept price records');
+assert.match(html, /不会触发目标价提醒/, 'paused price watch clearly discloses alerts are disabled');
+assert.match(html, /修改商品\/目标价/, 'price watch edit control is visible');
+
 assert.match(html, /今日福利清单/, 'daily welfare checklist is visible');
 assert.match(html, /function toggleDailyCheck\(/, 'daily checklist supports manual completion toggles');
 assert.match(html, /function openDailyModule\(/, 'daily checklist can open the saved JD module entry');
