@@ -41,6 +41,7 @@ footer{text-align:center;color:#aaa;font-size:11px;padding:16px}
 <div class="rowbtn"><button class="secondary" onclick="renameAccount()">修改备注</button><button class="danger" onclick="deleteAccount()">删除当前账号</button></div>
 <input id="newAccountName" placeholder="输入账号备注，例如：主账号、家人账号">
 <button onclick="addAccount()">＋ 添加账号</button>
+<div class="module"><h4>账号回收站</h4><div class="muted">移入回收站的账号会保留完整数据；恢复后可继续使用。清除应用数据或卸载应用可能使回收站丢失。</div><div id="deletedAccountsList" class="muted">正在读取回收站…</div></div>
 <div class="note">这里仅保存账号备注和各自的统计数据，不保存京东密码、短信验证码或登录凭据。切换统计账号不会自动切换京东 App 的登录身份；请在京东官方 App 内自行确认当前登录账号。</div>
 </details>
 <section class="card"><h3>我的收益</h3><div class="big" id="activeTotal">¥0.00</div><div class="muted">已核验到账累计（不含导入待核验记录）</div><div class="grid" style="margin-top:12px"><div class="item">本月已核验<strong id="activeMonth">¥0.00</strong></div><div class="item">待核验金额<strong id="activePending">¥0.00</strong></div><div class="item">收益记录<strong id="activeCount">0</strong></div><div class="item">京豆到账<strong id="activeBeans">0 个</strong></div><div class="item">红包到账<strong id="activeRedpackets">0 个</strong></div></div></section>
@@ -123,15 +124,17 @@ footer{text-align:center;color:#aaa;font-size:11px;padding:16px}
 </details>
 </main><footer>京东个人收益助手 · 数据保存在本设备本地</footer>
 <script>
-const KEY='jd_assistant_accounts_v3', ACTIVE='jd_assistant_active_v3', ROUTES='jd_assistant_module_routes_v1';
+const KEY='jd_assistant_accounts_v3', ACTIVE='jd_assistant_active_v3', ROUTES='jd_assistant_module_routes_v1', TRASH='jd_assistant_deleted_accounts_v1';
 function makeAccount(name){return {id:'a'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),name,tasks:[],incomes:[],created:new Date().toISOString()}}
 const accountsSeed=[];
 function loadAccounts(){try{const v=JSON.parse(localStorage.getItem(KEY));if(Array.isArray(v)&&v.length)return v}catch(e){}const first=makeAccount('主账号');try{first.tasks=JSON.parse(localStorage.getItem('jd_tasks'))||[];first.incomes=JSON.parse(localStorage.getItem('jd_incomes'))||[];const labels=JSON.parse(localStorage.getItem('jd_accounts'))||[];labels.forEach((name,i)=>{if(typeof name==='string'&&name.trim()&&name.trim()!=='主账号')accountsSeed.push(makeAccount(name.trim()))})}catch(e){}return [first,...accountsSeed]}
 let accounts=loadAccounts();
+function loadDeletedAccounts(){try{const v=JSON.parse(localStorage.getItem(TRASH));return Array.isArray(v)?v.filter(x=>x&&typeof x.id==='string'&&typeof x.name==='string'&&Array.isArray(x.tasks)&&Array.isArray(x.incomes)):[]}catch(e){return []}}
+let deletedAccounts=loadDeletedAccounts();
 let activeId=localStorage.getItem(ACTIVE);
 if(!accounts.some(a=>a.id===activeId))activeId=accounts[0].id;
 function current(){return accounts.find(a=>a.id===activeId)||accounts[0]}
-function save(){localStorage.setItem(KEY,JSON.stringify(accounts));localStorage.setItem(ACTIVE,activeId);render();renderIncomeRecords();renderMonthlyIncome()}
+function save(){localStorage.setItem(KEY,JSON.stringify(accounts));localStorage.setItem(ACTIVE,activeId);localStorage.setItem(TRASH,JSON.stringify(deletedAccounts));render();renderIncomeRecords();renderMonthlyIncome()}
 function money(n){return '¥'+Number(n||0).toFixed(2)}
 function switchAccount(id){if(!accounts.some(a=>a.id===id))return;try{if(window.AndroidBridge)AndroidBridge.stopClaimAttempt(current().id)}catch(e){}activeId=id;save()}
 function addAccount(){const el=document.getElementById('newAccountName'),name=el.value.trim();if(!name){alert('请先填写账号备注');return}if(accounts.some(a=>a.name===name)){alert('已有同名备注，请换一个名称');return}const a=makeAccount(name);try{if(window.AndroidBridge)AndroidBridge.stopClaimAttempt(current().id)}catch(e){}accounts.push(a);activeId=a.id;el.value='';save()}
@@ -143,12 +146,41 @@ function accountDeleteSummary(a){
 function deleteAccount(){
  if(accounts.length===1){alert('至少保留一个账号');return}
  const a=current(),summary=accountDeleteSummary(a);
- if(!confirm('即将删除当前账号及其全部本地数据：\\n\\n'+summary+'\\n\\n删除后无法从本机直接恢复。建议先到“数据备份与恢复”生成并复制完整备份。是否继续？'))return;
- const typed=prompt('为防止误删，请输入该账号备注以确认：'+a.name);
- if(typed!==a.name){alert('账号备注不匹配，已取消删除；本机数据未改变。');return}
+ if(!confirm('即将把当前账号移入本机回收站：\n\n'+summary+'\n\n回收站保留完整账号数据，可在账号管理中恢复。清除应用数据或卸载应用可能导致回收站数据丢失。是否继续？'))return;
+ const typed=prompt('为防止误操作，请输入该账号备注以确认移入回收站：'+a.name);
+ if(typed!==a.name){alert('账号备注不匹配，已取消；本机数据未改变。');return}
  try{if(window.AndroidBridge)AndroidBridge.stopClaimAttempt(a.id)}catch(e){}
+ deletedAccounts=deletedAccounts.filter(x=>x.id!==a.id);
+ deletedAccounts.unshift({...a,deletedAt:new Date().toISOString()});
  accounts=accounts.filter(x=>x.id!==a.id);activeId=accounts[0].id;save();
- alert('账号已删除。其他账号数据未受影响。');
+ alert('账号已移入回收站。你可以在“账号管理”的回收站区域恢复。');
+}
+function renderDeletedAccounts(){
+ const box=document.getElementById('deletedAccountsList');if(!box)return;box.innerHTML='';
+ if(!deletedAccounts.length){box.textContent='回收站为空';return}
+ deletedAccounts.forEach(a=>{
+  const item=document.createElement('div');item.className='module';
+  const title=document.createElement('strong');title.textContent=a.name+' · '+(a.deletedAt||'删除时间未知');
+  const info=document.createElement('div');info.className='muted';info.textContent=accountDeleteSummary(a);
+  const restore=document.createElement('button');restore.className='secondary';restore.textContent='恢复此账号';restore.onclick=()=>restoreDeletedAccount(a.id);
+  const purge=document.createElement('button');purge.className='danger';purge.textContent='永久删除';purge.onclick=()=>permanentlyDeleteAccount(a.id);
+  item.append(title,info,restore,purge);box.append(item);
+ });
+}
+function restoreDeletedAccount(id){
+ const a=deletedAccounts.find(x=>x.id===id);if(!a)return;
+ if(accounts.some(x=>x.id===a.id)){alert('当前账号中已存在相同 ID，无法恢复');return}
+ if(accounts.some(x=>x.name===a.name)){alert('当前已有同名账号，请先修改现有账号备注，再恢复；原数据没有改变。');return}
+ if(!confirm('确认恢复账号“'+a.name+'”及其全部任务、收益、价格监测和每日清单数据？'))return;
+ const restored={...a};delete restored.deletedAt;accounts.push(restored);deletedAccounts=deletedAccounts.filter(x=>x.id!==id);activeId=restored.id;save();
+ alert('账号已恢复，已切换到该账号。');
+}
+function permanentlyDeleteAccount(id){
+ const a=deletedAccounts.find(x=>x.id===id);if(!a)return;
+ if(!confirm('永久删除回收站中的“'+a.name+'”？此操作无法撤销。'))return;
+ const typed=prompt('请输入账号备注以永久删除：'+a.name);
+ if(typed!==a.name){alert('备注不匹配，未删除');return}
+ deletedAccounts=deletedAccounts.filter(x=>x.id!==id);save();alert('已从回收站永久删除。');
 }
 function openJd(){try{const ok=window.AndroidBridge&&AndroidBridge.openJdApp();if(!ok)alert('没有检测到京东 App，请先安装京东官方 App。')}catch(e){alert('暂时无法打开京东 App，请确认已安装。')}}
 function openOfficialHelp(url){if(!isAllowedJdUrl(url)){alert('官方帮助链接校验失败，已阻止打开');return}try{if(window.AndroidBridge&&AndroidBridge.openJdUrl(url))return}catch(e){}try{window.open(url,'_blank','noopener')}catch(e){alert('无法打开官方帮助页面，请在浏览器访问：'+url)}}
@@ -426,7 +458,7 @@ function renderIncomeRecords(){
   const del=document.createElement('button');del.className='danger';del.textContent='删除记录';del.onclick=()=>deleteIncome(index);d.append(del);box.append(d);
  });
 }
-function render(){const sel=document.getElementById('activeAccount');sel.innerHTML='';accounts.forEach(a=>{const o=document.createElement('option');o.value=a.id;o.textContent=a.name;sel.append(o)});sel.value=activeId;const a=current();document.getElementById('activeHint').textContent='当前数据空间：'+a.name+' · '+a.tasks.length+' 条任务 · '+a.incomes.length+' 条收益记录';
+function render(){renderDeletedAccounts();const sel=document.getElementById('activeAccount');sel.innerHTML='';accounts.forEach(a=>{const o=document.createElement('option');o.value=a.id;o.textContent=a.name;sel.append(o)});sel.value=activeId;const a=current();document.getElementById('activeHint').textContent='当前数据空间：'+a.name+' · '+a.tasks.length+' 条任务 · '+a.incomes.length+' 条收益记录';
 const yuanOnly=x=>(x.unit||'yuan')==='yuan',verified=x=>x.verifiedByUser===true,total=a.incomes.filter(x=>yuanOnly(x)&&verified(x)).reduce((s,x)=>s+x.amount,0),pending=a.incomes.filter(x=>yuanOnly(x)&&!verified(x)).reduce((s,x)=>s+x.amount,0),beans=a.incomes.filter(x=>x.unit==='beans'&&verified(x)).reduce((s,x)=>s+x.amount,0),redpackets=a.incomes.filter(x=>x.unit==='redpacket'&&verified(x)).reduce((s,x)=>s+x.amount,0),now=new Date(),month=a.incomes.filter(x=>yuanOnly(x)&&verified(x)&&(()=>{const d=new Date(x.date);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()})()).reduce((s,x)=>s+x.amount,0);
 document.getElementById('activeTotal').textContent=money(total);document.getElementById('activeMonth').textContent=money(month);document.getElementById('activePending').textContent=money(pending);document.getElementById('activeCount').textContent=a.incomes.length;
 const beansEl=document.getElementById('activeBeans');if(beansEl)beansEl.textContent=beans.toLocaleString()+' 个';const packetsEl=document.getElementById('activeRedpackets');if(packetsEl)packetsEl.textContent=redpackets.toLocaleString()+' 个';
