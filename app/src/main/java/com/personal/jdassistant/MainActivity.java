@@ -63,13 +63,21 @@ public class MainActivity extends Activity {
             if (accountId == null || accountId.trim().isEmpty() || accountId.length() > 128) return false;
             SharedPreferences p = getSharedPreferences(PREFS, MODE_PRIVATE);
             String prefix = "account." + accountId + ".";
+            String previousId = p.getString("active_attempt_account_id", "");
             if (!isAccessibilityServiceEnabled()) {
-                p.edit().putBoolean(prefix + "auto_claim_enabled", false)
+                SharedPreferences.Editor disabledEdit = p.edit();
+                if (!previousId.isEmpty()) {
+                    String oldPrefix = "account." + previousId + ".";
+                    disabledEdit.putBoolean(oldPrefix + "auto_claim_enabled", false)
+                        .putString(oldPrefix + "claim_state", "stopped")
+                        .putString(oldPrefix + "last_result", "无障碍权限已关闭，旧任务已停止");
+                }
+                disabledEdit.remove("active_attempt_account_id")
+                    .putBoolean(prefix + "auto_claim_enabled", false)
                     .putString(prefix + "claim_state", "idle")
                     .putString(prefix + "last_result", "请先开启本助手的无障碍服务").apply();
                 return false;
             }
-            String previousId = p.getString("active_attempt_account_id", "");
             SharedPreferences.Editor edit = p.edit();
             if (!previousId.isEmpty() && !previousId.equals(accountId)) {
                 String oldPrefix = "account." + previousId + ".";
@@ -104,11 +112,12 @@ public class MainActivity extends Activity {
         public void stopClaimAttempt(String accountId) {
             if (accountId == null || accountId.trim().isEmpty()) return;
             SharedPreferences p = getSharedPreferences(PREFS, MODE_PRIVATE);
+            if (!accountId.equals(p.getString("active_attempt_account_id", ""))) return;
             String prefix = "account." + accountId + ".";
-            SharedPreferences.Editor edit = p.edit().putBoolean(prefix + "auto_claim_enabled", false)
-                .putString(prefix + "claim_state", "stopped").putString(prefix + "last_result", "已由用户停止");
-            if (accountId.equals(p.getString("active_attempt_account_id", ""))) edit.remove("active_attempt_account_id");
-            edit.apply();
+            p.edit().putBoolean(prefix + "auto_claim_enabled", false)
+                .putString(prefix + "claim_state", "stopped")
+                .putString(prefix + "last_result", "已由用户停止")
+                .remove("active_attempt_account_id").apply();
         }
 
         @JavascriptInterface
@@ -117,7 +126,6 @@ public class MainActivity extends Activity {
             if (accountId == null || accountId.trim().isEmpty()) return;
             String prefix = "account." + accountId + ".";
             String task = p.getString(prefix + "selected_task", "");
-            String attemptAccountId = accountId;
             String source = incomeName == null ? "" : incomeName.trim();
             boolean matchingIncome =
                 ("京豆签到".equals(task) && "beans".equals(unit)
@@ -130,8 +138,7 @@ public class MainActivity extends Activity {
                 || ("游戏福利".equals(task)
                     && ("beans".equals(unit) || "redpacket".equals(unit) || "yuan".equals(unit))
                     && source.contains("游戏"));
-            if (matchingIncome && accountId != null && accountId.equals(attemptAccountId)
-                    && "clicked_unverified".equals(p.getString(prefix + "claim_state", ""))) {
+            if (matchingIncome && "clicked_unverified".equals(p.getString(prefix + "claim_state", ""))) {
                 p.edit().putString(prefix + "claim_state", "user_verified")
                     .putString(prefix + "last_result", task + "：用户已手动登记对应类型的实际到账").apply();
             }
