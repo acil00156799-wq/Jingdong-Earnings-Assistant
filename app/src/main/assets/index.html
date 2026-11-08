@@ -65,6 +65,14 @@ footer{text-align:center;color:#aaa;font-size:11px;padding:16px}
 <input id="taskUrl" placeholder="可选：京东活动链接（http/https）">
 <button onclick="addTask()">添加任务</button><div id="tasks" class="muted">暂无任务</div>
 </details>
+<details><summary>数据备份与恢复</summary>
+<h3>本机数据备份</h3>
+<p class="muted">备份包含账号备注、任务、收益登记和各模块京东链接。不包含京东登录密码、验证码或登录凭据。建议定期复制备份并保存到手机文件或自己的安全位置。</p>
+<div class="rowbtn"><button onclick="exportBackup()">生成备份</button><button class="secondary" onclick="copyBackup()">复制备份内容</button></div>
+<textarea id="backupData" rows="7" placeholder="点击“生成备份”后，这里会显示备份内容；恢复时也可将备份粘贴到这里。" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;font-size:11px;line-height:1.5;resize:vertical"></textarea>
+<button class="danger" style="margin-top:8px" onclick="importBackup()">从备份恢复（将替换本机数据）</button>
+<div class="muted" id="backupHint" style="margin-top:8px">恢复前请确认备份来源可信。导入会替换本工具当前所有账号、任务、收益记录和模块链接。</div>
+</details>
 <details><summary>到账登记与明细</summary><h3>登记当前账号实际到账</h3><p class="muted">此处由你根据京东页面或账单手动登记。本工具不会自动读取京东账户；只有确认实际到账后才填写。</p>
 <input id="incomeName" placeholder="收益来源，例如：购物返豆">
 <select id="incomeUnit" aria-label="收益单位"><option value="yuan">现金/红包金额（元）</option><option value="beans">京豆（个）</option><option value="redpacket">红包（个）</option></select>
@@ -109,6 +117,62 @@ function goTask(id){const t=current().tasks.find(x=>x.id===id);if(!t)return;if(t
 function confirmTask(id){const t=current().tasks.find(x=>x.id===id);if(!t)return;t.status='已检查任务，到账需另行核验';t.confirmed=new Date().toISOString();save()}
 function removeTask(id){current().tasks=current().tasks.filter(x=>x.id!==id);save()}
 function addIncome(){const name=document.getElementById('incomeName').value.trim(),amount=Number(document.getElementById('incomeAmount').value),unit=document.getElementById('incomeUnit').value;if(!name||!Number.isFinite(amount)||amount<=0){alert('请填写收益来源和有效到账数量');return}const a=current();a.incomes.unshift({name,amount,unit,date:new Date().toISOString(),verifiedByUser:true,verificationSource:'user_confirmed'});if(unit==='beans'){if(!a.moduleChecks)a.moduleChecks={};a.moduleChecks.bean={status:'已登记用户核验到账',updated:new Date().toISOString(),incomeRecordId:a.incomes[0].date}}try{if(window.AndroidBridge)AndroidBridge.markUserVerified(unit,name,a.id)}catch(e){}document.getElementById('incomeName').value='';document.getElementById('incomeAmount').value='';save()}
+function exportBackup(){
+ const payload={app:'jd-welfare-assistant',formatVersion:1,exportedAt:new Date().toISOString(),activeId,accounts,moduleRoutes:moduleRoutes()};
+ const box=document.getElementById('backupData');box.value=JSON.stringify(payload,null,2);
+ document.getElementById('backupHint').textContent='备份已生成。请复制全部内容并保存到安全位置；不要只保存在本机网页缓存中。';
+ box.focus();box.select();
+}
+function copyBackup(){
+ const box=document.getElementById('backupData');
+ if(!box.value.trim()){alert('请先点击“生成备份”');return}
+ box.focus();box.select();
+ let ok=false;try{ok=document.execCommand('copy')}catch(e){}
+ if(ok)document.getElementById('backupHint').textContent='已尝试复制备份内容；请粘贴到记事本或文件中确认保存成功。';
+ else document.getElementById('backupHint').textContent='自动复制未成功，请长按文本框内容并选择“全选→复制”。';
+}
+function importBackup(){
+ const raw=document.getElementById('backupData').value.trim();
+ if(!raw){alert('请先粘贴备份内容');return}
+ if(raw.length>2000000){alert('备份文件过大，已拒绝导入');return}
+ let data;try{data=JSON.parse(raw)}catch(e){alert('备份格式错误：不是有效 JSON');return}
+ if(!data||data.app!=='jd-welfare-assistant'||data.formatVersion!==1||!Array.isArray(data.accounts)||data.accounts.length<1||data.accounts.length>50){
+  alert('备份版本或数据结构不正确，未修改本机数据');return
+ }
+ const safeAccounts=[];
+ for(const a of data.accounts){
+  if(!a||typeof a.id!=='string'||!a.id||typeof a.name!=='string'||!a.name.trim()||!Array.isArray(a.tasks)||!Array.isArray(a.incomes)||a.tasks.length>5000||a.incomes.length>20000){
+   alert('备份中的账号或记录结构异常，未修改本机数据');return
+  }
+  const tasks=[];
+  for(const t of a.tasks){
+   if(!t||typeof t.name!=='string'||typeof t.id!=='number'){alert('任务记录异常，未修改本机数据');return}
+   if(t.url&& !isAllowedJdUrl(t.url)){alert('备份中含有非京东官方 HTTPS 任务链接，已拒绝导入');return}
+   tasks.push({id:t.id,name:t.name,url:t.url||'',status:typeof t.status==='string'?t.status:'待核对',created:typeof t.created==='string'?t.created:'' ,confirmed:typeof t.confirmed==='string'?t.confirmed:undefined})
+  }
+  const incomes=[];
+  for(const x of a.incomes){
+   if(!x||typeof x.name!=='string'||!Number.isFinite(Number(x.amount))||Number(x.amount)<=0||!['yuan','beans','redpacket',undefined].includes(x.unit)){
+    alert('收益记录异常，未修改本机数据');return
+   }
+   incomes.push({name:x.name,amount:Number(x.amount),unit:x.unit||'yuan',date:typeof x.date==='string'?x.date:new Date().toISOString(),verifiedByUser:x.verifiedByUser===true,verificationSource:typeof x.verificationSource==='string'?x.verificationSource:'imported'})
+  }
+  safeAccounts.push({id:a.id,name:a.name.trim(),tasks,incomes,created:typeof a.created==='string'?a.created:new Date().toISOString(),moduleChecks:a.moduleChecks&&typeof a.moduleChecks==='object'?a.moduleChecks:{}})
+ }
+ const routes=data.moduleRoutes&&typeof data.moduleRoutes==='object'&&!Array.isArray(data.moduleRoutes)?data.moduleRoutes:{};
+ const safeRoutes={};
+ for(const [name,url] of Object.entries(routes)){
+  if(typeof url==='string'&&isAllowedJdUrl(url))safeRoutes[name]=url;
+  else if(url){alert('模块链接中存在非京东官方 HTTPS 地址，已拒绝导入');return}
+ }
+ if(!confirm('确定恢复这份备份吗？本机现有账号、任务、收益记录和模块链接将被备份内容替换。建议先生成一份当前备份。'))return;
+ const nextActive=safeAccounts.some(a=>a.id===data.activeId)?data.activeId:safeAccounts[0].id;
+ try{
+  localStorage.setItem(KEY,JSON.stringify(safeAccounts));localStorage.setItem(ACTIVE,nextActive);localStorage.setItem(ROUTES,JSON.stringify(safeRoutes));
+  accounts=safeAccounts;activeId=nextActive;render();renderRouteHint();
+  document.getElementById('backupHint').textContent='恢复完成：已载入 '+accounts.length+' 个账号。请检查各账号记录是否完整。';
+ }catch(e){alert('写入本机存储失败，可能是设备空间不足；请勿关闭页面，先复制备份文本。')}
+}
 function render(){const sel=document.getElementById('activeAccount');sel.innerHTML='';accounts.forEach(a=>{const o=document.createElement('option');o.value=a.id;o.textContent=a.name;sel.append(o)});sel.value=activeId;const a=current();document.getElementById('activeHint').textContent='当前数据空间：'+a.name+' · '+a.tasks.length+' 条任务 · '+a.incomes.length+' 条收益记录';
 const yuanOnly=x=>(x.unit||'yuan')==='yuan',total=a.incomes.filter(yuanOnly).reduce((s,x)=>s+x.amount,0),beans=a.incomes.filter(x=>x.unit==='beans').reduce((s,x)=>s+x.amount,0),redpackets=a.incomes.filter(x=>x.unit==='redpacket').reduce((s,x)=>s+x.amount,0),now=new Date(),month=a.incomes.filter(x=>yuanOnly(x)&&(()=>{const d=new Date(x.date);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()})()).reduce((s,x)=>s+x.amount,0);
 document.getElementById('activeTotal').textContent=money(total);document.getElementById('activeMonth').textContent=money(month);document.getElementById('activeCount').textContent=a.incomes.length;
