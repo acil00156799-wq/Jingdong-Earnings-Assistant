@@ -36,7 +36,8 @@ public class MainActivity extends Activity {
                 Uri uri = Uri.parse(value);
                 String scheme = uri.getScheme();
                 String host = uri.getHost();
-                if (scheme == null || !scheme.equalsIgnoreCase("https") || host == null) return false;
+                if (scheme == null || !scheme.equalsIgnoreCase("https") || host == null
+                        || uri.getUserInfo() != null || (uri.getPort() != -1 && uri.getPort() != 443)) return false;
                 String normalizedHost = host.toLowerCase(java.util.Locale.ROOT);
                 boolean jdHost = normalizedHost.equals("jd.com") || normalizedHost.endsWith(".jd.com")
                     || normalizedHost.equals("jingdong.com") || normalizedHost.endsWith(".jingdong.com");
