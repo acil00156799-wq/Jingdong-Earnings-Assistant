@@ -83,6 +83,7 @@ public class JdClaimAccessibilityService extends AccessibilityService {
         if ("每日红包".equals(task) || "京东红包".equals(task)) {
             return pageText.contains("红包") && (pageText.contains("每日") || pageText.contains("签到"));
         }
+        if ("优惠券领取".equals(task)) return pageText.contains("优惠券") && (pageText.contains("领券") || pageText.contains("领取") || pageText.contains("券中心"));
         if ("宠汪汪".equals(task)) return pageText.contains("宠汪汪");
         if ("游戏福利".equals(task)) return pageText.contains("游戏") && pageText.contains("福利");
         return false;
