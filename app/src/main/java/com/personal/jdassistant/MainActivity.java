@@ -161,7 +161,7 @@ public class MainActivity extends Activity {
                 edit.apply(); waiting = false;
             }
             return p.getString(prefix + "last_result", "尚未执行") +
-                (waiting ? "（正在等待领取按钮，最长3分钟）" : "");
+                (waiting ? "（正在等待页面识别，最长3分钟）" : "");
         }
     }
 
