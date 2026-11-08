@@ -40,6 +40,10 @@ assert.match(html, /不会自动抓取京东价格/, 'price tracking is transpar
 assert.match(html, /priceWatches/, 'price watches are included in account backup data');
 assert.match(html, /今日福利清单/, 'daily welfare checklist is visible');
 assert.match(html, /function toggleDailyCheck\(/, 'daily checklist supports manual completion toggles');
+assert.match(html, /function openDailyModule\(/, 'daily checklist can open the saved JD module entry');
+assert.match(html, /打开入口/, 'daily checklist exposes a direct module entry action');
+assert.match(html, /moduleRoutes\(\)\[moduleName\]/, 'daily entry uses the saved module-specific official JD URL');
+
 assert.match(html, /dailyChecks/, 'daily checklist is included in account backup data');
 assert.match(html, /用户已核验/, 'income history labels user-verified records');
 assert.match(html, /导入记录\/待核验/, 'income history distinguishes imported unverified records');
