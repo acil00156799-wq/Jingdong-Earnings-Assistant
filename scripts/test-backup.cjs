@@ -248,4 +248,40 @@ elements.backupData.value = 'x'.repeat(2000001);
 context.importBackup();
 assert.equal(context.accounts[0].id, beforeId, 'oversized backup must not change saved data');
 
-console.log('PASS: JavaScript syntax, account-scoped claim state, manual-only page recognition, backup export/restore and rollback, daily checklist backup/restore, duplicate ID rejection, module route allowlist/shape, HTTPS host, credential and port validation, malformed JSON, oversized backup');
+
+const coreStart = script.indexOf('let accountsLoadError=false;');
+const coreEnd = script.indexOf('function money(', coreStart);
+assert.ok(coreStart >= 0 && coreEnd > coreStart, 'account persistence core exists');
+const coreChunk = script.slice(coreStart, coreEnd);
+function makeStorageHarness(initial) {
+  const data = new Map(Object.entries(initial || {}));
+  let writes = 0, failOn = 0;
+  const alerts = [];
+  const ctx = {
+    KEY: 'jd_assistant_accounts_v3', ACTIVE: 'jd_assistant_active_v3', TRASH: 'jd_assistant_deleted_accounts_v1',
+    accountsSeed: [], Date, Math, JSON, Array, Object,
+    localStorage: {
+      getItem(k) { return data.has(k) ? data.get(k) : null; },
+      setItem(k,v) { writes++; if (writes === failOn) throw new Error('simulated quota exceeded'); data.set(k,String(v)); },
+      removeItem(k) { data.delete(k); }
+    },
+    alert(m) { alerts.push(String(m)); }, render(){}, renderIncomeRecords(){}, renderMonthlyIncome(){}
+  };
+  vm.createContext(ctx); vm.runInContext(coreChunk,ctx);
+  return {ctx,data,alerts,setFail(n){failOn=n},writes(){return writes}};
+}
+const originalAccount = {id:'persisted1',name:'原始账号',tasks:[],incomes:[]};
+const harness = makeStorageHarness({'jd_assistant_accounts_v3':JSON.stringify([originalAccount]),'jd_assistant_active_v3':'persisted1'});
+harness.ctx.accounts[0].name='未保存的新名称';
+harness.setFail(2);
+assert.equal(harness.ctx.save(),false,'failed multi-key save reports failure');
+assert.equal(JSON.parse(harness.data.get('jd_assistant_accounts_v3'))[0].name,'原始账号','failed save rolls persisted account data back');
+assert.equal(harness.ctx.accounts[0].name,'原始账号','failed save restores in-memory last-good data');
+assert.ok(harness.alerts.some(x=>x.includes('保存失败')),'failed save explains the storage failure');
+const corruptHarness = makeStorageHarness({'jd_assistant_accounts_v3':'{corrupt'});
+assert.equal(corruptHarness.ctx.accountsLoadError,true,'corrupt persisted JSON is detected');
+assert.equal(corruptHarness.ctx.save(),false,'writes are blocked when existing account data cannot be read');
+assert.equal(corruptHarness.data.get('jd_assistant_accounts_v3'),'{corrupt','corrupt source data is never overwritten by fallback data');
+assert.ok(corruptHarness.alerts.some(x=>x.includes('读取异常')),'corrupt data warning directs user to restore a backup');
+
+console.log('PASS: JavaScript syntax, account save rollback and corrupt-data protection, account-scoped claim state, manual-only page recognition, backup export/restore and rollback, daily checklist backup/restore, duplicate ID rejection, module route allowlist/shape, HTTPS host, credential and port validation, malformed JSON, oversized backup');
