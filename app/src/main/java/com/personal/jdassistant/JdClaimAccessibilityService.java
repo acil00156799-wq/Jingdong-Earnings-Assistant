@@ -4,9 +4,6 @@ import android.accessibilityservice.AccessibilityService;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.content.SharedPreferences;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * User-started, one-shot page-context recognizer.
@@ -110,31 +107,6 @@ public class JdClaimAccessibilityService extends AccessibilityService {
         return out.toString();
     }
 
-    private AccessibilityNodeInfo findClaimNode(AccessibilityNodeInfo node, Set<String> labels) {
-        if (node == null || !node.isVisibleToUser() || !node.isEnabled()) return null;
-        CharSequence t = node.getText();
-        CharSequence d = node.getContentDescription();
-        String label = t != null ? t.toString().trim() : "";
-        if (label.isEmpty() && d != null) label = d.toString().trim();
-
-        if (labels.contains(label)) {
-            // Only allow a nearby clickable control. Walking to an arbitrary
-            // distant clickable ancestor could click an entire card or page.
-            AccessibilityNodeInfo candidate = node;
-            for (int depth = 0; candidate != null && depth <= 2; depth++) {
-                if (candidate.isVisibleToUser() && candidate.isEnabled() && candidate.isClickable()) {
-                    return candidate;
-                }
-                candidate = candidate.getParent();
-            }
-        }
-        for (int i = 0; i < node.getChildCount(); i++) {
-            AccessibilityNodeInfo found = findClaimNode(node.getChild(i), labels);
-            if (found != null) return found;
-        }
-        return null;
-    }
-
     @Override
     public void onInterrupt() {
         SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
@@ -142,7 +114,7 @@ public class JdClaimAccessibilityService extends AccessibilityService {
         if (accountId.isEmpty()) return;
         String prefix = "account." + accountId + ".";
         prefs.edit().putBoolean(prefix + "auto_claim_enabled", false)
-            .putString(prefix + "last_result", "自动领取辅助已中断")
+            .putString(prefix + "last_result", "页面识别辅助已中断")
             .remove("active_attempt_account_id").apply();
     }
 }
