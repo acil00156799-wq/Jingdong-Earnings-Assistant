@@ -187,9 +187,31 @@ public class MainActivity extends Activity {
         settings.setDefaultTextEncodingName("UTF-8");
         settings.setDomStorageEnabled(true);
         settings.setAllowFileAccess(true);
-        settings.setAllowContentAccess(true);
+        settings.setAllowContentAccess(false);
+        settings.setAllowFileAccessFromFileURLs(false);
+        settings.setAllowUniversalAccessFromFileURLs(false);
+        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
+        settings.setBlockNetworkLoads(true);
         webView.addJavascriptInterface(new AndroidBridge(), "AndroidBridge");
-        webView.setWebViewClient(new WebViewClient());
+        webView.setWebViewClient(new WebViewClient() {
+            private boolean isLocalAppPage(Uri uri) {
+                return uri != null && "file".equalsIgnoreCase(uri.getScheme())
+                    && uri.getHost() == null && "/android_asset/index.html".equals(uri.getPath());
+            }
+
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, android.webkit.WebResourceRequest request) {
+                // The JavaScript bridge is trusted only on the bundled local app page.
+                // All web destinations must be opened through the validated Android bridge.
+                return !isLocalAppPage(request.getUrl());
+            }
+
+            @Override
+            @SuppressWarnings("deprecation")
+            public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                return !isLocalAppPage(Uri.parse(url));
+            }
+        });
         webView.loadUrl("file:///android_asset/index.html");
     }
 
