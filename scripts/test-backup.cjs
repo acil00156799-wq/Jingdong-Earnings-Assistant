@@ -17,6 +17,11 @@ assert.match(mainJava, /无障碍权限已关闭，旧任务已停止/, 'disabli
 assert.match(mainJava, /Math\.max\(now, p\.getLong\(prefix \+ "attempt_id", 0L\) \+ 1L\)/, 'repeated attempts receive a fresh attempt id');
 assert.match(claimService, /active_attempt_account_id/, 'accessibility service follows the active account attempt');
 assert.match(claimService, /account\." \+ accountId \+ "\./, 'accessibility preferences are account-scoped');
+assert.match(html, /startTaskShortcut\('优惠券领取'\)/, 'coupon claim has a dedicated launcher');
+assert.match(html, /const DAILY_MODULES=\[[^;]*'优惠券领取'/, 'coupon claim participates in daily checklist');
+assert.match(html, /<option>优惠券领取<\/option>/, 'coupon module supports a saved official activity URL');
+assert.match(claimService, /"优惠券领取"\.equals\(task\)/, 'accessibility helper recognizes coupon tasks');
+assert.match(claimService, /pageText\.contains\("优惠券"\)/, 'coupon recognition checks visible coupon text');
 assert.match(claimService, /manual_action_required/, 'page recognition always hands the claim action back to the user');
 assert.match(claimService, /不会代替领取/, 'page recognizer clearly states it does not claim rewards');
 const manifest = fs.readFileSync('app/src/main/AndroidManifest.xml', 'utf8');
