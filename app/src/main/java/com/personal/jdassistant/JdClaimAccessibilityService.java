@@ -17,6 +17,7 @@ public class JdClaimAccessibilityService extends AccessibilityService {
     private static final String PREFS = "jd_claim_assistant";
     private static final long MAX_ATTEMPT_MS = 180000L;
     private long lastAttemptId = -1L;
+    private String lastAccountId = "";
     private boolean actionAttempted = false;
 
     @Override
@@ -41,7 +42,8 @@ public class JdClaimAccessibilityService extends AccessibilityService {
         }
 
         long attemptId = prefs.getLong(prefix + "attempt_id", -1L);
-        if (attemptId != lastAttemptId) {
+        if (!accountId.equals(lastAccountId) || attemptId != lastAttemptId) {
+            lastAccountId = accountId;
             lastAttemptId = attemptId;
             actionAttempted = false;
         }
@@ -71,6 +73,10 @@ public class JdClaimAccessibilityService extends AccessibilityService {
             return;
         }
 
+        // Re-check ownership immediately before clicking: the user may have
+        // switched accounts while this accessibility event was being handled.
+        if (!accountId.equals(prefs.getString("active_attempt_account_id", ""))
+                || !prefs.getBoolean(prefix + "auto_claim_enabled", false)) return;
         actionAttempted = true;
         boolean clicked = target.performAction(AccessibilityNodeInfo.ACTION_CLICK);
         SharedPreferences.Editor resultEdit = prefs.edit()
