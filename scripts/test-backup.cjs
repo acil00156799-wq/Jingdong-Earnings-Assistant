@@ -43,6 +43,10 @@ assert.match(html, /function toggleDailyCheck\(/, 'daily checklist supports manu
 assert.match(html, /dailyChecks/, 'daily checklist is included in account backup data');
 assert.match(html, /用户已核验/, 'income history labels user-verified records');
 assert.match(html, /导入记录\/待核验/, 'income history distinguishes imported unverified records');
+assert.match(html, /verified=x=>x\.verifiedByUser===true/, 'income totals count only user-verified records');
+assert.match(html, /activePending/, 'dashboard separately displays pending imported cash amounts');
+assert.match(html, /已核验到账累计/, 'dashboard labels confirmed income separately from imported records');
+
 const match = html.match(/<script>([\s\S]*?)<\/script>/i);
 assert.ok(match, 'inline application script exists');
 const script = match[1];
