@@ -59,11 +59,11 @@ footer{text-align:center;color:#aaa;font-size:11px;padding:16px}
 <div class="rowbtn"><button class="secondary" onclick="saveModuleRoute()">保存此模块链接</button><button class="danger" onclick="clearModuleRoute()">清除此模块链接</button></div>
 <div class="muted" id="routeHint">尚未设置专属活动链接</div></div>
 <button class="primary-action" onclick="startOneClaim()">一键启动领取识别</button><button class="secondary" style="margin-top:8px" onclick="openAccessibility()">开启/检查无障碍权限</button><button class="danger" style="margin-top:8px" onclick="stopClaim()">停止本次识别</button><div class="status" id="claimStatus">状态：等待启动</div>
-<div class="note">当前版本会打开京东并识别页面上明确的领取按钮；单次点击不代表全部任务已完成或奖励已到账。</div></section>
+<div class="note">页面识别辅助只识别当前京东页面，不会代替你点击、领取或提交。请在京东官方 App 内手动操作，并以账户实际到账为准。京东规则禁止使用未经认可的软件/机器人领取京豆、优惠券等权益。</div></section>
 <details><summary>官方规则与核验入口</summary>
 <h3>京东官方帮助中心</h3>
 <p class="muted">这里提供京东官方公开规则和账户核验路径。打开后请以京东 App 当前页面和你的账号实际显示为准；本助手不会读取账户余额或自动判断奖励到账。</p>
-<div class="module"><h4>京豆获取与购物返豆</h4><p class="muted">官方说明：京豆可来自购物、评价、晒单和活动；部分购物返豆需在“我的-京豆”中手动领取，并有领取有效期。</p><button class="secondary" onclick="openOfficialHelp('https://help.jd.com/user/issue/167-4224.html')">查看京豆官方规则</button></div>
+<div class="module"><h4>京豆获取、返豆与有效期</h4><p class="muted">官方说明：京豆可来自购物、评价、晒单和活动；部分购物返豆需手动领取。京东帮助中心当前说明：自2026年1月1日0时起，京豆有效期最长不超过180天；可在京东 App“我的-京豆-30天即将过期京豆明细”查看临期京豆。具体以账户页面和规则为准。</p><button class="secondary" onclick="openOfficialHelp('https://help.jd.com/user/issue/167-4224.html')">查看京豆获取规则</button><button class="secondary" style="margin-top:6px" onclick="openOfficialHelp('https://help.jd.com/issue/search?keyword=%E4%BA%AC%E8%B1%86%E6%9C%89%E6%95%88%E6%9C%9F&siteId=5')">查询京豆有效期说明</button></div>
 <div class="module"><h4>红包获取与查看</h4><p class="muted">官方说明：红包可通过推广或游戏活动获得；账户红包可在“我的-我的钱包-红包”查看，具体以活动规则为准。</p><button class="secondary" onclick="openOfficialHelp('https://help.jd.com/user/issue/168-4458.html')">查看红包官方说明</button></div>
 <div class="module"><h4>优惠券领取</h4><p class="muted">官方帮助中心指引：京东 App 首页点击“领券”进入领券中心；领取资格、有效期和适用范围以券面为准。</p><button class="secondary" onclick="openOfficialHelp('https://help.jd.com/user/issue/169-335.html')">查看优惠券官方指引</button></div>
 <div class="note">来源仅限京东官方帮助中心公开页面。若官方页面规则更新，以官方页面为准；不使用第三方脚本、账号 Cookie 或非公开接口读取个人数据。</div>
@@ -112,9 +112,9 @@ function clearModuleRoute(){const name=document.getElementById('routeModule').va
 function renderRouteHint(){const name=document.getElementById('routeModule').value,url=moduleRoutes()[name]||'';document.getElementById('routeUrl').value=url;document.getElementById('routeHint').textContent=url?'已保存此模块专属链接：点击入口时优先打开':'尚未设置专属活动链接，将打开京东首页'}
 document.getElementById('routeModule').addEventListener('change',renderRouteHint);
 
-function openAccessibility(){try{if(window.AndroidBridge)AndroidBridge.openAccessibilitySettings();else alert('请在系统设置中开启本助手的无障碍服务。')}catch(e){alert('请在系统设置中开启本助手的无障碍服务。')}}
-function startTaskShortcut(name){try{if(!window.AndroidBridge){alert('请安装本助手 APK 后使用');return}if(!AndroidBridge.startOneClaimAttempt(name,current().id)){setTaskHint('请先开启本助手的无障碍权限，再启动'+name);openAccessibility();return}setTaskHint(name+'：已启动对应模块识别，正在打开京东');const url=moduleRoutes()[name];if(url){const ok=AndroidBridge.openJdUrl(url);if(!ok){setTaskHint(name+'：活动链接无法打开，请检查链接或手动进入京东');openJd()}}else openJd()}catch(e){setTaskHint(name+'：启动失败，请检查无障碍权限')}}
-function startOneClaim(){try{if(!window.AndroidBridge){alert('请安装 Android APK 后使用自动化功能。');return}if(!AndroidBridge.startOneClaimAttempt('其他活动',current().id)){setTaskHint('请先开启本助手的无障碍权限');openAccessibility();return}setTaskHint('已启动安全识别；其他活动仍需人工核对');openJd()}catch(e){setTaskHint('启动失败，请检查无障碍权限')}}
+function openAccessibility(){try{if(window.AndroidBridge)AndroidBridge.openAccessibilitySettings();else alert('请在系统设置中开启本助手的页面识别辅助。')}catch(e){alert('请在系统设置中开启本助手的页面识别辅助。')}}
+function startTaskShortcut(name){try{if(!window.AndroidBridge){alert('请安装本助手 APK 后使用');return}if(!AndroidBridge.startOneClaimAttempt(name,current().id)){setTaskHint('请先开启本助手的无障碍权限，再启动'+name);openAccessibility();return}setTaskHint(name+'：已启动页面识别辅助，正在打开京东');const url=moduleRoutes()[name];if(url){const ok=AndroidBridge.openJdUrl(url);if(!ok){setTaskHint(name+'：活动链接无法打开，请检查链接或手动进入京东');openJd()}}else openJd()}catch(e){setTaskHint(name+'：启动失败，请检查无障碍权限')}}
+function startOneClaim(){try{if(!window.AndroidBridge){alert('请安装 Android APK 后使用自动化功能。');return}if(!AndroidBridge.startOneClaimAttempt('其他活动',current().id)){setTaskHint('请先开启本助手的无障碍权限');openAccessibility();return}setTaskHint('已启动页面识别辅助；领取操作请在京东内手动完成');openJd()}catch(e){setTaskHint('启动失败，请检查无障碍权限')}}
 function stopClaim(){try{if(window.AndroidBridge)AndroidBridge.stopClaimAttempt(current().id);setTaskHint('已停止')}catch(e){setTaskHint('停止请求已发送')}}
 function setTaskHint(message){const el=document.getElementById('claimStatus');if(el)el.textContent='任务辅助状态：'+message;}
 function refreshClaimStatus(){try{if(window.AndroidBridge&&document.getElementById('claimStatus'))document.getElementById('claimStatus').textContent='任务辅助状态：'+AndroidBridge.getClaimStatus(current().id)}catch(e){}}
