@@ -46,6 +46,9 @@ assert.match(html, /修改商品\/目标价/, 'price watch edit control is visib
 assert.match(html, /function removePriceRecord\(/, 'a mistaken price observation can be removed without deleting its product');
 assert.match(html, /删除最新一条价格记录/, 'price history correction control is visible when records exist');
 assert.match(html, /商品和其他历史记录会保留/, 'price history correction confirms other data is preserved');
+assert.match(html, /查看全部价格历史/, 'all price observations can be expanded and reviewed');
+assert.match(html, /删除此条/, 'each individual price observation can be corrected');
+
 
 
 assert.match(html, /今日福利清单/, 'daily welfare checklist is visible');
