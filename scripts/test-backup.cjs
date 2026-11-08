@@ -43,6 +43,12 @@ assert.match(html, /function toggleDailyCheck\(/, 'daily checklist supports manu
 assert.match(html, /dailyChecks/, 'daily checklist is included in account backup data');
 assert.match(html, /用户已核验/, 'income history labels user-verified records');
 assert.match(html, /导入记录\/待核验/, 'income history distinguishes imported unverified records');
+assert.match(html, /function verifyIncome\(/, 'imported income can be marked verified only through explicit user confirmation');
+assert.match(html, /function unverifyIncome\(/, 'verified income can be reverted');
+assert.match(html, /function deleteIncome\(/, 'income records can be deleted');
+assert.match(html, /核实到账后确认/, 'income verification action is clearly labeled');
+assert.match(html, /撤销核验/, 'income verification can be reverted from the record list');
+
 assert.match(html, /verified=x=>x\.verifiedByUser===true/, 'income totals count only user-verified records');
 assert.match(html, /activePending/, 'dashboard separately displays pending imported cash amounts');
 assert.match(html, /已核验到账累计/, 'dashboard labels confirmed income separately from imported records');
