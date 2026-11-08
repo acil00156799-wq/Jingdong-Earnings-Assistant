@@ -89,6 +89,13 @@ assert.match(html, /id="allPending"/, 'all-account dashboard includes pending ca
 assert.match(html, /id="allBeans"/, 'all-account dashboard includes verified bean totals');
 assert.match(html, /id="allRedpackets"/, 'all-account dashboard includes verified red packet totals');
 assert.match(html, /verifiedAt:typeof x\.verifiedAt==='string'\?x\.verifiedAt:undefined/, 'backup restore preserves verification timestamps');
+assert.match(html, /let accountsLoadError=false/, 'account loading tracks corrupted storage');
+assert.match(html, /accountsLoadError=true/, 'invalid stored account data is flagged');
+assert.match(html, /if\(accountsLoadError\)\{alert\('检测到本机账号数据读取异常/, 'normal saves are blocked when persisted data is corrupted');
+assert.match(html, /lastGoodState=next;render\(\);/, 'successful saves advance the last-good checkpoint');
+assert.match(html, /localStorage\.setItem\(KEY,lastGoodState\.accounts\)/, 'failed saves attempt to restore last-good persisted accounts');
+assert.match(html, /accounts=JSON\.parse\(lastGoodState\.accounts\)/, 'failed saves restore last-good in-memory accounts');
+assert.match(html, /accountsLoadError=false;\s*lastGoodState=\{accounts:JSON\.stringify\(accounts\)/, 'successful backup restore clears the corruption block and resets checkpoint');
 assert.match(html, /async function inspectStorageHealth\(/, 'storage health check is available');
 assert.match(html, /localStorage\.length/, 'storage inspection counts local storage entries');
 assert.match(html, /unescape\(encodeURIComponent\(key\+value\)\)\.length/, 'storage usage is estimated using UTF-8 byte length');
