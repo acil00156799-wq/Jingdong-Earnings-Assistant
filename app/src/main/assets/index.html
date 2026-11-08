@@ -129,14 +129,40 @@ footer{text-align:center;color:#aaa;font-size:11px;padding:16px}
 const KEY='jd_assistant_accounts_v3', ACTIVE='jd_assistant_active_v3', ROUTES='jd_assistant_module_routes_v1', TRASH='jd_assistant_deleted_accounts_v1';
 function makeAccount(name){return {id:'a'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),name,tasks:[],incomes:[],created:new Date().toISOString()}}
 const accountsSeed=[];
-function loadAccounts(){try{const v=JSON.parse(localStorage.getItem(KEY));if(Array.isArray(v)&&v.length)return v}catch(e){}const first=makeAccount('主账号');try{first.tasks=JSON.parse(localStorage.getItem('jd_tasks'))||[];first.incomes=JSON.parse(localStorage.getItem('jd_incomes'))||[];const labels=JSON.parse(localStorage.getItem('jd_accounts'))||[];labels.forEach((name,i)=>{if(typeof name==='string'&&name.trim()&&name.trim()!=='主账号')accountsSeed.push(makeAccount(name.trim()))})}catch(e){}return [first,...accountsSeed]}
+let accountsLoadError=false;
+function loadAccounts(){
+ let raw=null;
+ try{raw=localStorage.getItem(KEY)}catch(e){accountsLoadError=true;return [makeAccount('主账号')]}
+ if(raw!==null){
+  try{const v=JSON.parse(raw);if(Array.isArray(v)&&v.length&&v.every(a=>a&&typeof a.id==='string'&&typeof a.name==='string'&&Array.isArray(a.tasks)&&Array.isArray(a.incomes)))return v;accountsLoadError=true}
+  catch(e){accountsLoadError=true}
+  return [makeAccount('数据待恢复')];
+ }
+ const first=makeAccount('主账号');
+ try{first.tasks=JSON.parse(localStorage.getItem('jd_tasks'))||[];first.incomes=JSON.parse(localStorage.getItem('jd_incomes'))||[];const labels=JSON.parse(localStorage.getItem('jd_accounts'))||[];labels.forEach(name=>{if(typeof name==='string'&&name.trim()&&name.trim()!=='主账号')accountsSeed.push(makeAccount(name.trim()))})}catch(e){}
+ return [first,...accountsSeed];
+}
 let accounts=loadAccounts();
 function loadDeletedAccounts(){try{const v=JSON.parse(localStorage.getItem(TRASH));return Array.isArray(v)?v.filter(x=>x&&typeof x.id==='string'&&typeof x.name==='string'&&Array.isArray(x.tasks)&&Array.isArray(x.incomes)):[]}catch(e){return []}}
 let deletedAccounts=loadDeletedAccounts();
 let activeId=localStorage.getItem(ACTIVE);
 if(!accounts.some(a=>a.id===activeId))activeId=accounts[0].id;
 function current(){return accounts.find(a=>a.id===activeId)||accounts[0]}
-function save(){localStorage.setItem(KEY,JSON.stringify(accounts));localStorage.setItem(ACTIVE,activeId);localStorage.setItem(TRASH,JSON.stringify(deletedAccounts));render();renderIncomeRecords();renderMonthlyIncome()}
+let lastGoodState={accounts:JSON.stringify(accounts),activeId,deletedAccounts:JSON.stringify(deletedAccounts)};
+function save(){
+ if(accountsLoadError){alert('检测到本机账号数据读取异常。为防止覆盖原数据，已暂停保存。请先粘贴有效备份并恢复，或联系支持处理。');return false}
+ const next={accounts:JSON.stringify(accounts),activeId,deletedAccounts:JSON.stringify(deletedAccounts)};
+ try{
+  localStorage.setItem(KEY,next.accounts);localStorage.setItem(ACTIVE,next.activeId);localStorage.setItem(TRASH,next.deletedAccounts);
+  lastGoodState=next;render();renderIncomeRecords();renderMonthlyIncome();return true;
+ }catch(e){
+  try{localStorage.setItem(KEY,lastGoodState.accounts);localStorage.setItem(ACTIVE,lastGoodState.activeId);localStorage.setItem(TRASH,lastGoodState.deletedAccounts)}catch(rollbackError){}
+  try{accounts=JSON.parse(lastGoodState.accounts);activeId=lastGoodState.activeId;deletedAccounts=JSON.parse(lastGoodState.deletedAccounts)}catch(reloadError){}
+  alert('保存失败，可能是本机存储空间不足或不可写。已尝试恢复上一次成功保存的数据；请立即导出备份并检查存储空间。');
+  try{render();renderIncomeRecords();renderMonthlyIncome()}catch(renderError){}
+  return false;
+ }
+}
 function money(n){return '¥'+Number(n||0).toFixed(2)}
 function switchAccount(id){if(!accounts.some(a=>a.id===id))return;try{if(window.AndroidBridge)AndroidBridge.stopClaimAttempt(current().id)}catch(e){}activeId=id;save()}
 function addAccount(){const el=document.getElementById('newAccountName'),name=el.value.trim();if(!name){alert('请先填写账号备注');return}if(accounts.some(a=>a.name===name)){alert('已有同名备注，请换一个名称');return}const a=makeAccount(name);try{if(window.AndroidBridge)AndroidBridge.stopClaimAttempt(current().id)}catch(e){}accounts.push(a);activeId=a.id;el.value='';save()}
