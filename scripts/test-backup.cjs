@@ -92,7 +92,14 @@ assert.match(html, /verifiedAt:typeof x\.verifiedAt==='string'\?x\.verifiedAt:un
 assert.match(html, /function accountDeleteSummary\(/, 'account deletion previews the account data inventory');
 assert.match(html, /const typed=prompt\(/, 'account deletion requires typed confirmation after the warning');
 assert.match(html, /typed!==a\.name/, 'mismatched account name cancels deletion');
-assert.match(html, /建议先到“数据备份与恢复”生成并复制完整备份/, 'account deletion recommends exporting a backup first');
+assert.match(html, /TRASH='jd_assistant_deleted_accounts_v1'/, 'deleted accounts use a separate local recycle-bin store');
+assert.match(html, /function loadDeletedAccounts\(/, 'recycle bin loads saved deleted accounts safely');
+assert.match(html, /deletedAccounts\.unshift\(\{\.\.\.a,deletedAt:new Date\(\)\.toISOString\(\)\}\)/, 'deletion preserves the full account with a deletion timestamp');
+assert.match(html, /function restoreDeletedAccount\(/, 'deleted accounts can be restored');
+assert.match(html, /function permanentlyDeleteAccount\(/, 'permanent deletion is a separate confirmed action');
+assert.match(html, /当前已有同名账号，请先修改现有账号备注/, 'restore prevents duplicate account names');
+assert.match(html, /清除应用数据或卸载应用可能使回收站丢失/, 'recycle bin clearly discloses local-storage limitations');
+assert.match(html, /localStorage\.setItem\(TRASH,JSON\.stringify\(deletedAccounts\)\)/, 'recycle bin persists on every save');
 
 
 assert.match(html, /不同单位分开统计/, 'monthly totals do not combine incompatible units');
