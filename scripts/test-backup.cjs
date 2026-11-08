@@ -105,7 +105,7 @@ assert.ok(match, 'inline application script exists');
 const script = match[1];
 new Function(script);
 
-const start = script.indexOf('function exportBackup()');
+const start = script.indexOf('function backupStats(');
 const end = script.indexOf('function render()', start);
 assert.ok(start >= 0 && end > start, 'backup functions exist');
 const chunk = script.slice(start, end);
