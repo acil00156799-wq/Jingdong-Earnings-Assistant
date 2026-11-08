@@ -13,6 +13,10 @@ assert.match(mainJava, /Math\.max\(now, p\.getLong\(prefix \+ "attempt_id", 0L\)
 assert.match(claimService, /active_attempt_account_id/, 'accessibility service follows the active account attempt');
 assert.match(claimService, /account\." \+ accountId \+ "\./, 'accessibility preferences are account-scoped');
 assert.match(claimService, /Re-check ownership immediately before clicking/, 'service rechecks account ownership before a click');
+assert.match(html, /help\.jd\.com\/user\/issue\/167-4224\.html/, 'official JD bean help source is present');
+assert.match(html, /help\.jd\.com\/user\/issue\/168-4458\.html/, 'official JD red packet help source is present');
+assert.match(html, /help\.jd\.com\/user\/issue\/169-335\.html/, 'official JD coupon help source is present');
+assert.match(html, /function openOfficialHelp\(url\)/, 'official help links pass through the JD URL safety check');
 const match = html.match(/<script>([\s\S]*?)<\/script>/i);
 assert.ok(match, 'inline application script exists');
 const script = match[1];
