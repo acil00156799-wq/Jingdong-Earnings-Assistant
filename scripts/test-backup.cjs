@@ -3,6 +3,13 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 
 const html = fs.readFileSync('app/src/main/assets/index.html', 'utf8');
+const mainJava = fs.readFileSync('app/src/main/java/com/personal/jdassistant/MainActivity.java', 'utf8');
+const claimService = fs.readFileSync('app/src/main/java/com/personal/jdassistant/JdClaimAccessibilityService.java', 'utf8');
+assert.match(mainJava, /account\." \+ accountId \+ "\./, 'native claim preferences are account-scoped');
+assert.match(mainJava, /getClaimStatus\(String accountId\)/, 'claim status requires an account id');
+assert.match(claimService, /active_attempt_account_id/, 'accessibility service follows the active account attempt');
+assert.match(claimService, /account\." \+ accountId \+ "\./, 'accessibility preferences are account-scoped');
+assert.match(claimService, /Re-check ownership immediately before clicking/, 'service rechecks account ownership before a click');
 const match = html.match(/<script>([\s\S]*?)<\/script>/i);
 assert.ok(match, 'inline application script exists');
 const script = match[1];
@@ -57,4 +64,4 @@ elements.backupData.value = 'x'.repeat(2000001);
 context.importBackup();
 assert.equal(context.accounts[0].id, beforeId, 'oversized backup must not change saved data');
 
-console.log('PASS: JavaScript syntax, backup export/restore, module routes, external URL rejection, malformed JSON, oversized backup');
+console.log('PASS: JavaScript syntax, account-scoped claim state, pre-click ownership guard, backup export/restore, module routes, external URL rejection, malformed JSON, oversized backup');
