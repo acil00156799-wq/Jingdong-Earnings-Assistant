@@ -7,6 +7,11 @@ const mainJava = fs.readFileSync('app/src/main/java/com/personal/jdassistant/Mai
 const claimService = fs.readFileSync('app/src/main/java/com/personal/jdassistant/JdClaimAccessibilityService.java', 'utf8');
 assert.match(mainJava, /account\." \+ accountId \+ "\./, 'native claim preferences are account-scoped');
 assert.match(mainJava, /getClaimStatus\(String accountId\)/, 'claim status requires an account id');
+assert.match(mainJava, /setBlockNetworkLoads\(true\)/, 'WebView blocks network content');
+assert.match(mainJava, /setAllowFileAccessFromFileURLs\(false\)/, 'file URLs cannot read other file URLs');
+assert.match(mainJava, /setAllowUniversalAccessFromFileURLs\(false\)/, 'file URLs cannot access arbitrary origins');
+assert.match(mainJava, /private boolean isLocalAppPage\(Uri uri\)/, 'WebView bridge is restricted to the bundled local page');
+assert.match(mainJava, /return !isLocalAppPage\(request\.getUrl\(\)\)/, 'external navigations are blocked in the bridge-enabled WebView');
 assert.match(mainJava, /if \(!accountId\.equals\(p\.getString\("active_attempt_account_id", ""\)\)\) return;/, 'stopping an inactive account must not overwrite its history');
 assert.match(mainJava, /无障碍权限已关闭，旧任务已停止/, 'disabling accessibility clears any previous active attempt');
 assert.match(mainJava, /Math\.max\(now, p\.getLong\(prefix \+ "attempt_id", 0L\) \+ 1L\)/, 'repeated attempts receive a fresh attempt id');
