@@ -35,7 +35,12 @@ public class MainActivity extends Activity {
             try {
                 Uri uri = Uri.parse(value);
                 String scheme = uri.getScheme();
-                if (scheme == null || !(scheme.equals("https") || scheme.equals("http"))) return false;
+                String host = uri.getHost();
+                if (scheme == null || !scheme.equalsIgnoreCase("https") || host == null) return false;
+                String normalizedHost = host.toLowerCase(java.util.Locale.ROOT);
+                boolean jdHost = normalizedHost.equals("jd.com") || normalizedHost.endsWith(".jd.com")
+                    || normalizedHost.equals("jingdong.com") || normalizedHost.endsWith(".jingdong.com");
+                if (!jdHost) return false;
                 Intent intent = new Intent(Intent.ACTION_VIEW, uri);
                 intent.setPackage(JD_PACKAGE);
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
