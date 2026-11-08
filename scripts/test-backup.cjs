@@ -113,7 +113,7 @@ assert.match(html, /function restoreDeletedAccount\(/, 'deleted accounts can be 
 assert.match(html, /function permanentlyDeleteAccount\(/, 'permanent deletion is a separate confirmed action');
 assert.match(html, /当前已有同名账号，请先修改现有账号备注/, 'restore prevents duplicate account names');
 assert.match(html, /清除应用数据或卸载应用可能使回收站丢失/, 'recycle bin clearly discloses local-storage limitations');
-assert.match(html, /localStorage\.setItem\(TRASH,JSON\.stringify\(deletedAccounts\)\)/, 'recycle bin persists on every save');
+assert.match(html, /deletedAccounts:JSON\.stringify\(deletedAccounts\)/, 'save checkpoint includes recycle-bin data');
 assert.match(html, /deletedAccounts,moduleRoutes:routes/, 'backup exports deleted accounts');
 assert.match(html, /const deletedSource=data\.deletedAccounts\|\|\[\]/, 'older backups without recycle-bin data remain compatible');
 assert.match(html, /localStorage\.setItem\(TRASH,JSON\.stringify\(safeDeletedAccounts\)\)/, 'restore persists the validated recycle bin');
