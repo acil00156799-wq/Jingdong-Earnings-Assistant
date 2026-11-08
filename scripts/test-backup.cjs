@@ -100,6 +100,11 @@ assert.match(html, /function permanentlyDeleteAccount\(/, 'permanent deletion is
 assert.match(html, /当前已有同名账号，请先修改现有账号备注/, 'restore prevents duplicate account names');
 assert.match(html, /清除应用数据或卸载应用可能使回收站丢失/, 'recycle bin clearly discloses local-storage limitations');
 assert.match(html, /localStorage\.setItem\(TRASH,JSON\.stringify\(deletedAccounts\)\)/, 'recycle bin persists on every save');
+assert.match(html, /deletedAccounts,moduleRoutes:routes/, 'backup exports deleted accounts');
+assert.match(html, /const deletedSource=data\.deletedAccounts\|\|\[\]/, 'older backups without recycle-bin data remain compatible');
+assert.match(html, /localStorage\.setItem\(TRASH,JSON\.stringify\(safeDeletedAccounts\)\)/, 'restore persists the validated recycle bin');
+assert.match(html, /previous\.trash===null\?localStorage\.removeItem\(TRASH\):localStorage\.setItem\(TRASH,previous\.trash\)/, 'failed restore rolls back persisted recycle-bin data');
+
 
 
 assert.match(html, /不同单位分开统计/, 'monthly totals do not combine incompatible units');
@@ -127,8 +132,9 @@ const alerts = [];
 let failAtWrite = 0;
 let writeCount = 0;
 const context = {
-  KEY: 'jd_assistant_accounts_v3', ACTIVE: 'jd_assistant_active_v3', ROUTES: 'jd_assistant_module_routes_v1',
+  KEY: 'jd_assistant_accounts_v3', ACTIVE: 'jd_assistant_active_v3', ROUTES: 'jd_assistant_module_routes_v1', TRASH: 'jd_assistant_deleted_accounts_v1',
   activeId: 'acct1',
+  deletedAccounts: [{ id: 'oldacct', name: '已删除账号', tasks: [], incomes: [], priceWatches: [], dailyChecks: [], deletedAt: '2026-11-07T08:00:00.000Z' }],
   accounts: [{ id: 'acct1', name: '主账号', tasks: [{ id: 123, name: '签到任务', url: 'https://bean.jd.com/', status: '待核对', created: '2026-11-08' }], incomes: [{ name: '京豆签到', amount: 20, unit: 'beans', date: '2026-11-08', verifiedByUser: true, verificationSource: 'user_confirmed', verifiedAt: '2026-11-08T09:30:00.000Z' }], priceWatches: [{ id: 'pwatch1', name: '测试商品', url: 'https://item.jd.com/1.html', targetPrice: 99, records: [{ price: 89, date: '2026-11-08' }], created: '2026-11-08', enabled: true }], dailyChecks: [{ date: '2026-11-08', module: '京豆签到', checkedAt: '2026-11-08T09:00:00.000Z' }], created: '2026-11-01' }],
   localStorage: { getItem(k) { return store.has(k) ? store.get(k) : null; }, setItem(k, v) { writeCount += 1; if (failAtWrite === writeCount) throw new Error('simulated storage full'); store.set(k, String(v)); }, removeItem(k) { store.delete(k); } },
   document: { getElementById(id) { return elements[id]; } },
@@ -143,6 +149,10 @@ vm.runInContext(chunk, context);
 context.localStorage.setItem(context.ROUTES, JSON.stringify({ '京豆签到': 'https://bean.jd.com/' }));
 context.exportBackup();
 const validBackup = elements.backupData.value;
+const parsedBackup = JSON.parse(validBackup);
+assert.equal(parsedBackup.deletedAccounts.length, 1, 'backup includes recycle-bin accounts');
+assert.equal(parsedBackup.deletedAccounts[0].id, 'oldacct', 'backup preserves deleted account identity');
+assert.match(elements.backupHint.textContent, /回收站 1 个/, 'backup summary counts recycle-bin accounts');
 assert.match(elements.backupHint.textContent, /本次备份：1 个账号/, 'backup generation shows an inventory summary');
 assert.match(elements.backupHint.textContent, /收益 1 笔/, 'backup summary counts income records');
 assert.match(elements.backupHint.textContent, /价格商品 1 件（历史 1 条）/, 'backup summary counts price watch history');
@@ -155,6 +165,10 @@ context.importBackup();
 assert.match(elements.backupPreview.textContent, /待恢复备份：1 个账号/, 'restore preview shows incoming backup counts');
 assert.match(elements.backupPreview.textContent, /当前本机：/, 'restore preview compares current local data');
 assert.equal(context.accounts[0].id, 'acct1');
+assert.equal(context.deletedAccounts.length, 1, 'restore brings back recycle-bin accounts');
+assert.equal(context.deletedAccounts[0].id, 'oldacct');
+assert.equal(context.deletedAccounts[0].deletedAt, '2026-11-07T08:00:00.000Z');
+assert.equal(store.get(context.TRASH) && JSON.parse(store.get(context.TRASH))[0].id, 'oldacct', 'restore persists recycle-bin data');
 assert.equal(context.accounts[0].tasks.length, 1);
 assert.equal(context.accounts[0].incomes[0].amount, 20);
 assert.equal(context.accounts[0].incomes[0].verifiedAt, '2026-11-08T09:30:00.000Z', 'verification timestamps survive backup restore');
@@ -168,6 +182,8 @@ context.accounts = [{ id: 'before', name: 'Before', tasks: [], incomes: [] }];
 context.activeId = 'before';
 store.set(context.KEY, JSON.stringify(context.accounts));
 store.set(context.ACTIVE, 'before');
+store.set(context.TRASH, JSON.stringify([{ id: 'trash-before', name: '旧回收站', tasks: [], incomes: [] }]));
+context.deletedAccounts = [{ id: 'trash-before', name: '旧回收站', tasks: [], incomes: [] }];
 elements.backupData.value = validBackup;
 writeCount = 0;
 failAtWrite = 2;
@@ -176,6 +192,8 @@ failAtWrite = 0;
 assert.equal(context.accounts[0].id, 'before', 'failed restore must restore in-memory accounts');
 assert.equal(context.activeId, 'before', 'failed restore must restore in-memory active account');
 assert.equal(JSON.parse(store.get(context.KEY))[0].id, 'before', 'failed restore must roll back persisted accounts');
+assert.equal(JSON.parse(store.get(context.TRASH))[0].id, 'trash-before', 'failed restore must roll back persisted recycle-bin data');
+assert.equal(context.deletedAccounts[0].id, 'trash-before', 'failed restore must roll back in-memory recycle-bin data');
 
 assert.equal(context.isAllowedJdUrl('https://user:pass@bean.jd.com/'), false, 'credential-bearing URLs must be rejected');
 assert.equal(context.isAllowedJdUrl('https://bean.jd.com:8443/'), false, 'non-standard ports must be rejected');
