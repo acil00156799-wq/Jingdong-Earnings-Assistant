@@ -68,6 +68,26 @@ assert.equal(context.activeId, 'before', 'failed restore must restore in-memory 
 assert.equal(JSON.parse(store.get(context.KEY))[0].id, 'before', 'failed restore must roll back persisted accounts');
 
 const beforeId = context.accounts[0].id;
+const duplicateAccounts = JSON.parse(validBackup);
+duplicateAccounts.accounts.push({ ...duplicateAccounts.accounts[0], name: '重复 ID' });
+elements.backupData.value = JSON.stringify(duplicateAccounts);
+context.importBackup();
+assert.equal(context.accounts[0].id, beforeId, 'duplicate account IDs must be rejected');
+assert.ok(alerts.some(x => x.includes('账号 ID 不可重复')));
+
+const duplicateTasks = JSON.parse(validBackup);
+duplicateTasks.accounts[0].tasks.push({ ...duplicateTasks.accounts[0].tasks[0], name: '重复任务 ID' });
+elements.backupData.value = JSON.stringify(duplicateTasks);
+context.importBackup();
+assert.equal(context.accounts[0].id, beforeId, 'duplicate task IDs must be rejected');
+assert.ok(alerts.some(x => x.includes('任务编号重复')));
+
+const poisonedRoutes = JSON.parse(validBackup);
+poisonedRoutes.moduleRoutes = { '__proto__': 'https://bean.jd.com/' };
+elements.backupData.value = JSON.stringify(poisonedRoutes);
+context.importBackup();
+assert.equal(context.accounts[0].id, beforeId, 'unknown module route names must be rejected');
+
 const unsafe = JSON.parse(validBackup);
 unsafe.accounts[0].tasks[0].url = 'https://evil.example/';
 elements.backupData.value = JSON.stringify(unsafe);
@@ -83,4 +103,4 @@ elements.backupData.value = 'x'.repeat(2000001);
 context.importBackup();
 assert.equal(context.accounts[0].id, beforeId, 'oversized backup must not change saved data');
 
-console.log('PASS: JavaScript syntax, account-scoped claim state, pre-click ownership guard, backup export/restore and rollback, module routes, external URL rejection, malformed JSON, oversized backup');
+console.log('PASS: JavaScript syntax, account-scoped claim state, pre-click ownership guard, backup export/restore and rollback, duplicate ID rejection, module route allowlist, external URL rejection, malformed JSON, oversized backup');
