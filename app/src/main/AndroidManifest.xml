@@ -13,7 +13,7 @@
         </activity>
         <service
             android:name=".JdClaimAccessibilityService"
-            android:label="京东福利助手自动领取辅助"
+            android:label="京东福利页面识别辅助"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
             android:exported="true">
             <intent-filter>
