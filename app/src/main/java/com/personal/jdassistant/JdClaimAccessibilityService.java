@@ -139,9 +139,15 @@ public class JdClaimAccessibilityService extends AccessibilityService {
         if (label.isEmpty() && d != null) label = d.toString().trim();
 
         if (labels.contains(label)) {
+            // Only allow a nearby clickable control. Walking to an arbitrary
+            // distant clickable ancestor could click an entire card or page.
             AccessibilityNodeInfo candidate = node;
-            while (candidate != null && !candidate.isClickable()) candidate = candidate.getParent();
-            if (candidate != null && candidate.isClickable()) return candidate;
+            for (int depth = 0; candidate != null && depth <= 2; depth++) {
+                if (candidate.isVisibleToUser() && candidate.isEnabled() && candidate.isClickable()) {
+                    return candidate;
+                }
+                candidate = candidate.getParent();
+            }
         }
         for (int i = 0; i < node.getChildCount(); i++) {
             AccessibilityNodeInfo found = findClaimNode(node.getChild(i), labels);
