@@ -19,6 +19,10 @@ assert.match(claimService, /active_attempt_account_id/, 'accessibility service f
 assert.match(claimService, /account\." \+ accountId \+ "\./, 'accessibility preferences are account-scoped');
 assert.match(claimService, /manual_action_required/, 'page recognition always hands the claim action back to the user');
 assert.match(claimService, /不会代替领取/, 'page recognizer clearly states it does not claim rewards');
+const manifest = fs.readFileSync('app/src/main/AndroidManifest.xml', 'utf8');
+const strings = fs.readFileSync('app/src/main/res/values/strings.xml', 'utf8');
+assert.match(manifest, /京东福利页面识别辅助/, 'Android service label accurately describes page recognition');
+assert.match(strings, /不会点击按钮、领取权益或提交操作/, 'Android accessibility permission description discloses manual-only behavior');
 assert.doesNotMatch(claimService, /performAction\(AccessibilityNodeInfo\.ACTION_CLICK\)/, 'accessibility helper must never click JD claim controls');
 assert.doesNotMatch(claimService, /findClaimNode|allowedLabelsFor/, 'no automated claim-button targeting remains');
 assert.match(html, /最长不超过180天/, 'official JD bean expiry guidance is visible in the app');
