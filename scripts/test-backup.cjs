@@ -83,7 +83,7 @@ assert.equal(context.accounts[0].id, beforeId, 'duplicate task IDs must be rejec
 assert.ok(alerts.some(x => x.includes('任务编号重复')));
 
 const poisonedRoutes = JSON.parse(validBackup);
-poisonedRoutes.moduleRoutes = { '__proto__': 'https://bean.jd.com/' };
+poisonedRoutes.moduleRoutes = JSON.parse('{"__proto__":"https://bean.jd.com/"}');
 elements.backupData.value = JSON.stringify(poisonedRoutes);
 context.importBackup();
 assert.equal(context.accounts[0].id, beforeId, 'unknown module route names must be rejected');
