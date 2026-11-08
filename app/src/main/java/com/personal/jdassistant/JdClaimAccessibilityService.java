@@ -9,9 +9,10 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * User-started, one-shot helper. A click is allowed only when both the selected
- * welfare module's page context and an exact visible claim label match.
- * It performs at most one click per explicit user-started attempt.
+ * User-started, one-shot page-context recognizer.
+ * It reads visible text from the JD app only to identify the selected welfare
+ * page. It never clicks, submits, claims, or otherwise operates JD controls.
+ * The user must perform all actions manually inside the official JD app.
  */
 public class JdClaimAccessibilityService extends AccessibilityService {
     private static final String PREFS = "jd_claim_assistant";
@@ -65,26 +66,14 @@ public class JdClaimAccessibilityService extends AccessibilityService {
             return;
         }
 
-        Set<String> labels = allowedLabelsFor(task, pageText);
-        AccessibilityNodeInfo target = findClaimNode(root, labels);
-        if (target == null) {
-            updateStateIfChanged(prefs, prefix, "button_not_found",
-                task + "：已识别到对应页面，但暂未发现明确的领取按钮；继续等待页面加载，未执行点击");
-            return;
-        }
-
-        // Re-check ownership immediately before clicking: the user may have
-        // switched accounts while this accessibility event was being handled.
-        if (!accountId.equals(prefs.getString("active_attempt_account_id", ""))
-                || !prefs.getBoolean(prefix + "auto_claim_enabled", false)) return;
+        // Platform rules prohibit unapproved software/robot activity for
+        // claiming beans, coupons, and other benefits. This helper therefore
+        // stops at page recognition and leaves the actual claim action to the user.
         actionAttempted = true;
-        boolean clicked = target.performAction(AccessibilityNodeInfo.ACTION_CLICK);
         SharedPreferences.Editor resultEdit = prefs.edit()
             .putBoolean(prefix + "auto_claim_enabled", false)
-            .putString(prefix + "claim_state", clicked ? "clicked_unverified" : "click_failed")
-            .putString(prefix + "last_result", clicked
-                ? task + "：已点击一个匹配的领取按钮，尚未确认领取成功或到账"
-                : task + "：找到匹配按钮，但点击未成功；未确认到账")
+            .putString(prefix + "claim_state", "manual_action_required")
+            .putString(prefix + "last_result", task + "：已识别到对应页面。请你在京东官方 App 内自行查看并点击；本助手不会代替领取，也不会判断到账。")
             .putLong(prefix + "last_action_time", System.currentTimeMillis());
         if (accountId.equals(prefs.getString("active_attempt_account_id", ""))) resultEdit.remove("active_attempt_account_id");
         resultEdit.apply();
@@ -106,26 +95,6 @@ public class JdClaimAccessibilityService extends AccessibilityService {
         if (!state.equals(prefs.getString(prefix + "claim_state", ""))) {
             prefs.edit().putString(prefix + "claim_state", state).putString(prefix + "last_result", message).apply();
         }
-    }
-
-    private Set<String> allowedLabelsFor(String task, String pageText) {
-        Set<String> labels = new HashSet<>();
-        if ("京豆签到".equals(task)) {
-            if (pageText.contains("京豆") && (pageText.contains("签到") || pageText.contains("领豆"))) {
-                labels.addAll(Arrays.asList("签到领京豆", "领取京豆"));
-            }
-        } else if ("每日红包".equals(task) || "京东红包".equals(task)) {
-            if (pageText.contains("红包") && (pageText.contains("每日") || pageText.contains("签到"))) {
-                labels.add("领取红包");
-            }
-        } else if ("宠汪汪".equals(task) || "游戏福利".equals(task)) {
-            // These pages may contain several unrelated “领取奖励” controls.
-            // Keep recognition status visible, but do not auto-click until the
-            // exact claim control has been verified against a real page sample.
-        }
-        // “其他活动” intentionally remains manual until its page and button
-        // semantics are identified, preventing a generic button from being clicked.
-        return labels;
     }
 
     private String collectVisibleText(AccessibilityNodeInfo node) {
