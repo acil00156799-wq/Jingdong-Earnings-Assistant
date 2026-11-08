@@ -17,7 +17,12 @@ assert.match(mainJava, /无障碍权限已关闭，旧任务已停止/, 'disabli
 assert.match(mainJava, /Math\.max\(now, p\.getLong\(prefix \+ "attempt_id", 0L\) \+ 1L\)/, 'repeated attempts receive a fresh attempt id');
 assert.match(claimService, /active_attempt_account_id/, 'accessibility service follows the active account attempt');
 assert.match(claimService, /account\." \+ accountId \+ "\./, 'accessibility preferences are account-scoped');
-assert.match(claimService, /Re-check ownership immediately before clicking/, 'service rechecks account ownership before a click');
+assert.match(claimService, /manual_action_required/, 'page recognition always hands the claim action back to the user');
+assert.match(claimService, /不会代替领取/, 'page recognizer clearly states it does not claim rewards');
+assert.doesNotMatch(claimService, /performAction\(AccessibilityNodeInfo\.ACTION_CLICK\)/, 'accessibility helper must never click JD claim controls');
+assert.doesNotMatch(claimService, /findClaimNode|allowedLabelsFor/, 'no automated claim-button targeting remains');
+assert.match(hc, /最长不超过180天/, 'official JD bean expiry guidance is visible in the app');
+assert.match(hc, /未经认可的软件\/机器人/, 'app warns against unapproved automated claiming');
 assert.match(html, /help\.jd\.com\/user\/issue\/167-4224\.html/, 'official JD bean help source is present');
 assert.match(html, /help\.jd\.com\/user\/issue\/168-4458\.html/, 'official JD red packet help source is present');
 assert.match(html, /help\.jd\.com\/user\/issue\/169-335\.html/, 'official JD coupon help source is present');
