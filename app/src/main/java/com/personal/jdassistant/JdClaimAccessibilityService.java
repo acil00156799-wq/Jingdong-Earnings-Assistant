@@ -25,19 +25,22 @@ public class JdClaimAccessibilityService extends AccessibilityService {
         if (!"com.jingdong.app.mall".contentEquals(event.getPackageName())) return;
 
         SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
-        if (!prefs.getBoolean("auto_claim_enabled", false)) return;
+        String accountId = prefs.getString("active_attempt_account_id", "");
+        if (accountId.isEmpty()) return;
+        String prefix = "account." + accountId + ".";
+        if (!prefs.getBoolean(prefix + "auto_claim_enabled", false)) return;
 
-        long startedAt = prefs.getLong("attempt_started_at", 0L);
+        long startedAt = prefs.getLong(prefix + "attempt_started_at", 0L);
         if (startedAt > 0L && System.currentTimeMillis() - startedAt > MAX_ATTEMPT_MS) {
-            prefs.edit()
-                .putBoolean("auto_claim_enabled", false)
-                .putString("claim_state", "timeout")
-                .putString("last_result", "识别等待超过3分钟，已自动停止；未执行领取点击")
-                .apply();
+            SharedPreferences.Editor edit = prefs.edit().putBoolean(prefix + "auto_claim_enabled", false)
+                .putString(prefix + "claim_state", "timeout")
+                .putString(prefix + "last_result", "识别等待超过3分钟，已自动停止；未执行领取点击");
+            if (accountId.equals(prefs.getString("active_attempt_account_id", ""))) edit.remove("active_attempt_account_id");
+            edit.apply();
             return;
         }
 
-        long attemptId = prefs.getLong("attempt_id", -1L);
+        long attemptId = prefs.getLong(prefix + "attempt_id", -1L);
         if (attemptId != lastAttemptId) {
             lastAttemptId = attemptId;
             actionAttempted = false;
@@ -48,14 +51,14 @@ public class JdClaimAccessibilityService extends AccessibilityService {
         if (type != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
                 && type != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return;
 
-        String task = prefs.getString("selected_task", "其他活动");
+        String task = prefs.getString(prefix + "selected_task", "其他活动");
         AccessibilityNodeInfo root = getRootInActiveWindow();
         if (root == null) return;
 
         String pageText = collectVisibleText(root);
         boolean pageMatched = isTargetPage(task, pageText);
         if (!pageMatched) {
-            updateStateIfChanged(prefs, "page_not_matched",
+            updateStateIfChanged(prefs, prefix, "page_not_matched",
                 task + "：当前页面尚未识别为对应福利页面，未执行点击；请停留在该模块页面");
             return;
         }
@@ -63,21 +66,22 @@ public class JdClaimAccessibilityService extends AccessibilityService {
         Set<String> labels = allowedLabelsFor(task, pageText);
         AccessibilityNodeInfo target = findClaimNode(root, labels);
         if (target == null) {
-            updateStateIfChanged(prefs, "button_not_found",
+            updateStateIfChanged(prefs, prefix, "button_not_found",
                 task + "：已识别到对应页面，但暂未发现明确的领取按钮；继续等待页面加载，未执行点击");
             return;
         }
 
         actionAttempted = true;
         boolean clicked = target.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-        prefs.edit()
-            .putBoolean("auto_claim_enabled", false)
-            .putString("claim_state", clicked ? "clicked_unverified" : "click_failed")
-            .putString("last_result", clicked
+        SharedPreferences.Editor resultEdit = prefs.edit()
+            .putBoolean(prefix + "auto_claim_enabled", false)
+            .putString(prefix + "claim_state", clicked ? "clicked_unverified" : "click_failed")
+            .putString(prefix + "last_result", clicked
                 ? task + "：已点击一个匹配的领取按钮，尚未确认领取成功或到账"
                 : task + "：找到匹配按钮，但点击未成功；未确认到账")
-            .putLong("last_action_time", System.currentTimeMillis())
-            .apply();
+            .putLong(prefix + "last_action_time", System.currentTimeMillis());
+        if (accountId.equals(prefs.getString("active_attempt_account_id", ""))) resultEdit.remove("active_attempt_account_id");
+        resultEdit.apply();
     }
 
     private boolean isTargetPage(String task, String pageText) {
@@ -92,9 +96,9 @@ public class JdClaimAccessibilityService extends AccessibilityService {
         return false;
     }
 
-    private void updateStateIfChanged(SharedPreferences prefs, String state, String message) {
-        if (!state.equals(prefs.getString("claim_state", ""))) {
-            prefs.edit().putString("claim_state", state).putString("last_result", message).apply();
+    private void updateStateIfChanged(SharedPreferences prefs, String prefix, String state, String message) {
+        if (!state.equals(prefs.getString(prefix + "claim_state", ""))) {
+            prefs.edit().putString(prefix + "claim_state", state).putString(prefix + "last_result", message).apply();
         }
     }
 
@@ -158,9 +162,12 @@ public class JdClaimAccessibilityService extends AccessibilityService {
 
     @Override
     public void onInterrupt() {
-        getSharedPreferences(PREFS, MODE_PRIVATE).edit()
-            .putBoolean("auto_claim_enabled", false)
-            .putString("last_result", "自动领取辅助已中断")
-            .apply();
+        SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
+        String accountId = prefs.getString("active_attempt_account_id", "");
+        if (accountId.isEmpty()) return;
+        String prefix = "account." + accountId + ".";
+        prefs.edit().putBoolean(prefix + "auto_claim_enabled", false)
+            .putString(prefix + "last_result", "自动领取辅助已中断")
+            .remove("active_attempt_account_id").apply();
     }
 }
