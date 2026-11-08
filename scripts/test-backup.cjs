@@ -22,11 +22,13 @@ const chunk = script.slice(start, end);
 const store = new Map();
 const elements = { backupData: { value: '', focus() {}, select() {} }, backupHint: { textContent: '' } };
 const alerts = [];
+let failAtWrite = 0;
+let writeCount = 0;
 const context = {
   KEY: 'jd_assistant_accounts_v3', ACTIVE: 'jd_assistant_active_v3', ROUTES: 'jd_assistant_module_routes_v1',
   activeId: 'acct1',
   accounts: [{ id: 'acct1', name: '主账号', tasks: [{ id: 123, name: '签到任务', url: 'https://bean.jd.com/', status: '待核对', created: '2026-11-08' }], incomes: [{ name: '京豆签到', amount: 20, unit: 'beans', date: '2026-11-08', verifiedByUser: true, verificationSource: 'user_confirmed' }], created: '2026-11-01' }],
-  localStorage: { getItem(k) { return store.has(k) ? store.get(k) : null; }, setItem(k, v) { store.set(k, String(v)); }, removeItem(k) { store.delete(k); } },
+  localStorage: { getItem(k) { return store.has(k) ? store.get(k) : null; }, setItem(k, v) { writeCount += 1; if (failAtWrite === writeCount) throw new Error('simulated storage full'); store.set(k, String(v)); }, removeItem(k) { store.delete(k); } },
   document: { getElementById(id) { return elements[id]; } },
   alert(message) { alerts.push(String(message)); }, confirm() { return true; },
   moduleRoutes() { try { return JSON.parse(store.get('jd_assistant_module_routes_v1') || '{}'); } catch { return {}; } },
@@ -48,6 +50,20 @@ assert.equal(context.accounts[0].tasks.length, 1);
 assert.equal(context.accounts[0].incomes[0].amount, 20);
 assert.equal(JSON.parse(context.localStorage.getItem(context.ROUTES))['京豆签到'], 'https://bean.jd.com/');
 
+// A failed multi-key restore must roll back both persisted data and in-memory state.
+context.accounts = [{ id: 'before', name: 'Before', tasks: [], incomes: [] }];
+context.activeId = 'before';
+store.set(context.KEY, JSON.stringify(context.accounts));
+store.set(context.ACTIVE, 'before');
+elements.backupData.value = validBackup;
+writeCount = 0;
+failAtWrite = 2;
+context.importBackup();
+failAtWrite = 0;
+assert.equal(context.accounts[0].id, 'before', 'failed restore must restore in-memory accounts');
+assert.equal(context.activeId, 'before', 'failed restore must restore in-memory active account');
+assert.equal(JSON.parse(store.get(context.KEY))[0].id, 'before', 'failed restore must roll back persisted accounts');
+
 const beforeId = context.accounts[0].id;
 const unsafe = JSON.parse(validBackup);
 unsafe.accounts[0].tasks[0].url = 'https://evil.example/';
@@ -64,4 +80,4 @@ elements.backupData.value = 'x'.repeat(2000001);
 context.importBackup();
 assert.equal(context.accounts[0].id, beforeId, 'oversized backup must not change saved data');
 
-console.log('PASS: JavaScript syntax, account-scoped claim state, pre-click ownership guard, backup export/restore, module routes, external URL rejection, malformed JSON, oversized backup');
+console.log('PASS: JavaScript syntax, account-scoped claim state, pre-click ownership guard, backup export/restore and rollback, module routes, external URL rejection, malformed JSON, oversized backup');
