@@ -60,6 +60,14 @@ footer{text-align:center;color:#aaa;font-size:11px;padding:16px}
 <div class="muted" id="routeHint">尚未设置专属活动链接</div></div>
 <button class="primary-action" onclick="startOneClaim()">一键启动领取识别</button><button class="secondary" style="margin-top:8px" onclick="openAccessibility()">开启/检查无障碍权限</button><button class="danger" style="margin-top:8px" onclick="stopClaim()">停止本次识别</button><div class="status" id="claimStatus">状态：等待启动</div>
 <div class="note">当前版本会打开京东并识别页面上明确的领取按钮；单次点击不代表全部任务已完成或奖励已到账。</div></section>
+<details><summary>官方规则与核验入口</summary>
+<h3>京东官方帮助中心</h3>
+<p class="muted">这里提供京东官方公开规则和账户核验路径。打开后请以京东 App 当前页面和你的账号实际显示为准；本助手不会读取账户余额或自动判断奖励到账。</p>
+<div class="module"><h4>京豆获取与购物返豆</h4><p class="muted">官方说明：京豆可来自购物、评价、晒单和活动；部分购物返豆需在“我的-京豆”中手动领取，并有领取有效期。</p><button class="secondary" onclick="openOfficialHelp('https://help.jd.com/user/issue/167-4224.html')">查看京豆官方规则</button></div>
+<div class="module"><h4>红包获取与查看</h4><p class="muted">官方说明：红包可通过推广或游戏活动获得；账户红包可在“我的-我的钱包-红包”查看，具体以活动规则为准。</p><button class="secondary" onclick="openOfficialHelp('https://help.jd.com/user/issue/168-4458.html')">查看红包官方说明</button></div>
+<div class="module"><h4>优惠券领取</h4><p class="muted">官方帮助中心指引：京东 App 首页点击“领券”进入领券中心；领取资格、有效期和适用范围以券面为准。</p><button class="secondary" onclick="openOfficialHelp('https://help.jd.com/user/issue/169-335.html')">查看优惠券官方指引</button></div>
+<div class="note">来源仅限京东官方帮助中心公开页面。若官方页面规则更新，以官方页面为准；不使用第三方脚本、账号 Cookie 或非公开接口读取个人数据。</div>
+</details>
 <details><summary>任务记录与自定义任务</summary><h3>当前账号任务记录</h3>
 <input id="taskName" placeholder="任务名称，例如：京豆购物返豆领取">
 <input id="taskUrl" placeholder="可选：京东活动链接（http/https）">
@@ -96,6 +104,7 @@ function addAccount(){const el=document.getElementById('newAccountName'),name=el
 function renameAccount(){const a=current(),name=prompt('修改账号备注',a.name);if(name===null)return;const v=name.trim();if(!v){alert('备注不能为空');return}if(accounts.some(x=>x.id!==a.id&&x.name===v)){alert('已有同名账号备注');return}a.name=v;save()}
 function deleteAccount(){if(accounts.length===1){alert('至少保留一个账号');return}const a=current();if(!confirm('确定删除“'+a.name+'”及其本工具中的任务和收益记录吗？此操作不可撤销。'))return;try{if(window.AndroidBridge)AndroidBridge.stopClaimAttempt(a.id)}catch(e){}accounts=accounts.filter(x=>x.id!==a.id);activeId=accounts[0].id;save()}
 function openJd(){try{const ok=window.AndroidBridge&&AndroidBridge.openJdApp();if(!ok)alert('没有检测到京东 App，请先安装京东官方 App。')}catch(e){alert('暂时无法打开京东 App，请确认已安装。')}}
+function openOfficialHelp(url){if(!isAllowedJdUrl(url)){alert('官方帮助链接校验失败，已阻止打开');return}try{if(window.AndroidBridge&&AndroidBridge.openJdUrl(url))return}catch(e){}try{window.open(url,'_blank','noopener')}catch(e){alert('无法打开官方帮助页面，请在浏览器访问：'+url)}}
 function moduleRoutes(){try{return JSON.parse(localStorage.getItem(ROUTES)||'{}')}catch(e){return {}}}
 function isAllowedJdUrl(value){try{const u=new URL(value);const host=u.hostname.toLowerCase();return u.protocol==='https:'&&!u.username&&!u.password&&(!u.port||u.port==='443')&&(host==='jd.com'||host.endsWith('.jd.com')||host==='jingdong.com'||host.endsWith('.jingdong.com'))}catch(e){return false}}
 function saveModuleRoute(){const name=document.getElementById('routeModule').value,url=document.getElementById('routeUrl').value.trim();if(!url){alert('请先粘贴京东活动链接');return}if(!isAllowedJdUrl(url)){alert('为保护账号安全，只接受京东官方 HTTPS 链接（jd.com / jingdong.com）');return}const routes=moduleRoutes();routes[name]=url;localStorage.setItem(ROUTES,JSON.stringify(routes));renderRouteHint()}
