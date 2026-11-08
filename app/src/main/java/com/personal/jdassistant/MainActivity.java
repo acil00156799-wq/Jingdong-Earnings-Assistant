@@ -80,9 +80,10 @@ public class MainActivity extends Activity {
             String selected = taskName == null ? "其他活动" : taskName.trim();
             if (selected.isEmpty()) selected = "其他活动";
             long now = System.currentTimeMillis();
+            long attemptId = Math.max(now, p.getLong(prefix + "attempt_id", 0L) + 1L);
             edit.putString("active_attempt_account_id", accountId)
                 .putString(prefix + "selected_task", selected)
-                .putLong(prefix + "attempt_id", now)
+                .putLong(prefix + "attempt_id", attemptId)
                 .putLong(prefix + "attempt_started_at", now)
                 .putBoolean(prefix + "auto_claim_enabled", true)
                 .putString(prefix + "claim_state", "waiting_page")
