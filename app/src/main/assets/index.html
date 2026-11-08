@@ -84,7 +84,7 @@ footer{text-align:center;color:#aaa;font-size:11px;padding:16px}
 </details>
 <details><summary>数据备份与恢复</summary>
 <h3>本机数据备份</h3>
-<p class="muted">备份包含账号备注、任务、收益登记和各模块京东链接。不包含京东登录密码、验证码或登录凭据。建议定期复制备份并保存到手机文件或自己的安全位置。</p>
+<p class="muted">备份包含账号备注、任务、收益登记、商品价格监测及各模块京东链接。不包含京东登录密码、验证码或登录凭据。建议定期复制备份并保存到手机文件或自己的安全位置。</p>
 <div class="rowbtn"><button onclick="exportBackup()">生成备份</button><button class="secondary" onclick="copyBackup()">复制备份内容</button></div>
 <textarea id="backupData" rows="7" placeholder="点击“生成备份”后，这里会显示备份内容；恢复时也可将备份粘贴到这里。" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;font-size:11px;line-height:1.5;resize:vertical"></textarea>
 <button class="danger" style="margin-top:8px" onclick="importBackup()">从备份恢复（将替换本机数据）</button>
@@ -225,14 +225,14 @@ function importBackup(){
   if(typeof url==='string'&&url.length<=2048&&isAllowedJdUrl(url))safeRoutes[name]=url;
   else if(url){alert('模块链接中存在非京东官方 HTTPS 地址或格式异常，已拒绝导入');return}
  }
- if(!confirm('确定恢复这份备份吗？本机现有账号、任务、收益记录和模块链接将被备份内容替换。建议先生成一份当前备份。'))return;
+ if(!confirm('确定恢复这份备份吗？本机现有账号、任务、收益记录、商品价格监测和模块链接将被备份内容替换。建议先生成一份当前备份。'))return;
  const nextActive=safeAccounts.some(a=>a.id===data.activeId)?data.activeId:safeAccounts[0].id;
  const previous={accounts:localStorage.getItem(KEY),active:localStorage.getItem(ACTIVE),routes:localStorage.getItem(ROUTES)};
  const previousMemory={accounts,activeId};
  try{
   localStorage.setItem(KEY,JSON.stringify(safeAccounts));localStorage.setItem(ACTIVE,nextActive);localStorage.setItem(ROUTES,JSON.stringify(safeRoutes));
   accounts=safeAccounts;activeId=nextActive;render();renderRouteHint();
-  document.getElementById('backupHint').textContent='恢复完成：已载入 '+accounts.length+' 个账号。请检查各账号记录是否完整。';
+  document.getElementById('backupHint').textContent='恢复完成：已载入 '+accounts.length+' 个账号，包含价格监测记录。请检查各账号数据是否完整。';
  }catch(e){
   try{previous.accounts===null?localStorage.removeItem(KEY):localStorage.setItem(KEY,previous.accounts);previous.active===null?localStorage.removeItem(ACTIVE):localStorage.setItem(ACTIVE,previous.active);previous.routes===null?localStorage.removeItem(ROUTES):localStorage.setItem(ROUTES,previous.routes)}catch(rollbackError){}
   accounts=previousMemory.accounts;activeId=previousMemory.activeId;
