@@ -54,11 +54,12 @@ footer{text-align:center;color:#aaa;font-size:11px;padding:16px}
 <button class="launch" onclick="startTaskShortcut('每日红包')"><span class="ico">🧧</span><span>每日红包</span></button>
 <button class="launch" onclick="startTaskShortcut('宠汪汪')"><span class="ico">🐶</span><span>宠汪汪</span></button>
 <button class="launch" onclick="startTaskShortcut('京东红包')"><span class="ico">🎁</span><span>京东红包</span></button>
+<button class="launch" onclick="startTaskShortcut('优惠券领取')"><span class="ico">🎟️</span><span>优惠券领取</span></button>
 <button class="launch" onclick="startTaskShortcut('游戏福利')"><span class="ico">🎮</span><span>游戏福利</span></button>
 <button class="launch" onclick="startTaskShortcut('其他活动')"><span class="ico">⭐</span><span>其他活动</span></button>
 </div>
 <div class="module" style="margin-top:12px"><h4>固定福利入口链接（可选）</h4><p class="muted">如果你已从京东官方 App 分享某项福利的活动链接，可在这里保存。以后点击对应入口时，助手会优先尝试打开该链接；未设置时仍打开京东首页。</p>
-<select id="routeModule" aria-label="选择福利模块"><option>京豆签到</option><option>每日红包</option><option>宠汪汪</option><option>京东红包</option><option>游戏福利</option><option>其他活动</option></select>
+<select id="routeModule" aria-label="选择福利模块"><option>京豆签到</option><option>每日红包</option><option>宠汪汪</option><option>京东红包</option><option>优惠券领取</option><option>游戏福利</option><option>其他活动</option></select>
 <input id="routeUrl" placeholder="粘贴京东活动链接（http/https）">
 <div class="rowbtn"><button class="secondary" onclick="saveModuleRoute()">保存此模块链接</button><button class="danger" onclick="clearModuleRoute()">清除此模块链接</button></div>
 <div class="muted" id="routeHint">尚未设置专属活动链接</div></div>
@@ -228,7 +229,7 @@ function refreshClaimStatus(){try{if(window.AndroidBridge&&document.getElementBy
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshClaimStatus()});
 setInterval(refreshClaimStatus,1500);
 
-const DAILY_MODULES=['京豆签到','每日红包','宠汪汪','京东红包','游戏福利','其他活动'];
+const DAILY_MODULES=['京豆签到','每日红包','宠汪汪','京东红包','优惠券领取','游戏福利','其他活动'];
 function localDayKey(d=new Date()){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return y+'-'+m+'-'+day}
 function openDailyModule(moduleName){
  if(!DAILY_MODULES.includes(moduleName))return;
