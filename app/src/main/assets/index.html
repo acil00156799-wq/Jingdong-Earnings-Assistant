@@ -91,10 +91,10 @@ if(!accounts.some(a=>a.id===activeId))activeId=accounts[0].id;
 function current(){return accounts.find(a=>a.id===activeId)||accounts[0]}
 function save(){localStorage.setItem(KEY,JSON.stringify(accounts));localStorage.setItem(ACTIVE,activeId);render()}
 function money(n){return '¥'+Number(n||0).toFixed(2)}
-function switchAccount(id){if(!accounts.some(a=>a.id===id))return;activeId=id;save()}
-function addAccount(){const el=document.getElementById('newAccountName'),name=el.value.trim();if(!name){alert('请先填写账号备注');return}if(accounts.some(a=>a.name===name)){alert('已有同名备注，请换一个名称');return}const a=makeAccount(name);accounts.push(a);activeId=a.id;el.value='';save()}
+function switchAccount(id){if(!accounts.some(a=>a.id===id))return;try{if(window.AndroidBridge)AndroidBridge.stopClaimAttempt(current().id)}catch(e){}activeId=id;save()}
+function addAccount(){const el=document.getElementById('newAccountName'),name=el.value.trim();if(!name){alert('请先填写账号备注');return}if(accounts.some(a=>a.name===name)){alert('已有同名备注，请换一个名称');return}const a=makeAccount(name);try{if(window.AndroidBridge)AndroidBridge.stopClaimAttempt(current().id)}catch(e){}accounts.push(a);activeId=a.id;el.value='';save()}
 function renameAccount(){const a=current(),name=prompt('修改账号备注',a.name);if(name===null)return;const v=name.trim();if(!v){alert('备注不能为空');return}if(accounts.some(x=>x.id!==a.id&&x.name===v)){alert('已有同名账号备注');return}a.name=v;save()}
-function deleteAccount(){if(accounts.length===1){alert('至少保留一个账号');return}const a=current();if(!confirm('确定删除“'+a.name+'”及其本工具中的任务和收益记录吗？此操作不可撤销。'))return;accounts=accounts.filter(x=>x.id!==a.id);activeId=accounts[0].id;save()}
+function deleteAccount(){if(accounts.length===1){alert('至少保留一个账号');return}const a=current();if(!confirm('确定删除“'+a.name+'”及其本工具中的任务和收益记录吗？此操作不可撤销。'))return;try{if(window.AndroidBridge)AndroidBridge.stopClaimAttempt(a.id)}catch(e){}accounts=accounts.filter(x=>x.id!==a.id);activeId=accounts[0].id;save()}
 function openJd(){try{const ok=window.AndroidBridge&&AndroidBridge.openJdApp();if(!ok)alert('没有检测到京东 App，请先安装京东官方 App。')}catch(e){alert('暂时无法打开京东 App，请确认已安装。')}}
 function moduleRoutes(){try{return JSON.parse(localStorage.getItem(ROUTES)||'{}')}catch(e){return {}}}
 function isAllowedJdUrl(value){try{const u=new URL(value);const host=u.hostname.toLowerCase();return u.protocol==='https:'&&(host==='jd.com'||host.endsWith('.jd.com')||host==='jingdong.com'||host.endsWith('.jingdong.com'))}catch(e){return false}}
@@ -106,9 +106,9 @@ document.getElementById('routeModule').addEventListener('change',renderRouteHint
 function openAccessibility(){try{if(window.AndroidBridge)AndroidBridge.openAccessibilitySettings();else alert('请在系统设置中开启本助手的无障碍服务。')}catch(e){alert('请在系统设置中开启本助手的无障碍服务。')}}
 function startTaskShortcut(name){try{if(!window.AndroidBridge){alert('请安装本助手 APK 后使用');return}if(!AndroidBridge.startOneClaimAttempt(name,current().id)){setTaskHint('请先开启本助手的无障碍权限，再启动'+name);openAccessibility();return}setTaskHint(name+'：已启动对应模块识别，正在打开京东');const url=moduleRoutes()[name];if(url){const ok=AndroidBridge.openJdUrl(url);if(!ok){setTaskHint(name+'：活动链接无法打开，请检查链接或手动进入京东');openJd()}}else openJd()}catch(e){setTaskHint(name+'：启动失败，请检查无障碍权限')}}
 function startOneClaim(){try{if(!window.AndroidBridge){alert('请安装 Android APK 后使用自动化功能。');return}if(!AndroidBridge.startOneClaimAttempt('其他活动',current().id)){setTaskHint('请先开启本助手的无障碍权限');openAccessibility();return}setTaskHint('已启动安全识别；其他活动仍需人工核对');openJd()}catch(e){setTaskHint('启动失败，请检查无障碍权限')}}
-function stopClaim(){try{if(window.AndroidBridge)AndroidBridge.stopClaimAttempt();setTaskHint('已停止')}catch(e){setTaskHint('停止请求已发送')}}
+function stopClaim(){try{if(window.AndroidBridge)AndroidBridge.stopClaimAttempt(current().id);setTaskHint('已停止')}catch(e){setTaskHint('停止请求已发送')}}
 function setTaskHint(message){const el=document.getElementById('claimStatus');if(el)el.textContent='任务辅助状态：'+message;}
-function refreshClaimStatus(){try{if(window.AndroidBridge&&document.getElementById('claimStatus'))document.getElementById('claimStatus').textContent='任务辅助状态：'+AndroidBridge.getClaimStatus()}catch(e){}}
+function refreshClaimStatus(){try{if(window.AndroidBridge&&document.getElementById('claimStatus'))document.getElementById('claimStatus').textContent='任务辅助状态：'+AndroidBridge.getClaimStatus(current().id)}catch(e){}}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshClaimStatus()});
 setInterval(refreshClaimStatus,1500);
 
