@@ -89,6 +89,13 @@ assert.match(html, /id="allPending"/, 'all-account dashboard includes pending ca
 assert.match(html, /id="allBeans"/, 'all-account dashboard includes verified bean totals');
 assert.match(html, /id="allRedpackets"/, 'all-account dashboard includes verified red packet totals');
 assert.match(html, /verifiedAt:typeof x\.verifiedAt==='string'\?x\.verifiedAt:undefined/, 'backup restore preserves verification timestamps');
+assert.match(html, /async function inspectStorageHealth\(/, 'storage health check is available');
+assert.match(html, /localStorage\.length/, 'storage inspection counts local storage entries');
+assert.match(html, /unescape\(encodeURIComponent\(key\+value\)\)\.length/, 'storage usage is estimated using UTF-8 byte length');
+assert.match(html, /navigator\.storage&&navigator\.storage\.estimate/, 'storage inspection uses the browser quota estimate when available');
+assert.match(html, /total>=4\*1024\*1024/, 'storage inspection warns before the common local-storage limit range');
+assert.match(html, /检查失败：本机存储暂时无法读取/, 'storage inspection handles local storage read failures safely');
+assert.match(html, /id="storageHealth"/, 'storage inspection has a visible result area');
 assert.match(html, /function accountDeleteSummary\(/, 'account deletion previews the account data inventory');
 assert.match(html, /const typed=prompt\(/, 'account deletion requires typed confirmation after the warning');
 assert.match(html, /typed!==a\.name/, 'mismatched account name cancels deletion');
