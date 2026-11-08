@@ -41,80 +41,495 @@ footer{text-align:center;color:#aaa;font-size:11px;padding:16px}
 <div class="rowbtn"><button class="secondary" onclick="renameAccount()">修改备注</button><button class="danger" onclick="deleteAccount()">删除当前账号</button></div>
 <input id="newAccountName" placeholder="输入账号备注，例如：主账号、家人账号">
 <button onclick="addAccount()">＋ 添加账号</button>
+<div class="module"><h4>账号回收站</h4><div class="muted">移入回收站的账号会保留完整数据；恢复后可继续使用。清除应用数据或卸载应用可能使回收站丢失。</div><div id="deletedAccountsList" class="muted">正在读取回收站…</div></div>
 <div class="note">这里仅保存账号备注和各自的统计数据，不保存京东密码、短信验证码或登录凭据。切换统计账号不会自动切换京东 App 的登录身份；请在京东官方 App 内自行确认当前登录账号。</div>
 </details>
-<section class="card"><h3>我的收益</h3><div class="big" id="activeTotal">¥0.00</div><div class="muted">累计登记收益</div><div class="grid" style="margin-top:12px"><div class="item">本月收益<strong id="activeMonth">¥0.00</strong></div><div class="item">收益记录<strong id="activeCount">0</strong></div><div class="item">京豆到账<strong id="activeBeans">0 个</strong></div><div class="item">红包到账<strong id="activeRedpackets">0 个</strong></div></div></section>
-<details><summary>所有账号收益汇总</summary><h3>所有账号汇总</h3><div class="big" id="allTotal">¥0.00</div><div class="muted">全部账号累计登记收益（仅汇总本工具中保存的数据）</div><div id="accountSummary" class="muted"></div></details>
+<section class="card"><h3>我的收益</h3><div class="big" id="activeTotal">¥0.00</div><div class="muted">已核验到账累计（不含导入待核验记录）</div><div class="grid" style="margin-top:12px"><div class="item">本月已核验<strong id="activeMonth">¥0.00</strong></div><div class="item">待核验金额<strong id="activePending">¥0.00</strong></div><div class="item">收益记录<strong id="activeCount">0</strong></div><div class="item">京豆到账<strong id="activeBeans">0 个</strong></div><div class="item">红包到账<strong id="activeRedpackets">0 个</strong></div></div></section>
+<details><summary>所有账号收益汇总</summary><h3>所有账号汇总</h3><div class="big" id="allTotal">¥0.00</div><div class="muted">全部账号已核验到账金额（不含导入待核验记录）</div>
+<div class="grid" style="margin-top:10px"><div class="item">待核验金额<strong id="allPending">¥0.00</strong></div><div class="item">已核验京豆<strong id="allBeans">0 个</strong></div><div class="item">已核验红包<strong id="allRedpackets">0 个</strong></div></div>
+<div id="accountSummary" class="muted"></div></details>
+<section class="card"><h3>今日福利清单</h3><div class="muted" id="dailyProgress">今天还没有核对项目</div><div id="dailyChecklist"></div><p class="muted">每天自动按日期显示新的清单；每项可直接打开已保存的京东活动链接；返回后由你亲自核对并点击“已检查”才会记为完成。未设置专属链接时打开京东首页。完成清单不代表奖励到账，到账请在下方单独登记。</p></section>
 <section class="card"><h3>福利入口</h3><div class="launch-grid">
 <button class="launch" onclick="startTaskShortcut('京豆签到')"><span class="ico">🫘</span><span>京豆签到</span></button>
 <button class="launch" onclick="startTaskShortcut('每日红包')"><span class="ico">🧧</span><span>每日红包</span></button>
 <button class="launch" onclick="startTaskShortcut('宠汪汪')"><span class="ico">🐶</span><span>宠汪汪</span></button>
 <button class="launch" onclick="startTaskShortcut('京东红包')"><span class="ico">🎁</span><span>京东红包</span></button>
+<button class="launch" onclick="startTaskShortcut('优惠券领取')"><span class="ico">🎟️</span><span>优惠券领取</span></button>
 <button class="launch" onclick="startTaskShortcut('游戏福利')"><span class="ico">🎮</span><span>游戏福利</span></button>
 <button class="launch" onclick="startTaskShortcut('其他活动')"><span class="ico">⭐</span><span>其他活动</span></button>
 </div>
 <div class="module" style="margin-top:12px"><h4>固定福利入口链接（可选）</h4><p class="muted">如果你已从京东官方 App 分享某项福利的活动链接，可在这里保存。以后点击对应入口时，助手会优先尝试打开该链接；未设置时仍打开京东首页。</p>
-<select id="routeModule" aria-label="选择福利模块"><option>京豆签到</option><option>每日红包</option><option>宠汪汪</option><option>京东红包</option><option>游戏福利</option><option>其他活动</option></select>
+<select id="routeModule" aria-label="选择福利模块"><option>京豆签到</option><option>每日红包</option><option>宠汪汪</option><option>京东红包</option><option>优惠券领取</option><option>游戏福利</option><option>其他活动</option></select>
 <input id="routeUrl" placeholder="粘贴京东活动链接（http/https）">
 <div class="rowbtn"><button class="secondary" onclick="saveModuleRoute()">保存此模块链接</button><button class="danger" onclick="clearModuleRoute()">清除此模块链接</button></div>
 <div class="muted" id="routeHint">尚未设置专属活动链接</div></div>
-<button class="primary-action" onclick="startOneClaim()">一键启动领取识别</button><button class="secondary" style="margin-top:8px" onclick="openAccessibility()">开启/检查无障碍权限</button><button class="danger" style="margin-top:8px" onclick="stopClaim()">停止本次识别</button><div class="status" id="claimStatus">状态：等待启动</div>
-<div class="note">当前版本会打开京东并识别页面上明确的领取按钮；单次点击不代表全部任务已完成或奖励已到账。</div></section>
+<button class="primary-action" onclick="startOneClaim()">启动页面识别辅助</button><button class="secondary" style="margin-top:8px" onclick="openAccessibility()">开启/检查无障碍权限</button><button class="danger" style="margin-top:8px" onclick="stopClaim()">停止页面识别</button><div class="status" id="claimStatus">状态：等待启动</div>
+<div class="note">页面识别辅助只识别当前京东页面，不会代替你点击、领取或提交。请在京东官方 App 内手动操作，并以账户实际到账为准。京东规则禁止使用未经认可的软件/机器人领取京豆、优惠券等权益。</div></section>
+<details><summary>官方规则与核验入口</summary>
+<h3>京东官方帮助中心</h3>
+<p class="muted">这里提供京东官方公开规则和账户核验路径。打开后请以京东 App 当前页面和你的账号实际显示为准；本助手不会读取账户余额或自动判断奖励到账。</p>
+<div class="module"><h4>京豆获取、返豆与有效期</h4><p class="muted">官方说明：京豆可来自购物、评价、晒单和活动；部分购物返豆需手动领取。京东帮助中心当前说明：自2026年1月1日0时起，京豆有效期最长不超过180天；可在京东 App“我的-京豆-30天即将过期京豆明细”查看临期京豆。具体以账户页面和规则为准。</p><button class="secondary" onclick="openOfficialHelp('https://help.jd.com/user/issue/167-4224.html')">查看京豆获取规则</button><button class="secondary" style="margin-top:6px" onclick="openOfficialHelp('https://help.jd.com/issue/search?keyword=%E4%BA%AC%E8%B1%86%E6%9C%89%E6%95%88%E6%9C%9F&siteId=5')">查询京豆有效期说明</button></div>
+<div class="module"><h4>红包获取与查看</h4><p class="muted">官方说明：红包可通过推广或游戏活动获得；账户红包可在“我的-我的钱包-红包”查看，具体以活动规则为准。</p><button class="secondary" onclick="openOfficialHelp('https://help.jd.com/user/issue/168-4458.html')">查看红包官方说明</button></div>
+<div class="module"><h4>优惠券领取</h4><p class="muted">官方帮助中心指引：京东 App 首页点击“领券”进入领券中心；领取资格、有效期和适用范围以券面为准。</p><button class="secondary" onclick="openOfficialHelp('https://help.jd.com/user/issue/169-335.html')">查看优惠券官方指引</button></div>
+<div class="note">来源仅限京东官方帮助中心公开页面。若官方页面规则更新，以官方页面为准；不使用第三方脚本、账号 Cookie 或非公开接口读取个人数据。</div>
+</details>
+<details><summary>商品价格监测</summary>
+<h3>本机价格跟踪</h3>
+<p class="muted">添加商品和心理目标价。价格由你从京东商品页手动填写；每次记录后，助手会更新历史最低价，并在达到目标价时提醒。不会自动抓取京东价格，也不会后台监控。</p>
+<input id="watchName" placeholder="商品名称，例如：无线充电器">
+<input id="watchUrl" placeholder="可选：京东商品链接（仅官方 HTTPS 链接）">
+<input id="watchTarget" type="number" min="0.01" step="0.01" placeholder="目标价（元）">
+<button onclick="addPriceWatch()">＋ 添加价格监测</button>
+<div id="priceWatches" class="muted" style="margin-top:10px">暂无监测商品</div>
+</details>
 <details><summary>任务记录与自定义任务</summary><h3>当前账号任务记录</h3>
 <input id="taskName" placeholder="任务名称，例如：京豆购物返豆领取">
 <input id="taskUrl" placeholder="可选：京东活动链接（http/https）">
 <button onclick="addTask()">添加任务</button><div id="tasks" class="muted">暂无任务</div>
 </details>
+<details><summary>数据备份与恢复</summary>
+<h3>本机数据备份</h3>
+<p class="muted">备份包含账号备注、任务、每日清单、收益登记、商品价格监测及各模块京东链接。不包含京东登录密码、验证码或登录凭据。建议定期复制备份并保存到手机文件或自己的安全位置。</p>
+<div class="rowbtn"><button class="secondary" onclick="inspectStorageHealth()">检查本机存储</button><span class="muted" style="align-self:center">仅检查，不会上传数据</span></div>
+<div class="module" id="storageHealth" aria-live="polite">尚未检查本机存储。建议定期检查并保存外部备份。</div>
+<div class="rowbtn"><button onclick="exportBackup()">生成备份</button><button class="secondary" onclick="copyBackup()">复制备份内容</button></div>
+<textarea id="backupData" rows="7" placeholder="点击“生成备份”后，这里会显示备份内容；恢复时也可将备份粘贴到这里。" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;font-size:11px;line-height:1.5;resize:vertical"></textarea>
+<div class="module" id="backupPreview" aria-live="polite">生成备份后显示数据概览；粘贴备份后，点击恢复会先核对双方数据数量。</div>
+<button class="danger" style="margin-top:8px" onclick="importBackup()">从备份恢复（将替换本机数据）</button>
+<div class="muted" id="backupHint" style="margin-top:8px">恢复前请确认备份来源可信。导入会替换本工具当前所有账号、任务、收益记录和模块链接。</div>
+</details>
 <details><summary>到账登记与明细</summary><h3>登记当前账号实际到账</h3><p class="muted">此处由你根据京东页面或账单手动登记。本工具不会自动读取京东账户；只有确认实际到账后才填写。</p>
 <input id="incomeName" placeholder="收益来源，例如：购物返豆">
 <select id="incomeUnit" aria-label="收益单位"><option value="yuan">现金/红包金额（元）</option><option value="beans">京豆（个）</option><option value="redpacket">红包（个）</option></select>
 <input id="incomeAmount" type="number" min="0.01" step="0.01" placeholder="实际到账数量">
-<button onclick="addIncome()">保存到账记录</button><div id="records" class="muted">暂无收益记录</div>
+<button onclick="addIncome()">保存到账记录</button>
+<div class="module" style="margin-top:12px"><h4>收益明细筛选</h4>
+<div class="muted">按日期、收益类型和核验状态查看记录；下方统计只计算当前筛选结果。</div>
+<input id="incomeSearch" placeholder="搜索收益来源" oninput="renderIncomeRecords()">
+<div class="rowbtn"><input id="incomeDateFrom" type="date" aria-label="开始日期" onchange="renderIncomeRecords()"><input id="incomeDateTo" type="date" aria-label="结束日期" onchange="renderIncomeRecords()"></div>
+<div class="rowbtn"><select id="incomeFilterUnit" aria-label="筛选收益类型" onchange="renderIncomeRecords()"><option value="all">全部类型</option><option value="yuan">现金/红包金额</option><option value="beans">京豆</option><option value="redpacket">红包个数</option></select>
+<select id="incomeFilterStatus" aria-label="筛选核验状态" onchange="renderIncomeRecords()"><option value="all">全部状态</option><option value="verified">用户已核验</option><option value="pending">待核验</option></select></div>
+<button class="secondary" onclick="resetIncomeFilters()">清除筛选条件</button>
+<div id="incomeFilterSummary" class="note">当前筛选：0 笔记录</div>
+</div>
+<div class="module" style="margin-top:12px"><h4>月度收益统计</h4>
+<div class="rowbtn"><button class="secondary" onclick="shiftIncomeMonth(-1)">上个月</button><input id="incomeMonth" type="month" aria-label="选择统计月份" onchange="renderMonthlyIncome()"><button class="secondary" onclick="shiftIncomeMonth(1)">下个月</button></div>
+<div id="incomeMonthSummary" class="note">按月份汇总已核验和待核验记录</div>
+</div>
+<div class="module" style="margin-top:12px"><h4>导出当前筛选记录</h4>
+<div class="muted">可导出当前账号或全部账号的收益明细；日期、类型、状态和来源筛选仍然生效。导出不会修改原始记录。</div>
+<select id="incomeCsvScope" aria-label="导出范围"><option value="current">当前账号</option><option value="all">全部账号</option></select>
+<button class="secondary" onclick="prepareIncomeCsv()">生成 CSV 明细</button><button class="secondary" onclick="copyIncomeCsv()">复制 CSV</button>
+<textarea id="incomeCsvData" rows="5" placeholder="点击“生成 CSV 明细”后显示内容"></textarea>
+<div id="incomeCsvHint" class="muted">请注意：CSV 包含你本机记录的收益来源和数量。</div>
+</div>
+<div id="records" class="muted">暂无收益记录</div>
 </details>
 </main><footer>京东个人收益助手 · 数据保存在本设备本地</footer>
 <script>
-const KEY='jd_assistant_accounts_v3', ACTIVE='jd_assistant_active_v3', ROUTES='jd_assistant_module_routes_v1';
+const KEY='jd_assistant_accounts_v3', ACTIVE='jd_assistant_active_v3', ROUTES='jd_assistant_module_routes_v1', TRASH='jd_assistant_deleted_accounts_v1';
 function makeAccount(name){return {id:'a'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),name,tasks:[],incomes:[],created:new Date().toISOString()}}
 const accountsSeed=[];
-function loadAccounts(){try{const v=JSON.parse(localStorage.getItem(KEY));if(Array.isArray(v)&&v.length)return v}catch(e){}const first=makeAccount('主账号');try{first.tasks=JSON.parse(localStorage.getItem('jd_tasks'))||[];first.incomes=JSON.parse(localStorage.getItem('jd_incomes'))||[];const labels=JSON.parse(localStorage.getItem('jd_accounts'))||[];labels.forEach((name,i)=>{if(typeof name==='string'&&name.trim()&&name.trim()!=='主账号')accountsSeed.push(makeAccount(name.trim()))})}catch(e){}return [first,...accountsSeed]}
+let accountsLoadError=false;
+function loadAccounts(){
+ let raw=null;
+ try{raw=localStorage.getItem(KEY)}catch(e){accountsLoadError=true;return [makeAccount('主账号')]}
+ if(raw!==null){
+  try{const v=JSON.parse(raw);if(Array.isArray(v)&&v.length&&v.every(a=>a&&typeof a.id==='string'&&typeof a.name==='string'&&Array.isArray(a.tasks)&&Array.isArray(a.incomes)))return v;accountsLoadError=true}
+  catch(e){accountsLoadError=true}
+  return [makeAccount('数据待恢复')];
+ }
+ const first=makeAccount('主账号');
+ try{first.tasks=JSON.parse(localStorage.getItem('jd_tasks'))||[];first.incomes=JSON.parse(localStorage.getItem('jd_incomes'))||[];const labels=JSON.parse(localStorage.getItem('jd_accounts'))||[];labels.forEach(name=>{if(typeof name==='string'&&name.trim()&&name.trim()!=='主账号')accountsSeed.push(makeAccount(name.trim()))})}catch(e){}
+ return [first,...accountsSeed];
+}
 let accounts=loadAccounts();
+function loadDeletedAccounts(){try{const v=JSON.parse(localStorage.getItem(TRASH));return Array.isArray(v)?v.filter(x=>x&&typeof x.id==='string'&&typeof x.name==='string'&&Array.isArray(x.tasks)&&Array.isArray(x.incomes)):[]}catch(e){return []}}
+let deletedAccounts=loadDeletedAccounts();
 let activeId=localStorage.getItem(ACTIVE);
 if(!accounts.some(a=>a.id===activeId))activeId=accounts[0].id;
 function current(){return accounts.find(a=>a.id===activeId)||accounts[0]}
-function save(){localStorage.setItem(KEY,JSON.stringify(accounts));localStorage.setItem(ACTIVE,activeId);render()}
+let lastGoodState={accounts:JSON.stringify(accounts),activeId,deletedAccounts:JSON.stringify(deletedAccounts)};
+function save(){
+ if(accountsLoadError){alert('检测到本机账号数据读取异常。为防止覆盖原数据，已暂停保存。请先粘贴有效备份并恢复，或联系支持处理。');return false}
+ const next={accounts:JSON.stringify(accounts),activeId,deletedAccounts:JSON.stringify(deletedAccounts)};
+ try{
+  localStorage.setItem(KEY,next.accounts);localStorage.setItem(ACTIVE,next.activeId);localStorage.setItem(TRASH,next.deletedAccounts);
+  lastGoodState=next;render();renderIncomeRecords();renderMonthlyIncome();return true;
+ }catch(e){
+  try{localStorage.setItem(KEY,lastGoodState.accounts);localStorage.setItem(ACTIVE,lastGoodState.activeId);localStorage.setItem(TRASH,lastGoodState.deletedAccounts)}catch(rollbackError){}
+  try{accounts=JSON.parse(lastGoodState.accounts);activeId=lastGoodState.activeId;deletedAccounts=JSON.parse(lastGoodState.deletedAccounts)}catch(reloadError){}
+  alert('保存失败，可能是本机存储空间不足或不可写。已尝试恢复上一次成功保存的数据；请立即导出备份并检查存储空间。');
+  try{render();renderIncomeRecords();renderMonthlyIncome()}catch(renderError){}
+  return false;
+ }
+}
 function money(n){return '¥'+Number(n||0).toFixed(2)}
-function switchAccount(id){if(!accounts.some(a=>a.id===id))return;activeId=id;save()}
-function addAccount(){const el=document.getElementById('newAccountName'),name=el.value.trim();if(!name){alert('请先填写账号备注');return}if(accounts.some(a=>a.name===name)){alert('已有同名备注，请换一个名称');return}const a=makeAccount(name);accounts.push(a);activeId=a.id;el.value='';save()}
+function switchAccount(id){if(!accounts.some(a=>a.id===id))return;try{if(window.AndroidBridge)AndroidBridge.stopClaimAttempt(current().id)}catch(e){}activeId=id;save()}
+function addAccount(){const el=document.getElementById('newAccountName'),name=el.value.trim();if(!name){alert('请先填写账号备注');return}if(accounts.some(a=>a.name===name)){alert('已有同名备注，请换一个名称');return}const a=makeAccount(name);try{if(window.AndroidBridge)AndroidBridge.stopClaimAttempt(current().id)}catch(e){}accounts.push(a);activeId=a.id;el.value='';save()}
 function renameAccount(){const a=current(),name=prompt('修改账号备注',a.name);if(name===null)return;const v=name.trim();if(!v){alert('备注不能为空');return}if(accounts.some(x=>x.id!==a.id&&x.name===v)){alert('已有同名账号备注');return}a.name=v;save()}
-function deleteAccount(){if(accounts.length===1){alert('至少保留一个账号');return}const a=current();if(!confirm('确定删除“'+a.name+'”及其本工具中的任务和收益记录吗？此操作不可撤销。'))return;accounts=accounts.filter(x=>x.id!==a.id);activeId=accounts[0].id;save()}
+function accountDeleteSummary(a){
+ const inc=a.incomes||[],w=a.priceWatches||[];
+ return '账号：'+a.name+'\\n任务：'+(a.tasks||[]).length+' 条\\n收益：'+inc.length+' 笔\\n商品监测：'+w.length+' 件，历史价格 '+w.reduce((n,x)=>n+(x.records||[]).length,0)+' 条\\n每日清单：'+(a.dailyChecks||[]).length+' 条';
+}
+function deleteAccount(){
+ if(accounts.length===1){alert('至少保留一个账号');return}
+ const a=current(),summary=accountDeleteSummary(a);
+ if(!confirm('即将把当前账号移入本机回收站：\n\n'+summary+'\n\n回收站保留完整账号数据，可在账号管理中恢复。清除应用数据或卸载应用可能导致回收站数据丢失。是否继续？'))return;
+ const typed=prompt('为防止误操作，请输入该账号备注以确认移入回收站：'+a.name);
+ if(typed!==a.name){alert('账号备注不匹配，已取消；本机数据未改变。');return}
+ try{if(window.AndroidBridge)AndroidBridge.stopClaimAttempt(a.id)}catch(e){}
+ deletedAccounts=deletedAccounts.filter(x=>x.id!==a.id);
+ deletedAccounts.unshift({...a,deletedAt:new Date().toISOString()});
+ accounts=accounts.filter(x=>x.id!==a.id);activeId=accounts[0].id;save();
+ alert('账号已移入回收站。你可以在“账号管理”的回收站区域恢复。');
+}
+function renderDeletedAccounts(){
+ const box=document.getElementById('deletedAccountsList');if(!box)return;box.innerHTML='';
+ if(!deletedAccounts.length){box.textContent='回收站为空';return}
+ deletedAccounts.forEach(a=>{
+  const item=document.createElement('div');item.className='module';
+  const title=document.createElement('strong');title.textContent=a.name+' · '+(a.deletedAt||'删除时间未知');
+  const info=document.createElement('div');info.className='muted';info.textContent=accountDeleteSummary(a);
+  const restore=document.createElement('button');restore.className='secondary';restore.textContent='恢复此账号';restore.onclick=()=>restoreDeletedAccount(a.id);
+  const purge=document.createElement('button');purge.className='danger';purge.textContent='永久删除';purge.onclick=()=>permanentlyDeleteAccount(a.id);
+  item.append(title,info,restore,purge);box.append(item);
+ });
+}
+function restoreDeletedAccount(id){
+ const a=deletedAccounts.find(x=>x.id===id);if(!a)return;
+ if(accounts.some(x=>x.id===a.id)){alert('当前账号中已存在相同 ID，无法恢复');return}
+ if(accounts.some(x=>x.name===a.name)){alert('当前已有同名账号，请先修改现有账号备注，再恢复；原数据没有改变。');return}
+ if(!confirm('确认恢复账号“'+a.name+'”及其全部任务、收益、价格监测和每日清单数据？'))return;
+ const restored={...a};delete restored.deletedAt;accounts.push(restored);deletedAccounts=deletedAccounts.filter(x=>x.id!==id);activeId=restored.id;save();
+ alert('账号已恢复，已切换到该账号。');
+}
+function permanentlyDeleteAccount(id){
+ const a=deletedAccounts.find(x=>x.id===id);if(!a)return;
+ if(!confirm('永久删除回收站中的“'+a.name+'”？此操作无法撤销。'))return;
+ const typed=prompt('请输入账号备注以永久删除：'+a.name);
+ if(typed!==a.name){alert('备注不匹配，未删除');return}
+ deletedAccounts=deletedAccounts.filter(x=>x.id!==id);save();alert('已从回收站永久删除。');
+}
 function openJd(){try{const ok=window.AndroidBridge&&AndroidBridge.openJdApp();if(!ok)alert('没有检测到京东 App，请先安装京东官方 App。')}catch(e){alert('暂时无法打开京东 App，请确认已安装。')}}
+function openOfficialHelp(url){if(!isAllowedJdUrl(url)){alert('官方帮助链接校验失败，已阻止打开');return}try{if(window.AndroidBridge&&AndroidBridge.openJdUrl(url))return}catch(e){}try{window.open(url,'_blank','noopener')}catch(e){alert('无法打开官方帮助页面，请在浏览器访问：'+url)}}
 function moduleRoutes(){try{return JSON.parse(localStorage.getItem(ROUTES)||'{}')}catch(e){return {}}}
-function saveModuleRoute(){const name=document.getElementById('routeModule').value,url=document.getElementById('routeUrl').value.trim();if(!url){alert('请先粘贴京东活动链接');return}if(!/^https?:\/\//i.test(url)){alert('只接受 http:// 或 https:// 开头的链接');return}const routes=moduleRoutes();routes[name]=url;localStorage.setItem(ROUTES,JSON.stringify(routes));renderRouteHint()}
+function isAllowedJdUrl(value){try{const u=new URL(value);const host=u.hostname.toLowerCase();return u.protocol==='https:'&&!u.username&&!u.password&&(!u.port||u.port==='443')&&(host==='jd.com'||host.endsWith('.jd.com')||host==='jingdong.com'||host.endsWith('.jingdong.com'))}catch(e){return false}}
+function saveModuleRoute(){const name=document.getElementById('routeModule').value,url=document.getElementById('routeUrl').value.trim();if(!url){alert('请先粘贴京东活动链接');return}if(!isAllowedJdUrl(url)){alert('为保护账号安全，只接受京东官方 HTTPS 链接（jd.com / jingdong.com）');return}const routes=moduleRoutes();routes[name]=url;localStorage.setItem(ROUTES,JSON.stringify(routes));renderRouteHint()}
 function clearModuleRoute(){const name=document.getElementById('routeModule').value,routes=moduleRoutes();delete routes[name];localStorage.setItem(ROUTES,JSON.stringify(routes));document.getElementById('routeUrl').value='';renderRouteHint()}
 function renderRouteHint(){const name=document.getElementById('routeModule').value,url=moduleRoutes()[name]||'';document.getElementById('routeUrl').value=url;document.getElementById('routeHint').textContent=url?'已保存此模块专属链接：点击入口时优先打开':'尚未设置专属活动链接，将打开京东首页'}
 document.getElementById('routeModule').addEventListener('change',renderRouteHint);
 
-function openAccessibility(){try{if(window.AndroidBridge)AndroidBridge.openAccessibilitySettings();else alert('请在系统设置中开启本助手的无障碍服务。')}catch(e){alert('请在系统设置中开启本助手的无障碍服务。')}}
-function startTaskShortcut(name){try{if(!window.AndroidBridge){alert('请安装本助手 APK 后使用');return}if(!AndroidBridge.startOneClaimAttempt(name,current().id)){setTaskHint('请先开启本助手的无障碍权限，再启动'+name);openAccessibility();return}setTaskHint(name+'：已启动对应模块识别，正在打开京东');const url=moduleRoutes()[name];if(url){const ok=AndroidBridge.openJdUrl(url);if(!ok){setTaskHint(name+'：活动链接无法打开，请检查链接或手动进入京东');openJd()}}else openJd()}catch(e){setTaskHint(name+'：启动失败，请检查无障碍权限')}}
-function startOneClaim(){try{if(!window.AndroidBridge){alert('请安装 Android APK 后使用自动化功能。');return}if(!AndroidBridge.startOneClaimAttempt('其他活动',current().id)){setTaskHint('请先开启本助手的无障碍权限');openAccessibility();return}setTaskHint('已启动安全识别；其他活动仍需人工核对');openJd()}catch(e){setTaskHint('启动失败，请检查无障碍权限')}}
-function stopClaim(){try{if(window.AndroidBridge)AndroidBridge.stopClaimAttempt();setTaskHint('已停止')}catch(e){setTaskHint('停止请求已发送')}}
+function openAccessibility(){try{if(window.AndroidBridge)AndroidBridge.openAccessibilitySettings();else alert('请在系统设置中开启本助手的页面识别辅助。')}catch(e){alert('请在系统设置中开启本助手的页面识别辅助。')}}
+function startTaskShortcut(name){try{if(!window.AndroidBridge){alert('请安装本助手 APK 后使用');return}if(!AndroidBridge.startOneClaimAttempt(name,current().id)){setTaskHint('请先开启页面识别辅助权限，再启动'+name);openAccessibility();return}setTaskHint(name+'：已启动页面识别辅助，正在打开京东');const url=moduleRoutes()[name];if(url){const ok=AndroidBridge.openJdUrl(url);if(!ok){setTaskHint(name+'：活动链接无法打开，请检查链接或手动进入京东');openJd()}}else openJd()}catch(e){setTaskHint(name+'：启动失败，请检查页面识别辅助权限')}}
+function startOneClaim(){try{if(!window.AndroidBridge){alert('请安装 Android APK 后使用页面识别辅助。');return}if(!AndroidBridge.startOneClaimAttempt('其他活动',current().id)){setTaskHint('请先开启页面识别辅助权限');openAccessibility();return}setTaskHint('已启动页面识别辅助；领取操作请在京东内手动完成');openJd()}catch(e){setTaskHint('启动失败，请检查页面识别辅助权限')}}
+function stopClaim(){try{if(window.AndroidBridge)AndroidBridge.stopClaimAttempt(current().id);setTaskHint('已停止')}catch(e){setTaskHint('停止请求已发送')}}
 function setTaskHint(message){const el=document.getElementById('claimStatus');if(el)el.textContent='任务辅助状态：'+message;}
-function refreshClaimStatus(){try{if(window.AndroidBridge&&document.getElementById('claimStatus'))document.getElementById('claimStatus').textContent='任务辅助状态：'+AndroidBridge.getClaimStatus()}catch(e){}}
+function refreshClaimStatus(){try{if(window.AndroidBridge&&document.getElementById('claimStatus'))document.getElementById('claimStatus').textContent='任务辅助状态：'+AndroidBridge.getClaimStatus(current().id)}catch(e){}}
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshClaimStatus()});
 setInterval(refreshClaimStatus,1500);
 
-function addTask(){const name=document.getElementById('taskName').value.trim(),url=document.getElementById('taskUrl').value.trim();if(!name){alert('请填写任务名称');return}if(url&&!/^https?:\/\//i.test(url)){alert('链接需以 http:// 或 https:// 开头');return}current().tasks.unshift({id:Date.now(),name,url,status:'待核对',created:new Date().toISOString()});document.getElementById('taskName').value='';document.getElementById('taskUrl').value='';save()}
+const DAILY_MODULES=['京豆签到','每日红包','宠汪汪','京东红包','优惠券领取','游戏福利','其他活动'];
+function localDayKey(d=new Date()){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return y+'-'+m+'-'+day}
+function openDailyModule(moduleName){
+ if(!DAILY_MODULES.includes(moduleName))return;
+ const url=moduleRoutes()[moduleName];
+ if(url&&!isAllowedJdUrl(url)){alert('已保存的活动链接不符合京东官方 HTTPS 域名要求，请到“固定福利入口链接”中重新设置');return}
+ try{
+  if(window.AndroidBridge){
+   const ok=AndroidBridge.openJdUrl(url||'https://www.jd.com/');
+   if(!ok)alert('未能打开京东入口，请手动打开京东官方 App，进入“'+moduleName+'”核对。');
+  }else{alert('请在京东官方 App 中手动进入“'+moduleName+'”核对。')}
+ }catch(e){alert('无法打开入口，请手动打开京东官方 App，进入“'+moduleName+'”核对。')}
+}
+function toggleDailyCheck(moduleName){
+ if(!DAILY_MODULES.includes(moduleName))return;
+ const a=current();if(!Array.isArray(a.dailyChecks))a.dailyChecks=[];
+ const today=localDayKey(),i=a.dailyChecks.findIndex(x=>x.date===today&&x.module===moduleName);
+ if(i>=0)a.dailyChecks.splice(i,1);else{a.dailyChecks.unshift({date:today,module:moduleName,checkedAt:new Date().toISOString()});if(a.dailyChecks.length>3650)a.dailyChecks.length=3650}
+ save();
+}
+function addPriceWatch(){
+ const name=document.getElementById('watchName').value.trim(),url=document.getElementById('watchUrl').value.trim(),target=Number(document.getElementById('watchTarget').value);
+ if(!name||name.length>120||!Number.isFinite(target)||target<=0||target>100000000){alert('请填写商品名称和有效目标价');return}
+ if(url&&!isAllowedJdUrl(url)){alert('商品链接只接受京东官方 HTTPS 链接');return}
+ const a=current();if(!Array.isArray(a.priceWatches))a.priceWatches=[];
+ if(a.priceWatches.length>=300){alert('单个账号最多保存300个商品');return}
+ a.priceWatches.unshift({id:'p'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),name,url,targetPrice:target,records:[],created:new Date().toISOString(),enabled:true});
+ document.getElementById('watchName').value='';document.getElementById('watchUrl').value='';document.getElementById('watchTarget').value='';save();
+}
+function editPriceWatch(id){
+ const a=current(),w=(a.priceWatches||[]).find(x=>x.id===id);if(!w)return;
+ const name=prompt('修改商品名称',w.name);if(name===null)return;
+ const cleanName=name.trim();if(!cleanName||cleanName.length>120){alert('商品名称不能为空且不能超过120字');return}
+ const targetRaw=prompt('修改目标价（元）',String(w.targetPrice));if(targetRaw===null)return;
+ const target=Number(targetRaw.trim());if(!Number.isFinite(target)||target<=0||target>100000000){alert('目标价格式无效');return}
+ const urlRaw=prompt('京东商品链接（留空表示不保存链接）',w.url||'');if(urlRaw===null)return;
+ const url=urlRaw.trim();if(url&&!isAllowedJdUrl(url)){alert('商品链接只接受京东官方 HTTPS 链接');return}
+ w.name=cleanName;w.targetPrice=target;w.url=url;save();
+}
+function togglePriceWatch(id){
+ const a=current(),w=(a.priceWatches||[]).find(x=>x.id===id);if(!w)return;
+ w.enabled=w.enabled===false;save();
+}
+function recordPrice(id){
+ const a=current(),w=(a.priceWatches||[]).find(x=>x.id===id);if(!w)return;if(w.enabled===false){alert('该商品监测已暂停，请先恢复后再记录价格');return}
+ const raw=prompt('填写当前京东商品页显示的价格（元）');if(raw===null)return;
+ const price=Number(raw.trim());if(!Number.isFinite(price)||price<=0||price>100000000){alert('价格格式无效，请填写大于0的数字');return}
+ if(!Array.isArray(w.records))w.records=[];
+ if(w.records.length>=2000){alert('该商品价格记录已达上限（2000条），请先删除商品重新建立');return}
+ w.records.unshift({price,date:new Date().toISOString()});save();
+ if(w.enabled!==false&&price<=w.targetPrice)alert('价格提醒：'+w.name+' 当前记录 ¥'+price.toFixed(2)+'，已达到目标价 ¥'+w.targetPrice.toFixed(2)+'。请打开京东核对商品规格、优惠条件和最终结算价。');
+}
+function removePriceRecord(watchId,recordIndex){
+ const a=current(),w=(a.priceWatches||[]).find(x=>x.id===watchId);if(!w||!Array.isArray(w.records)||!Number.isInteger(recordIndex)||recordIndex<0||recordIndex>=w.records.length)return;
+ const r=w.records[recordIndex];if(!confirm('确定删除这条价格记录 ¥'+Number(r.price).toFixed(2)+'（'+new Date(r.date).toLocaleString()+'）？商品和其他历史记录会保留。'))return;
+ w.records.splice(recordIndex,1);save();
+}
+function removePriceWatch(id){
+ if(!confirm('确定删除该商品及其全部价格历史吗？'))return;
+ const a=current();a.priceWatches=(a.priceWatches||[]).filter(x=>x.id!==id);save();
+}
+function addTask(){const name=document.getElementById('taskName').value.trim(),url=document.getElementById('taskUrl').value.trim();if(!name){alert('请填写任务名称');return}if(url&&!isAllowedJdUrl(url)){alert('为保护账号安全，自定义任务只接受京东官方 HTTPS 链接（jd.com / jingdong.com）');return}const taskId=current().tasks.reduce((max,t)=>Math.max(max,Number.isSafeInteger(t.id)?t.id:0),Date.now()-1)+1;current().tasks.unshift({id:taskId,name,url,status:'待核对',created:new Date().toISOString()});document.getElementById('taskName').value='';document.getElementById('taskUrl').value='';save()}
 function goTask(id){const t=current().tasks.find(x=>x.id===id);if(!t)return;if(t.url){try{const ok=window.AndroidBridge&&AndroidBridge.openJdUrl(t.url);if(!ok)alert('无法直接打开京东 App，请手动打开京东查看。')}catch(e){alert('无法调用京东，请手动打开京东 App。')}}else openJd();t.status='已打开入口，待人工核对';save()}
 function confirmTask(id){const t=current().tasks.find(x=>x.id===id);if(!t)return;t.status='已检查任务，到账需另行核验';t.confirmed=new Date().toISOString();save()}
 function removeTask(id){current().tasks=current().tasks.filter(x=>x.id!==id);save()}
-function addIncome(){const name=document.getElementById('incomeName').value.trim(),amount=Number(document.getElementById('incomeAmount').value),unit=document.getElementById('incomeUnit').value;if(!name||!Number.isFinite(amount)||amount<=0){alert('请填写收益来源和有效到账数量');return}const a=current();a.incomes.unshift({name,amount,unit,date:new Date().toISOString(),verifiedByUser:true,verificationSource:'user_confirmed'});if(unit==='beans'){if(!a.moduleChecks)a.moduleChecks={};a.moduleChecks.bean={status:'已登记用户核验到账',updated:new Date().toISOString(),incomeRecordId:a.incomes[0].date}}try{if(window.AndroidBridge)AndroidBridge.markUserVerified(unit,name,a.id)}catch(e){}document.getElementById('incomeName').value='';document.getElementById('incomeAmount').value='';save()}
-function render(){const sel=document.getElementById('activeAccount');sel.innerHTML='';accounts.forEach(a=>{const o=document.createElement('option');o.value=a.id;o.textContent=a.name;sel.append(o)});sel.value=activeId;const a=current();document.getElementById('activeHint').textContent='当前数据空间：'+a.name+' · '+a.tasks.length+' 条任务 · '+a.incomes.length+' 条收益记录';
-const yuanOnly=x=>(x.unit||'yuan')==='yuan',total=a.incomes.filter(yuanOnly).reduce((s,x)=>s+x.amount,0),beans=a.incomes.filter(x=>x.unit==='beans').reduce((s,x)=>s+x.amount,0),redpackets=a.incomes.filter(x=>x.unit==='redpacket').reduce((s,x)=>s+x.amount,0),now=new Date(),month=a.incomes.filter(x=>yuanOnly(x)&&(()=>{const d=new Date(x.date);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()})()).reduce((s,x)=>s+x.amount,0);
-document.getElementById('activeTotal').textContent=money(total);document.getElementById('activeMonth').textContent=money(month);document.getElementById('activeCount').textContent=a.incomes.length;
+function verifyIncome(index){
+ const a=current(),x=a.incomes[index];if(!x||x.verifiedByUser===true)return;
+ if(!confirm('请确认你已经在京东官方 App 或订单/账户明细中核实这笔到账。核实前不要确认。'))return;
+ x.verifiedByUser=true;x.verificationSource='user_confirmed';x.verifiedAt=new Date().toISOString();save();
+}
+function unverifyIncome(index){
+ const a=current(),x=a.incomes[index];if(!x||x.verifiedByUser!==true)return;
+ if(!confirm('撤销这笔记录的已核验状态？金额将从已核验统计中扣除。'))return;
+ x.verifiedByUser=false;x.verificationSource='verification_retracted';delete x.verifiedAt;save();
+}
+function deleteIncome(index){
+ const a=current(),x=a.incomes[index];if(!x)return;
+ if(!confirm('确定删除这笔收益记录？删除后无法从本机恢复（除非已有备份）。'))return;
+ a.incomes.splice(index,1);save();
+}
+function addIncome(){const name=document.getElementById('incomeName').value.trim(),amount=Number(document.getElementById('incomeAmount').value),unit=document.getElementById('incomeUnit').value;if(!name||name.length>120||!Number.isFinite(amount)||amount<=0||amount>1000000000000){alert('请填写收益来源和有效到账数量');return}const unitName=unit==='beans'?'京豆':unit==='redpacket'?'红包':'元';if(!confirm('请确认：你已经在京东官方 App 或账户明细中核实“'+name+'”实际到账 '+amount+' '+unitName+'。\n\n只有实际到账并核对无误，才应保存为已核验记录。'))return;const a=current();a.incomes.unshift({name,amount,unit,date:new Date().toISOString(),verifiedByUser:true,verificationSource:'user_confirmed',verifiedAt:new Date().toISOString()});if(unit==='beans'){if(!a.moduleChecks)a.moduleChecks={};a.moduleChecks.bean={status:'已登记用户核验到账',updated:new Date().toISOString(),incomeRecordId:a.incomes[0].date}}try{if(window.AndroidBridge)AndroidBridge.markUserVerified(unit,name,a.id)}catch(e){}document.getElementById('incomeName').value='';document.getElementById('incomeAmount').value='';save()}
+function backupStats(list,routes={}){
+ const all=list.reduce((s,a)=>{const inc= a.incomes||[],w=a.priceWatches||[];s.tasks+=a.tasks.length;s.incomes+=inc.length;s.verified+=inc.filter(x=>x.verifiedByUser===true).length;s.pending+=inc.filter(x=>x.verifiedByUser!==true).length;s.yuan+=inc.filter(x=>(x.unit||'yuan')==='yuan'&&x.verifiedByUser===true).reduce((n,x)=>n+Number(x.amount||0),0);s.beans+=inc.filter(x=>x.unit==='beans'&&x.verifiedByUser===true).reduce((n,x)=>n+Number(x.amount||0),0);s.redpackets+=inc.filter(x=>x.unit==='redpacket'&&x.verifiedByUser===true).reduce((n,x)=>n+Number(x.amount||0),0);s.watches+=w.length;s.priceRecords+=w.reduce((n,x)=>n+(x.records||[]).length,0);s.daily+= (a.dailyChecks||[]).length;return s},{tasks:0,incomes:0,verified:0,pending:0,yuan:0,beans:0,redpackets:0,watches:0,priceRecords:0,daily:0});
+ all.accounts=list.length;all.routes=Object.keys(routes||{}).length;return all;
+}
+function backupStatsText(label,s,trashCount=0){
+ return label+'：'+s.accounts+' 个账号；回收站 '+trashCount+' 个；任务 '+s.tasks+' 条；收益 '+s.incomes+' 笔（已核验 '+s.verified+'、待核验 '+s.pending+'）；已核验现金 ¥'+s.yuan.toFixed(2)+'、京豆 '+s.beans+' 个、红包 '+s.redpackets+' 个；价格商品 '+s.watches+' 件（历史 '+s.priceRecords+' 条）；每日清单 '+s.daily+' 条；专属入口 '+s.routes+' 个。';
+}
+async function inspectStorageHealth(){
+ const box=document.getElementById('storageHealth');if(!box)return;
+ box.textContent='正在检查本机存储…';
+ try{
+  let total=0,rows=[];
+  for(let i=0;i<localStorage.length;i++){
+   const key=localStorage.key(i);if(!key)continue;
+   const value=localStorage.getItem(key)||'';
+   const bytes=unescape(encodeURIComponent(key+value)).length;
+   total+=bytes;
+   if(key.startsWith('jd_')||key.startsWith('jd-'))rows.push({key,bytes});
+  }
+  rows.sort((a,b)=>b.bytes-a.bytes);
+  const mib=n=>(n/1048576).toFixed(2)+' MB';
+  let message='本工具可识别的本地数据约 '+mib(total)+'（按键名和值的 UTF-8 字节估算）。\n';
+  message+='其中较大的数据项：'+(rows.slice(0,5).map(x=>x.key+' '+(x.bytes/1024).toFixed(1)+' KB').join('；')||'暂无')+'。\n';
+  message+='浏览器/安卓 WebView 的 localStorage 容量因设备而异，不能把估算值当作剩余空间保证。';
+  if(total>=4*1024*1024)message+='\n警告：本工具数据已接近常见 localStorage 容量范围，请立即生成并保存外部备份，避免继续大量增加记录。';
+  if(navigator.storage&&navigator.storage.estimate){
+   try{const estimate=await navigator.storage.estimate();if(Number.isFinite(estimate.quota)&&Number.isFinite(estimate.usage)){message+='\n当前网页来源总存储估算：已用 '+mib(estimate.usage)+' / '+mib(estimate.quota)+'。';if(estimate.quota>0&&estimate.usage/estimate.quota>=0.9)message+='\n警告：网页来源存储使用率已达 90% 以上，请先保存外部备份。'}}catch(e){message+='\n设备未能提供网页存储配额估算。'}
+  }else message+='\n当前 WebView 未提供存储配额估算接口。';
+  box.textContent=message;
+ }catch(e){box.textContent='检查失败：本机存储暂时无法读取。请不要清除应用数据；先尝试生成备份并保存到外部位置。'}
+}
+function exportBackup(){
+ const routes=moduleRoutes(),payload={app:'jd-welfare-assistant',formatVersion:1,exportedAt:new Date().toISOString(),activeId,accounts,deletedAccounts,moduleRoutes:routes};
+ const box=document.getElementById('backupData');box.value=JSON.stringify(payload,null,2);
+ document.getElementById('backupHint').textContent='备份已生成。'+backupStatsText('本次备份',backupStats(accounts,routes),deletedAccounts.length)+'请复制并保存到安全位置。';
+ box.focus();box.select();
+}
+function copyBackup(){
+ const box=document.getElementById('backupData');
+ if(!box.value.trim()){alert('请先点击“生成备份”');return}
+ box.focus();box.select();
+ let ok=false;try{ok=document.execCommand('copy')}catch(e){}
+ if(ok)document.getElementById('backupHint').textContent='已尝试复制备份内容；请粘贴到记事本或文件中确认保存成功。';
+ else document.getElementById('backupHint').textContent='自动复制未成功，请长按文本框内容并选择“全选→复制”。';
+}
+function importBackup(){
+ const raw=document.getElementById('backupData').value.trim();
+ if(!raw){alert('请先粘贴备份内容');return}
+ if(raw.length>2000000){alert('备份文件过大，已拒绝导入');return}
+ let data;try{data=JSON.parse(raw)}catch(e){alert('备份格式错误：不是有效 JSON');return}
+ if(!data||data.app!=='jd-welfare-assistant'||data.formatVersion!==1||!Array.isArray(data.accounts)||data.accounts.length<1||data.accounts.length>50){
+  alert('备份版本或数据结构不正确，未修改本机数据');return
+ }
+ if(data.deletedAccounts!==undefined&&(!Array.isArray(data.deletedAccounts)||data.deletedAccounts.length>50)){alert('备份中的回收站数据结构异常或数量超限，未修改本机数据');return}
+ const activeAccountCount=data.accounts.length;
+ const deletedSource=data.deletedAccounts||[];
+ const safeAccounts=[];
+ const accountIds=new Set();
+ for(const a of [...data.accounts,...deletedSource]){
+  if(!a||typeof a.id!=='string'||! /^[A-Za-z0-9_-]{1,128}$/.test(a.id)||accountIds.has(a.id)||typeof a.name!=='string'||!a.name.trim()||a.name.trim().length>80||!Array.isArray(a.tasks)||!Array.isArray(a.incomes)||a.tasks.length>5000||a.incomes.length>20000){
+   alert('备份中的账号或记录结构异常（账号 ID 不可重复），未修改本机数据');return
+  }
+  accountIds.add(a.id);
+  const taskIds=new Set();
+  const tasks=[];
+  for(const t of a.tasks){
+   if(!t||typeof t.name!=='string'||!t.name.trim()||t.name.length>120||!Number.isSafeInteger(t.id)||t.id<0||taskIds.has(t.id)){alert('任务记录异常或任务编号重复，未修改本机数据');return}
+   taskIds.add(t.id);
+   if(t.url&& !isAllowedJdUrl(t.url)){alert('备份中含有非京东官方 HTTPS 任务链接，已拒绝导入');return}
+   tasks.push({id:t.id,name:t.name,url:t.url||'',status:typeof t.status==='string'?t.status:'待核对',created:typeof t.created==='string'?t.created:'' ,confirmed:typeof t.confirmed==='string'?t.confirmed:undefined})
+  }
+  const incomes=[];
+  for(const x of a.incomes){
+   if(!x||typeof x.name!=='string'||!x.name.trim()||x.name.length>120||!Number.isFinite(Number(x.amount))||Number(x.amount)<=0||Number(x.amount)>1000000000000||!['yuan','beans','redpacket',undefined].includes(x.unit)){
+    alert('收益记录异常，未修改本机数据');return
+   }
+   incomes.push({name:x.name,amount:Number(x.amount),unit:x.unit||'yuan',date:typeof x.date==='string'?x.date:new Date().toISOString(),verifiedByUser:x.verifiedByUser===true,verificationSource:typeof x.verificationSource==='string'?x.verificationSource:'imported',verifiedAt:typeof x.verifiedAt==='string'?x.verifiedAt:undefined})
+  }
+  const priceWatches=[];const watchIds=new Set();
+  if(a.priceWatches!==undefined&&!Array.isArray(a.priceWatches)){alert('价格监测数据结构异常，未修改本机数据');return}
+  for(const w of (a.priceWatches||[])){
+   if(!w||typeof w.id!=='string'||!/^p[A-Za-z0-9_-]{1,128}$/.test(w.id)||watchIds.has(w.id)||typeof w.name!=='string'||!w.name.trim()||w.name.length>120||!Number.isFinite(Number(w.targetPrice))||Number(w.targetPrice)<=0||Number(w.targetPrice)>100000000||!Array.isArray(w.records)||w.records.length>2000){alert('价格监测商品或记录结构异常，未修改本机数据');return}
+   watchIds.add(w.id);if(w.url&&!isAllowedJdUrl(w.url)){alert('价格监测中含有非京东官方 HTTPS 链接，已拒绝导入');return}
+   const records=[];for(const r of w.records){if(!r||!Number.isFinite(Number(r.price))||Number(r.price)<=0||Number(r.price)>100000000||typeof r.date!=='string'){alert('价格历史记录异常，未修改本机数据');return}records.push({price:Number(r.price),date:r.date})}
+   priceWatches.push({id:w.id,name:w.name.trim(),url:w.url||'',targetPrice:Number(w.targetPrice),records,created:typeof w.created==='string'?w.created:'',enabled:w.enabled!==false})
+  }
+  const dailyChecks=[];const dailySeen=new Set(),dailyAllowed=new Set(['京豆签到','每日红包','宠汪汪','京东红包','游戏福利','其他活动']);
+  if(a.dailyChecks!==undefined&&!Array.isArray(a.dailyChecks)){alert('每日清单数据结构异常，未修改本机数据');return}
+  if((a.dailyChecks||[]).length>3650){alert('每日清单记录超过允许上限，未修改本机数据');return}
+  for(const c of (a.dailyChecks||[])){
+   if(!c||typeof c.date!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(c.date)||!dailyAllowed.has(c.module)||typeof c.checkedAt!=='string'){alert('每日清单记录异常，未修改本机数据');return}
+   const key=c.date+'|'+c.module;if(dailySeen.has(key)){alert('每日清单存在重复记录，未修改本机数据');return}dailySeen.add(key);dailyChecks.push({date:c.date,module:c.module,checkedAt:c.checkedAt})
+  }
+  let beanCheck={};
+  if(a.moduleChecks&&typeof a.moduleChecks==='object'&&!Array.isArray(a.moduleChecks)&&a.moduleChecks.bean&&typeof a.moduleChecks.bean==='object'&&!Array.isArray(a.moduleChecks.bean)){
+   const b=a.moduleChecks.bean;
+   beanCheck={bean:{status:typeof b.status==='string'?b.status.slice(0,80):'',updated:typeof b.updated==='string'?b.updated:'',incomeRecordId:typeof b.incomeRecordId==='string'?b.incomeRecordId:''}}
+  }
+  safeAccounts.push({id:a.id,name:a.name.trim(),tasks,incomes,priceWatches,dailyChecks,created:typeof a.created==='string'?a.created:new Date().toISOString(),moduleChecks:beanCheck})
+ }
+ if(data.moduleRoutes!==undefined&&data.moduleRoutes!==null&&(typeof data.moduleRoutes!=='object'||Array.isArray(data.moduleRoutes))){alert('备份中的模块链接结构异常，未修改本机数据');return}
+ const routes=data.moduleRoutes||{};
+ const allowedRouteNames=new Set(['京豆签到','每日红包','宠汪汪','京东红包','游戏福利','其他活动']);
+ const safeRoutes=Object.create(null);
+ for(const [name,url] of Object.entries(routes)){
+  if(!allowedRouteNames.has(name)){alert('备份中含有未知模块名称，已拒绝导入');return}
+  if(typeof url==='string'&&url.length<=2048&&isAllowedJdUrl(url))safeRoutes[name]=url;
+  else if(url){alert('模块链接中存在非京东官方 HTTPS 地址或格式异常，已拒绝导入');return}
+ }
+ for(const a of deletedSource){if(!a||typeof a.deletedAt!=='string'||!Number.isFinite(new Date(a.deletedAt).getTime())){alert('回收站账号删除时间无效，未修改本机数据');return}}
+ const safeDeletedAccounts=safeAccounts.splice(activeAccountCount).map((a,i)=>({...a,deletedAt:deletedSource[i].deletedAt}));
+ const incomingStats=backupStats(safeAccounts,safeRoutes),currentRoutes=moduleRoutes(),currentStats=backupStats(accounts,currentRoutes);
+ const preview=document.getElementById('backupPreview');
+ if(preview)preview.textContent=backupStatsText('待恢复备份',incomingStats,safeDeletedAccounts.length)+'当前本机：'+backupStatsText('',currentStats,deletedAccounts.length);
+ const message='恢复前请核对数据数量：\\n'+backupStatsText('备份内容',incomingStats,safeDeletedAccounts.length)+'\\n'+backupStatsText('本机现有数据',currentStats,deletedAccounts.length)+'\\n确认后将用备份整体替换本机数据，不会合并。建议先生成并保存当前备份。';
+ if(!confirm(message))return;
+ const nextActive=safeAccounts.some(a=>a.id===data.activeId)?data.activeId:safeAccounts[0].id;
+ const previous={accounts:localStorage.getItem(KEY),active:localStorage.getItem(ACTIVE),routes:localStorage.getItem(ROUTES),trash:localStorage.getItem(TRASH)};
+ const previousMemory={accounts,activeId,deletedAccounts};
+ try{
+  localStorage.setItem(KEY,JSON.stringify(safeAccounts));localStorage.setItem(ACTIVE,nextActive);localStorage.setItem(ROUTES,JSON.stringify(safeRoutes));localStorage.setItem(TRASH,JSON.stringify(safeDeletedAccounts));
+  accounts=safeAccounts;activeId=nextActive;deletedAccounts=safeDeletedAccounts;accountsLoadError=false;
+  lastGoodState={accounts:JSON.stringify(accounts),activeId,deletedAccounts:JSON.stringify(deletedAccounts)};
+  render();renderRouteHint();
+  document.getElementById('backupHint').textContent='恢复完成。'+backupStatsText('已载入',backupStats(accounts,safeRoutes),deletedAccounts.length)+'请检查各账号数据是否完整。';
+ }catch(e){
+  try{previous.accounts===null?localStorage.removeItem(KEY):localStorage.setItem(KEY,previous.accounts);previous.active===null?localStorage.removeItem(ACTIVE):localStorage.setItem(ACTIVE,previous.active);previous.routes===null?localStorage.removeItem(ROUTES):localStorage.setItem(ROUTES,previous.routes);previous.trash===null?localStorage.removeItem(TRASH):localStorage.setItem(TRASH,previous.trash)}catch(rollbackError){}
+  accounts=previousMemory.accounts;activeId=previousMemory.activeId;deletedAccounts=previousMemory.deletedAccounts;
+  lastGoodState={accounts:JSON.stringify(accounts),activeId,deletedAccounts:JSON.stringify(deletedAccounts)};
+  try{render();renderRouteHint()}catch(renderError){}
+  alert('写入本机存储失败，已尝试恢复导入前的数据。可能是设备空间不足；请先复制备份文本。')
+ }
+}
+function incomeLocalDay(value){const d=new Date(value);if(Number.isNaN(d.getTime()))return '';return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function selectedIncomeRows(includeAll=false){
+ const value=id=>{const el=document.getElementById(id);return el?el.value:''};
+ const keyword=value('incomeSearch').trim().toLowerCase(),from=value('incomeDateFrom'),to=value('incomeDateTo'),unitFilter=value('incomeFilterUnit')||'all',statusFilter=value('incomeFilterStatus')||'all',scope=value('incomeCsvScope')||'current';
+ const sources=includeAll&&scope==='all'?accounts:[current()];
+ return sources.flatMap(account=>account.incomes.map((x,index)=>({x,index,account}))).filter(({x})=>{
+  const day=incomeLocalDay(x.date);
+  if(keyword&&!String(x.name||'').toLowerCase().includes(keyword))return false;
+  if(from&&(!day||day<from))return false;
+  if(to&&(!day||day>to))return false;
+  if(unitFilter!=='all'&&(x.unit||'yuan')!==unitFilter)return false;
+  if(statusFilter==='verified'&&x.verifiedByUser!==true)return false;
+  if(statusFilter==='pending'&&x.verifiedByUser===true)return false;
+  return true;
+ });
+}
+function renderMonthlyIncome(){
+ const input=document.getElementById('incomeMonth'),out=document.getElementById('incomeMonthSummary');
+ if(!input||!out)return;
+ if(!input.value){const now=new Date();input.value=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')}
+ const month=input.value;
+ const rows=current().incomes.filter(x=>incomeLocalDay(x.date).slice(0,7)===month);
+ const total=(unit,verified)=>rows.filter(x=>(x.unit||'yuan')===unit&&(verified===null||x.verifiedByUser===verified)).reduce((n,x)=>n+Number(x.amount||0),0);
+ out.textContent=month+'｜现金：已核验 '+money(total('yuan',true))+'，待核验 '+money(total('yuan',false))+'；京豆：已核验 '+total('beans',true).toLocaleString()+'，待核验 '+total('beans',false).toLocaleString()+'；红包：已核验 '+total('redpacket',true).toLocaleString()+'，待核验 '+total('redpacket',false).toLocaleString()+'。共 '+rows.length+' 笔。不同单位分开统计。';
+}
+function shiftIncomeMonth(delta){
+ const input=document.getElementById('incomeMonth');if(!input)return;
+ if(!input.value)renderMonthlyIncome();
+ const parts=input.value.split('-').map(Number),date=new Date(parts[0],parts[1]-1+delta,1);
+ input.value=date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0');renderMonthlyIncome();
+}
+function csvCell(value){
+ let v=String(value??'');
+ if(/^[=+@-]/.test(v))v="'"+v;
+ return '"'+v.replace(/"/g,'""')+'"';
+}
+function prepareIncomeCsv(){
+ const rows=selectedIncomeRows(true);
+ const header=['账号备注','日期','收益来源','收益类型','数量','核验状态','核验时间'];
+ const type=x=>(x.unit||'yuan')==='beans'?'京豆':(x.unit||'yuan')==='redpacket'?'红包':'元';
+ const data=[header,...rows.map(({x,account})=>[account.name,x.date||'',x.name,type(x),x.amount,x.verifiedByUser===true?'用户已核验':'待核验',x.verifiedAt||''])];
+ const csv='\uFEFF'+data.map(row=>row.map(csvCell).join(',')).join('\r\n');
+ const box=document.getElementById('incomeCsvData');box.value=csv;
+ const hint=document.getElementById('incomeCsvHint');if(hint)hint.textContent='已生成 '+rows.length+' 笔记录。复制后可粘贴到 Excel、WPS 表格等软件；不同单位请分别筛选查看。';
+ box.focus();box.select();
+}
+function copyIncomeCsv(){
+ const box=document.getElementById('incomeCsvData'),hint=document.getElementById('incomeCsvHint');
+ if(!box||!box.value){alert('请先生成 CSV 明细');return}
+ box.focus();box.select();let ok=false;try{ok=document.execCommand('copy')}catch(e){}
+ if(hint)hint.textContent=ok?'已尝试复制 CSV，请粘贴到表格软件确认内容。若未复制成功，可长按文本框全选复制。':'自动复制未成功，请长按文本框内容并选择“全选→复制”。';
+}
+function resetIncomeFilters(){
+ ['incomeSearch','incomeDateFrom','incomeDateTo'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
+ ['incomeFilterUnit','incomeFilterStatus'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='all'});
+ renderIncomeRecords();
+}
+function renderIncomeRecords(){
+ const a=current(),box=document.getElementById('records'),summary=document.getElementById('incomeFilterSummary');
+ if(!box)return;
+ const rows=selectedIncomeRows();
+ const sum=(unit,verified)=>rows.filter(({x})=>(x.unit||'yuan')===unit&&(verified===null||x.verifiedByUser===verified)).reduce((n,{x})=>n+Number(x.amount||0),0);
+ const yuanDone=sum('yuan',true),yuanPending=sum('yuan',false),beanDone=sum('beans',true),beanPending=sum('beans',false),packetDone=sum('redpacket',true),packetPending=sum('redpacket',false);
+ if(summary)summary.textContent='筛选结果 '+rows.length+' 笔｜现金/金额：已核验 '+money(yuanDone)+'，待核验 '+money(yuanPending)+'｜京豆：已核验 '+beanDone.toLocaleString()+'，待核验 '+beanPending.toLocaleString()+'｜红包：已核验 '+packetDone.toLocaleString()+'，待核验 '+packetPending.toLocaleString()+'。不同单位分开统计，不混合相加。';
+ box.innerHTML='';
+ if(!rows.length){box.textContent=a.incomes.length?'没有符合筛选条件的记录':'当前账号暂无收益记录';return}
+ rows.forEach(({x,index})=>{
+  const d=document.createElement('div');d.className='task';const p=document.createElement('p');
+  const unit=x.unit||'yuan',shown=unit==='beans'?Number(x.amount).toLocaleString()+' 京豆':unit==='redpacket'?Number(x.amount).toLocaleString()+' 个红包':money(x.amount),check=x.verifiedByUser===true?'用户已核验':'导入记录/待核验';
+  const date=Number.isNaN(Date.parse(x.date))?String(x.date||'日期未知'):new Date(x.date).toLocaleDateString();
+  p.textContent=x.name+'  +'+shown+'  '+date+' · '+check;d.append(p);
+  if(x.verifiedByUser===true){const undo=document.createElement('button');undo.className='secondary';undo.textContent='撤销核验';undo.onclick=()=>unverifyIncome(index);d.append(undo)}
+  else{const verify=document.createElement('button');verify.textContent='核实到账后确认';verify.onclick=()=>verifyIncome(index);d.append(verify)}
+  const del=document.createElement('button');del.className='danger';del.textContent='删除记录';del.onclick=()=>deleteIncome(index);d.append(del);box.append(d);
+ });
+}
+function render(){renderDeletedAccounts();const sel=document.getElementById('activeAccount');sel.innerHTML='';accounts.forEach(a=>{const o=document.createElement('option');o.value=a.id;o.textContent=a.name;sel.append(o)});sel.value=activeId;const a=current();document.getElementById('activeHint').textContent='当前数据空间：'+a.name+' · '+a.tasks.length+' 条任务 · '+a.incomes.length+' 条收益记录';
+const yuanOnly=x=>(x.unit||'yuan')==='yuan',verified=x=>x.verifiedByUser===true,total=a.incomes.filter(x=>yuanOnly(x)&&verified(x)).reduce((s,x)=>s+x.amount,0),pending=a.incomes.filter(x=>yuanOnly(x)&&!verified(x)).reduce((s,x)=>s+x.amount,0),beans=a.incomes.filter(x=>x.unit==='beans'&&verified(x)).reduce((s,x)=>s+x.amount,0),redpackets=a.incomes.filter(x=>x.unit==='redpacket'&&verified(x)).reduce((s,x)=>s+x.amount,0),now=new Date(),month=a.incomes.filter(x=>yuanOnly(x)&&verified(x)&&(()=>{const d=new Date(x.date);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()})()).reduce((s,x)=>s+x.amount,0);
+document.getElementById('activeTotal').textContent=money(total);document.getElementById('activeMonth').textContent=money(month);document.getElementById('activePending').textContent=money(pending);document.getElementById('activeCount').textContent=a.incomes.length;
 const beansEl=document.getElementById('activeBeans');if(beansEl)beansEl.textContent=beans.toLocaleString()+' 个';const packetsEl=document.getElementById('activeRedpackets');if(packetsEl)packetsEl.textContent=redpackets.toLocaleString()+' 个';
-const all=accounts.reduce((s,x)=>s+x.incomes.filter(yuanOnly).reduce((q,r)=>q+r.amount,0),0);document.getElementById('allTotal').textContent=money(all);const summary=document.getElementById('accountSummary');summary.innerHTML='';accounts.forEach(x=>{const p=document.createElement('p');const yuan=x.incomes.filter(yuanOnly).reduce((s,r)=>s+r.amount,0),beanCount=x.incomes.filter(r=>r.unit==='beans').reduce((s,r)=>s+r.amount,0),packetCount=x.incomes.filter(r=>r.unit==='redpacket').reduce((s,r)=>s+r.amount,0);p.textContent=x.name+'：现金 '+money(yuan)+' · 京豆 '+beanCount.toLocaleString()+' 个 · 红包 '+packetCount.toLocaleString()+' 个（'+x.incomes.length+'笔）';summary.append(p)});
+const all=accounts.reduce((s,x)=>s+x.incomes.filter(r=>yuanOnly(r)&&verified(r)).reduce((q,r)=>q+r.amount,0),0),allPending=accounts.reduce((s,x)=>s+x.incomes.filter(r=>yuanOnly(r)&&!verified(r)).reduce((q,r)=>q+r.amount,0),0),allBeans=accounts.reduce((s,x)=>s+x.incomes.filter(r=>r.unit==='beans'&&verified(r)).reduce((q,r)=>q+r.amount,0),0),allRedpackets=accounts.reduce((s,x)=>s+x.incomes.filter(r=>r.unit==='redpacket'&&verified(r)).reduce((q,r)=>q+r.amount,0),0);document.getElementById('allTotal').textContent=money(all);document.getElementById('allPending').textContent=money(allPending);document.getElementById('allBeans').textContent=allBeans.toLocaleString()+' 个';document.getElementById('allRedpackets').textContent=allRedpackets.toLocaleString()+' 个';const summary=document.getElementById('accountSummary');summary.innerHTML='';accounts.forEach(x=>{const p=document.createElement('p');const yuan=x.incomes.filter(r=>yuanOnly(r)&&verified(r)).reduce((s,r)=>s+r.amount,0),pendingYuan=x.incomes.filter(r=>yuanOnly(r)&&!verified(r)).reduce((s,r)=>s+r.amount,0),beanCount=x.incomes.filter(r=>r.unit==='beans'&&verified(r)).reduce((s,r)=>s+r.amount,0),packetCount=x.incomes.filter(r=>r.unit==='redpacket'&&verified(r)).reduce((s,r)=>s+r.amount,0);p.textContent=x.name+'：已核验现金 '+money(yuan)+' · 待核验 '+money(pendingYuan)+' · 京豆 '+beanCount.toLocaleString()+' 个 · 红包 '+packetCount.toLocaleString()+' 个（'+x.incomes.length+'笔）';summary.append(p)});
 const taskBox=document.getElementById('tasks');taskBox.innerHTML='';if(!a.tasks.length)taskBox.textContent='当前账号暂无任务';a.tasks.forEach(t=>{const d=document.createElement('div');d.className='task';const b=document.createElement('b');b.textContent=t.name;const s=document.createElement('div');s.className='status';s.textContent=t.status+(t.confirmed?' · '+new Date(t.confirmed).toLocaleString():'');const go=document.createElement('button');go.textContent='打开京东查看';go.onclick=()=>goTask(t.id);const done=document.createElement('button');done.className='secondary';done.textContent='我已检查任务（不代表到账）';done.onclick=()=>confirmTask(t.id);const del=document.createElement('button');del.className='danger';del.textContent='删除任务';del.onclick=()=>removeTask(t.id);d.append(b,s,go,done,del);taskBox.append(d)});
-const rb=document.getElementById('records');rb.innerHTML='';if(!a.incomes.length)rb.textContent='当前账号暂无收益记录';a.incomes.forEach(x=>{const p=document.createElement('p');const unit=x.unit||'yuan',shown=unit==='beans'?Number(x.amount).toLocaleString()+' 京豆':unit==='redpacket'?Number(x.amount).toLocaleString()+' 个红包':money(x.amount);p.textContent=x.name+'  +'+shown+'  '+new Date(x.date).toLocaleDateString();rb.append(p)})}
+const dailyBox=document.getElementById('dailyChecklist');if(dailyBox){dailyBox.innerHTML='';const today=localDayKey(),checks=Array.isArray(a.dailyChecks)?a.dailyChecks:[],done=checks.filter(x=>x.date===today);const progress=document.getElementById('dailyProgress');if(progress)progress.textContent='今日完成 '+done.length+' / '+DAILY_MODULES.length+' 项';DAILY_MODULES.forEach(name=>{const checked=done.some(x=>x.module===name),line=document.createElement('div');line.className='task';line.style.display='flex';line.style.alignItems='center';line.style.justifyContent='space-between';line.style.gap='8px';const label=document.createElement('span');label.textContent=(checked?'✓ ':'○ ')+name;label.style.fontWeight='700';const actions=document.createElement('div');actions.style.display='flex';actions.style.gap='6px';actions.style.flexShrink='0';const open=document.createElement('button');open.style.width='auto';open.style.padding='9px 10px';open.style.fontSize='12px';open.className='secondary';open.textContent='打开入口';open.onclick=()=>openDailyModule(name);const btn=document.createElement('button');btn.style.width='auto';btn.style.minWidth='88px';btn.style.padding='9px 10px';btn.style.fontSize='12px';btn.className=checked?'secondary':'';btn.textContent=checked?'撤销':'已检查';btn.onclick=()=>toggleDailyCheck(name);actions.append(open,btn);line.append(label,actions);dailyBox.append(line)})}
+const priceBox=document.getElementById('priceWatches');if(priceBox){priceBox.innerHTML='';const watches=Array.isArray(a.priceWatches)?a.priceWatches:[];if(!watches.length)priceBox.textContent='当前账号暂无监测商品';watches.forEach(w=>{const d=document.createElement('div');d.className='module';const title=document.createElement('b');title.textContent=w.name;const prices=Array.isArray(w.records)?w.records:[],latest=prices.length?Number(prices[0].price):null,lowest=prices.length?Math.min(...prices.map(x=>Number(x.price)).filter(Number.isFinite)):null;const info=document.createElement('p');info.className='muted';info.textContent='目标价 ¥'+Number(w.targetPrice).toFixed(2)+' · 最新记录 '+(latest===null?'暂无':'¥'+latest.toFixed(2))+' · 历史最低 '+(lowest===null?'暂无':'¥'+lowest.toFixed(2))+' · '+prices.length+' 条记录';const history=document.createElement('p');history.className='muted';history.textContent=prices.slice(0,5).map(x=>'¥'+Number(x.price).toFixed(2)+'（'+new Date(x.date).toLocaleDateString()+'）').join('；')||'尚无价格历史';const record=document.createElement('button');record.textContent='记录一次当前价格';record.disabled=w.enabled===false;record.onclick=()=>recordPrice(w.id);const edit=document.createElement('button');edit.className='secondary';edit.textContent='修改商品/目标价';edit.onclick=()=>editPriceWatch(w.id);const pause=document.createElement('button');pause.className='secondary';pause.textContent=w.enabled===false?'恢复监测':'暂停监测';pause.onclick=()=>togglePriceWatch(w.id);const del=document.createElement('button');del.className='danger';del.style.marginTop='6px';del.textContent='删除商品及历史';del.onclick=()=>removePriceWatch(w.id);if(w.enabled===false){const paused=document.createElement('p');paused.className='muted';paused.textContent='已暂停：不会触发目标价提醒';d.append(title,paused)}else d.append(title);if(w.url){const link=document.createElement('button');link.className='secondary';link.textContent='打开京东商品页';link.onclick=()=>{try{if(!(window.AndroidBridge&&AndroidBridge.openJdUrl(w.url)))alert('无法打开，请在京东 App 手动搜索商品')}catch(e){alert('请在京东 App 手动搜索商品')}};d.append(link)}d.append(edit,pause,record);if(prices.length){const details=document.createElement('details');details.style.marginTop='8px';const summary=document.createElement('summary');summary.textContent='查看全部价格历史（'+prices.length+'条）';details.append(summary);prices.forEach((entry,index)=>{const line=document.createElement('div');line.className='task';line.style.marginTop='6px';const stamp=document.createElement('span');stamp.textContent='¥'+Number(entry.price).toFixed(2)+' · '+(Number.isNaN(Date.parse(entry.date))?entry.date:new Date(entry.date).toLocaleString());const remove=document.createElement('button');remove.className='danger';remove.textContent='删除此条';remove.onclick=()=>removePriceRecord(w.id,index);line.append(stamp,remove);details.append(line)});d.append(details)}d.append(del);priceBox.append(d)})}
+renderIncomeRecords();
+ renderMonthlyIncome();
+}
 render();
 renderRouteHint();
 </script></body></html>

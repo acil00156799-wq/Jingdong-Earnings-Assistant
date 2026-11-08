@@ -35,7 +35,13 @@ public class MainActivity extends Activity {
             try {
                 Uri uri = Uri.parse(value);
                 String scheme = uri.getScheme();
-                if (scheme == null || !(scheme.equals("https") || scheme.equals("http"))) return false;
+                String host = uri.getHost();
+                if (scheme == null || !scheme.equalsIgnoreCase("https") || host == null
+                        || uri.getUserInfo() != null || (uri.getPort() != -1 && uri.getPort() != 443)) return false;
+                String normalizedHost = host.toLowerCase(java.util.Locale.ROOT);
+                boolean jdHost = normalizedHost.equals("jd.com") || normalizedHost.endsWith(".jd.com")
+                    || normalizedHost.equals("jingdong.com") || normalizedHost.endsWith(".jingdong.com");
+                if (!jdHost) return false;
                 Intent intent = new Intent(Intent.ACTION_VIEW, uri);
                 intent.setPackage(JD_PACKAGE);
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -55,25 +61,42 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public boolean startOneClaimAttempt(String taskName, String accountId) {
+            if (accountId == null || accountId.trim().isEmpty() || accountId.length() > 128) return false;
+            SharedPreferences p = getSharedPreferences(PREFS, MODE_PRIVATE);
+            String prefix = "account." + accountId + ".";
+            String previousId = p.getString("active_attempt_account_id", "");
             if (!isAccessibilityServiceEnabled()) {
-                getSharedPreferences(PREFS, MODE_PRIVATE).edit()
-                    .putBoolean("auto_claim_enabled", false)
-                    .putString("claim_state", "idle")
-                    .putString("last_result", "请先开启本助手的无障碍服务")
-                    .apply();
+                SharedPreferences.Editor disabledEdit = p.edit();
+                if (!previousId.isEmpty()) {
+                    String oldPrefix = "account." + previousId + ".";
+                    disabledEdit.putBoolean(oldPrefix + "auto_claim_enabled", false)
+                        .putString(oldPrefix + "claim_state", "stopped")
+                        .putString(oldPrefix + "last_result", "无障碍权限已关闭，旧任务已停止");
+                }
+                disabledEdit.remove("active_attempt_account_id")
+                    .putBoolean(prefix + "auto_claim_enabled", false)
+                    .putString(prefix + "claim_state", "idle")
+                    .putString(prefix + "last_result", "请先开启本助手的无障碍服务").apply();
                 return false;
+            }
+            SharedPreferences.Editor edit = p.edit();
+            if (!previousId.isEmpty() && !previousId.equals(accountId)) {
+                String oldPrefix = "account." + previousId + ".";
+                edit.putBoolean(oldPrefix + "auto_claim_enabled", false)
+                    .putString(oldPrefix + "claim_state", "stopped")
+                    .putString(oldPrefix + "last_result", "已被其他账号的新任务替代");
             }
             String selected = taskName == null ? "其他活动" : taskName.trim();
             if (selected.isEmpty()) selected = "其他活动";
             long now = System.currentTimeMillis();
-            getSharedPreferences(PREFS, MODE_PRIVATE).edit()
-                .putString("selected_task", selected)
-                .putString("attempt_account_id", accountId == null ? "" : accountId)
-                .putLong("attempt_id", now)
-                .putLong("attempt_started_at", now)
-                .putBoolean("auto_claim_enabled", true)
-                .putString("claim_state", "waiting_page")
-                .putString("last_result", selected + "：已启动识别，等待对应福利页面")
+            long attemptId = Math.max(now, p.getLong(prefix + "attempt_id", 0L) + 1L);
+            edit.putString("active_attempt_account_id", accountId)
+                .putString(prefix + "selected_task", selected)
+                .putLong(prefix + "attempt_id", attemptId)
+                .putLong(prefix + "attempt_started_at", now)
+                .putBoolean(prefix + "auto_claim_enabled", true)
+                .putString(prefix + "claim_state", "waiting_page")
+                .putString(prefix + "last_result", selected + "：已启动识别，等待对应福利页面")
                 .apply();
             return true;
         }
@@ -87,19 +110,23 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
-        public void stopClaimAttempt() {
-            getSharedPreferences(PREFS, MODE_PRIVATE).edit()
-                .putBoolean("auto_claim_enabled", false)
-                .putString("claim_state", "stopped")
-                .putString("last_result", "已由用户停止")
-                .apply();
+        public void stopClaimAttempt(String accountId) {
+            if (accountId == null || accountId.trim().isEmpty()) return;
+            SharedPreferences p = getSharedPreferences(PREFS, MODE_PRIVATE);
+            if (!accountId.equals(p.getString("active_attempt_account_id", ""))) return;
+            String prefix = "account." + accountId + ".";
+            p.edit().putBoolean(prefix + "auto_claim_enabled", false)
+                .putString(prefix + "claim_state", "stopped")
+                .putString(prefix + "last_result", "已由用户停止")
+                .remove("active_attempt_account_id").apply();
         }
 
         @JavascriptInterface
         public void markUserVerified(String unit, String incomeName, String accountId) {
             SharedPreferences p = getSharedPreferences(PREFS, MODE_PRIVATE);
-            String task = p.getString("selected_task", "");
-            String attemptAccountId = p.getString("attempt_account_id", "");
+            if (accountId == null || accountId.trim().isEmpty()) return;
+            String prefix = "account." + accountId + ".";
+            String task = p.getString(prefix + "selected_task", "");
             String source = incomeName == null ? "" : incomeName.trim();
             boolean matchingIncome =
                 ("京豆签到".equals(task) && "beans".equals(unit)
@@ -112,30 +139,29 @@ public class MainActivity extends Activity {
                 || ("游戏福利".equals(task)
                     && ("beans".equals(unit) || "redpacket".equals(unit) || "yuan".equals(unit))
                     && source.contains("游戏"));
-            if (matchingIncome && accountId != null && accountId.equals(attemptAccountId)
-                    && "clicked_unverified".equals(p.getString("claim_state", ""))) {
-                p.edit()
-                    .putString("claim_state", "user_verified")
-                    .putString("last_result", task + "：用户已手动登记对应类型的实际到账")
-                    .apply();
+            if (matchingIncome && "clicked_unverified".equals(p.getString(prefix + "claim_state", ""))) {
+                p.edit().putString(prefix + "claim_state", "user_verified")
+                    .putString(prefix + "last_result", task + "：用户已手动登记对应类型的实际到账").apply();
             }
         }
 
         @JavascriptInterface
-        public String getClaimStatus() {
+        public String getClaimStatus(String accountId) {
+            if (accountId == null || accountId.trim().isEmpty()) return "尚未执行";
             SharedPreferences p = getSharedPreferences(PREFS, MODE_PRIVATE);
-            boolean waiting = p.getBoolean("auto_claim_enabled", false);
-            long startedAt = p.getLong("attempt_started_at", 0L);
+            String prefix = "account." + accountId + ".";
+            boolean active = accountId.equals(p.getString("active_attempt_account_id", ""));
+            boolean waiting = active && p.getBoolean(prefix + "auto_claim_enabled", false);
+            long startedAt = p.getLong(prefix + "attempt_started_at", 0L);
             if (waiting && startedAt > 0L && System.currentTimeMillis() - startedAt > 180000L) {
-                p.edit()
-                    .putBoolean("auto_claim_enabled", false)
-                    .putString("claim_state", "timeout")
-                    .putString("last_result", "识别等待超过3分钟，已自动停止；请重新打开对应京东页面后再试")
-                    .apply();
-                waiting = false;
+                SharedPreferences.Editor edit = p.edit().putBoolean(prefix + "auto_claim_enabled", false)
+                    .putString(prefix + "claim_state", "timeout")
+                    .putString(prefix + "last_result", "识别等待超过3分钟，已自动停止；请重新打开对应京东页面后再试");
+                if (active) edit.remove("active_attempt_account_id");
+                edit.apply(); waiting = false;
             }
-            return p.getString("last_result", "尚未执行") +
-                (waiting ? "（正在等待领取按钮，最长3分钟）" : "");
+            return p.getString(prefix + "last_result", "尚未执行") +
+                (waiting ? "（正在等待页面识别，最长3分钟）" : "");
         }
     }
 
@@ -161,9 +187,31 @@ public class MainActivity extends Activity {
         settings.setDefaultTextEncodingName("UTF-8");
         settings.setDomStorageEnabled(true);
         settings.setAllowFileAccess(true);
-        settings.setAllowContentAccess(true);
+        settings.setAllowContentAccess(false);
+        settings.setAllowFileAccessFromFileURLs(false);
+        settings.setAllowUniversalAccessFromFileURLs(false);
+        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
+        settings.setBlockNetworkLoads(true);
         webView.addJavascriptInterface(new AndroidBridge(), "AndroidBridge");
-        webView.setWebViewClient(new WebViewClient());
+        webView.setWebViewClient(new WebViewClient() {
+            private boolean isLocalAppPage(Uri uri) {
+                return uri != null && "file".equalsIgnoreCase(uri.getScheme())
+                    && uri.getHost() == null && "/android_asset/index.html".equals(uri.getPath());
+            }
+
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, android.webkit.WebResourceRequest request) {
+                // The JavaScript bridge is trusted only on the bundled local app page.
+                // All web destinations must be opened through the validated Android bridge.
+                return !isLocalAppPage(request.getUrl());
+            }
+
+            @Override
+            @SuppressWarnings("deprecation")
+            public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                return !isLocalAppPage(Uri.parse(url));
+            }
+        });
         webView.loadUrl("file:///android_asset/index.html");
     }
 
