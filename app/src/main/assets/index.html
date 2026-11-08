@@ -223,7 +223,7 @@ function importBackup(){
   if(a.dailyChecks!==undefined&&!Array.isArray(a.dailyChecks)){alert('每日清单数据结构异常，未修改本机数据');return}
   if((a.dailyChecks||[]).length>3650){alert('每日清单记录超过允许上限，未修改本机数据');return}
   for(const c of (a.dailyChecks||[])){
-   if(!c||typeof c.date!=='string'||!/^\\d{4}-\\d{2}-\\d{2}$/.test(c.date)||!dailyAllowed.has(c.module)||typeof c.checkedAt!=='string'){alert('每日清单记录异常，未修改本机数据');return}
+   if(!c||typeof c.date!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(c.date)||!dailyAllowed.has(c.module)||typeof c.checkedAt!=='string'){alert('每日清单记录异常，未修改本机数据');return}
    const key=c.date+'|'+c.module;if(dailySeen.has(key)){alert('每日清单存在重复记录，未修改本机数据');return}dailySeen.add(key);dailyChecks.push({date:c.date,module:c.module,checkedAt:c.checkedAt})
   }
   let beanCheck={};
