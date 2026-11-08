@@ -266,7 +266,7 @@ function makeStorageHarness(initial) {
   const alerts = [];
   const ctx = {
     KEY: 'jd_assistant_accounts_v3', ACTIVE: 'jd_assistant_active_v3', TRASH: 'jd_assistant_deleted_accounts_v1',
-    accountsSeed: [], Date, Math, JSON, Array, Object,
+    accountsSeed: [], makeAccount(name){return {id:'fresh1',name,tasks:[],incomes:[]}}, Date, Math, JSON, Array, Object,
     localStorage: {
       getItem(k) { return data.has(k) ? data.get(k) : null; },
       setItem(k,v) { writes++; if (writes === failOn) throw new Error('simulated quota exceeded'); data.set(k,String(v)); },
