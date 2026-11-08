@@ -35,7 +35,7 @@ const context = {
   document: { getElementById(id) { return elements[id]; } },
   alert(message) { alerts.push(String(message)); }, confirm() { return true; },
   moduleRoutes() { try { return JSON.parse(store.get('jd_assistant_module_routes_v1') || '{}'); } catch { return {}; } },
-  isAllowedJdUrl(value) { try { const u = new URL(value), h = u.hostname.toLowerCase(); return u.protocol === 'https:' && (h === 'jd.com' || h.endsWith('.jd.com') || h === 'jingdong.com' || h.endsWith('.jingdong.com')); } catch { return false; } },
+  isAllowedJdUrl(value) { try { const u = new URL(value), h = u.hostname.toLowerCase(); return u.protocol === 'https:' && !u.username && !u.password && (!u.port || u.port === '443') && (h === 'jd.com' || h.endsWith('.jd.com') || h === 'jingdong.com' || h.endsWith('.jingdong.com')); } catch { return false; } },
   render() {}, renderRouteHint() {}, Date, JSON, Number, Array, Object, URL
 };
 vm.createContext(context);
@@ -67,6 +67,10 @@ assert.equal(context.accounts[0].id, 'before', 'failed restore must restore in-m
 assert.equal(context.activeId, 'before', 'failed restore must restore in-memory active account');
 assert.equal(JSON.parse(store.get(context.KEY))[0].id, 'before', 'failed restore must roll back persisted accounts');
 
+assert.equal(context.isAllowedJdUrl('https://user:pass@bean.jd.com/'), false, 'credential-bearing URLs must be rejected');
+assert.equal(context.isAllowedJdUrl('https://bean.jd.com:8443/'), false, 'non-standard ports must be rejected');
+assert.equal(context.isAllowedJdUrl('https://bean.jd.com/'), true, 'normal JD HTTPS URLs remain allowed');
+
 const beforeId = context.accounts[0].id;
 const duplicateAccounts = JSON.parse(validBackup);
 duplicateAccounts.accounts.push({ ...duplicateAccounts.accounts[0], name: '重复 ID' });
@@ -81,6 +85,12 @@ elements.backupData.value = JSON.stringify(duplicateTasks);
 context.importBackup();
 assert.equal(context.accounts[0].id, beforeId, 'duplicate task IDs must be rejected');
 assert.ok(alerts.some(x => x.includes('任务编号重复')));
+
+const malformedRoutes = JSON.parse(validBackup);
+malformedRoutes.moduleRoutes = [];
+elements.backupData.value = JSON.stringify(malformedRoutes);
+context.importBackup();
+assert.equal(context.accounts[0].id, beforeId, 'non-object module routes must be rejected');
 
 const poisonedRoutes = JSON.parse(validBackup);
 poisonedRoutes.moduleRoutes = JSON.parse('{"__proto__":"https://bean.jd.com/"}');
@@ -103,4 +113,4 @@ elements.backupData.value = 'x'.repeat(2000001);
 context.importBackup();
 assert.equal(context.accounts[0].id, beforeId, 'oversized backup must not change saved data');
 
-console.log('PASS: JavaScript syntax, account-scoped claim state, pre-click ownership guard, backup export/restore and rollback, duplicate ID rejection, module route allowlist, external URL rejection, malformed JSON, oversized backup');
+console.log('PASS: JavaScript syntax, account-scoped claim state, pre-click ownership guard, backup export/restore and rollback, duplicate ID rejection, module route allowlist/shape, HTTPS host, credential and port validation, malformed JSON, oversized backup');
