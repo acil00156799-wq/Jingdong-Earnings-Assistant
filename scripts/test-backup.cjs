@@ -76,6 +76,16 @@ assert.match(html, /incomeFilterStatus/, 'income ledger can filter by verificati
 assert.match(html, /function resetIncomeFilters\(/, 'income ledger filters can be cleared');
 assert.match(html, /function renderIncomeRecords\(/, 'income ledger filtering and rendering are implemented');
 assert.match(html, /不同单位分开统计，不混合相加/, 'filtered totals keep yuan, beans and red packets separate');
+assert.match(html, /月度收益统计/, 'income ledger exposes monthly statistics');
+assert.match(html, /id="incomeMonth"/, 'monthly income can be browsed by month');
+assert.match(html, /function shiftIncomeMonth\(/, 'monthly statistics support previous and next month navigation');
+assert.match(html, /function renderMonthlyIncome\(/, 'monthly totals are calculated independently');
+assert.match(html, /function prepareIncomeCsv\(/, 'filtered income records can be exported as CSV text');
+assert.match(html, /function copyIncomeCsv\(/, 'CSV export provides a copy action');
+assert.match(html, /不同单位分开统计/, 'monthly totals do not combine incompatible units');
+assert.match(html, /function incomeLocalDay\(/, 'date filters and monthly totals use local calendar dates');
+assert.match(html, /renderIncomeRecords\(\);renderMonthlyIncome\(\)/, 'income summaries refresh after saved changes');
+
 
 
 assert.match(html, /verified=x=>x\.verifiedByUser===true/, 'income totals count only user-verified records');
