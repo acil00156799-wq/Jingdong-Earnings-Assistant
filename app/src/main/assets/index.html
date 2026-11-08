@@ -105,6 +105,16 @@ footer{text-align:center;color:#aaa;font-size:11px;padding:16px}
 <button class="secondary" onclick="resetIncomeFilters()">清除筛选条件</button>
 <div id="incomeFilterSummary" class="note">当前筛选：0 笔记录</div>
 </div>
+<div class="module" style="margin-top:12px"><h4>月度收益统计</h4>
+<div class="rowbtn"><button class="secondary" onclick="shiftIncomeMonth(-1)">上个月</button><input id="incomeMonth" type="month" aria-label="选择统计月份" onchange="renderMonthlyIncome()"><button class="secondary" onclick="shiftIncomeMonth(1)">下个月</button></div>
+<div id="incomeMonthSummary" class="note">按月份汇总已核验和待核验记录</div>
+</div>
+<div class="module" style="margin-top:12px"><h4>导出当前筛选记录</h4>
+<div class="muted">导出当前账号、当前筛选条件下的收益明细 CSV，可复制到表格软件。导出不会修改原始记录。</div>
+<button class="secondary" onclick="prepareIncomeCsv()">生成 CSV 明细</button><button class="secondary" onclick="copyIncomeCsv()">复制 CSV</button>
+<textarea id="incomeCsvData" rows="5" placeholder="点击“生成 CSV 明细”后显示内容"></textarea>
+<div id="incomeCsvHint" class="muted">请注意：CSV 包含你本机记录的收益来源和数量。</div>
+</div>
 <div id="records" class="muted">暂无收益记录</div>
 </details>
 </main><footer>京东个人收益助手 · 数据保存在本设备本地</footer>
@@ -312,17 +322,10 @@ function importBackup(){
   alert('写入本机存储失败，已尝试恢复导入前的数据。可能是设备空间不足；请先复制备份文本。')
  }
 }
-function resetIncomeFilters(){
- ['incomeSearch','incomeDateFrom','incomeDateTo'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
- ['incomeFilterUnit','incomeFilterStatus'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='all'});
- renderIncomeRecords();
-}
-function renderIncomeRecords(){
- const a=current(),box=document.getElementById('records'),summary=document.getElementById('incomeFilterSummary');
- if(!box)return;
- const value=id=>{const el=document.getElementById(id);return el?el.value:''};
+function selectedIncomeRows(){
+ const a=current(),value=id=>{const el=document.getElementById(id);return el?el.value:''};
  const keyword=value('incomeSearch').trim().toLowerCase(),from=value('incomeDateFrom'),to=value('incomeDateTo'),unitFilter=value('incomeFilterUnit')||'all',statusFilter=value('incomeFilterStatus')||'all';
- const rows=a.incomes.map((x,index)=>({x,index})).filter(({x})=>{
+ return a.incomes.map((x,index)=>({x,index})).filter(({x})=>{
   const day=typeof x.date==='string'?x.date.slice(0,10):'';
   if(keyword&&!String(x.name||'').toLowerCase().includes(keyword))return false;
   if(from&&(!day||day<from))return false;
@@ -332,6 +335,52 @@ function renderIncomeRecords(){
   if(statusFilter==='pending'&&x.verifiedByUser===true)return false;
   return true;
  });
+}
+function renderMonthlyIncome(){
+ const input=document.getElementById('incomeMonth'),out=document.getElementById('incomeMonthSummary');
+ if(!input||!out)return;
+ if(!input.value){const now=new Date();input.value=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')}
+ const month=input.value;
+ const rows=current().incomes.filter(x=>typeof x.date==='string'&&x.date.slice(0,7)===month);
+ const total=(unit,verified)=>rows.filter(x=>(x.unit||'yuan')===unit&&(verified===null||x.verifiedByUser===verified)).reduce((n,x)=>n+Number(x.amount||0),0);
+ out.textContent=month+'｜现金：已核验 '+money(total('yuan',true))+'，待核验 '+money(total('yuan',false))+'；京豆：已核验 '+total('beans',true).toLocaleString()+'，待核验 '+total('beans',false).toLocaleString()+'；红包：已核验 '+total('redpacket',true).toLocaleString()+'，待核验 '+total('redpacket',false).toLocaleString()+'。共 '+rows.length+' 笔。不同单位分开统计。';
+}
+function shiftIncomeMonth(delta){
+ const input=document.getElementById('incomeMonth');if(!input)return;
+ if(!input.value)renderMonthlyIncome();
+ const parts=input.value.split('-').map(Number),date=new Date(parts[0],parts[1]-1+delta,1);
+ input.value=date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0');renderMonthlyIncome();
+}
+function csvCell(value){
+ let v=String(value??'');
+ if(/^[=+@-]/.test(v))v="'"+v;
+ return '"'+v.replace(/"/g,'""')+'"';
+}
+function prepareIncomeCsv(){
+ const rows=selectedIncomeRows(),a=current();
+ const header=['账号备注','日期','收益来源','收益类型','数量','核验状态','核验时间'];
+ const type=x=>(x.unit||'yuan')==='beans'?'京豆':(x.unit||'yuan')==='redpacket'?'红包':'元';
+ const data=[header,...rows.map(({x})=>[a.name,x.date||'',x.name,type(x),x.amount,x.verifiedByUser===true?'用户已核验':'待核验',x.verifiedAt||''])];
+ const csv='\uFEFF'+data.map(row=>row.map(csvCell).join(',')).join('\r\n');
+ const box=document.getElementById('incomeCsvData');box.value=csv;
+ const hint=document.getElementById('incomeCsvHint');if(hint)hint.textContent='已生成 '+rows.length+' 笔记录。复制后可粘贴到 Excel、WPS 表格等软件；不同单位请分别筛选查看。';
+ box.focus();box.select();
+}
+function copyIncomeCsv(){
+ const box=document.getElementById('incomeCsvData'),hint=document.getElementById('incomeCsvHint');
+ if(!box||!box.value){alert('请先生成 CSV 明细');return}
+ box.focus();box.select();let ok=false;try{ok=document.execCommand('copy')}catch(e){}
+ if(hint)hint.textContent=ok?'已尝试复制 CSV，请粘贴到表格软件确认内容。若未复制成功，可长按文本框全选复制。':'自动复制未成功，请长按文本框内容并选择“全选→复制”。';
+}
+function resetIncomeFilters(){
+ ['incomeSearch','incomeDateFrom','incomeDateTo'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
+ ['incomeFilterUnit','incomeFilterStatus'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='all'});
+ renderIncomeRecords();
+}
+function renderIncomeRecords(){
+ const a=current(),box=document.getElementById('records'),summary=document.getElementById('incomeFilterSummary');
+ if(!box)return;
+ const rows=selectedIncomeRows();
  const sum=(unit,verified)=>rows.filter(({x})=>(x.unit||'yuan')===unit&&(verified===null||x.verifiedByUser===verified)).reduce((n,{x})=>n+Number(x.amount||0),0);
  const yuanDone=sum('yuan',true),yuanPending=sum('yuan',false),beanDone=sum('beans',true),beanPending=sum('beans',false),packetDone=sum('redpacket',true),packetPending=sum('redpacket',false);
  if(summary)summary.textContent='筛选结果 '+rows.length+' 笔｜现金/金额：已核验 '+money(yuanDone)+'，待核验 '+money(yuanPending)+'｜京豆：已核验 '+beanDone.toLocaleString()+'，待核验 '+beanPending.toLocaleString()+'｜红包：已核验 '+packetDone.toLocaleString()+'，待核验 '+packetPending.toLocaleString()+'。不同单位分开统计，不混合相加。';
@@ -356,6 +405,7 @@ const taskBox=document.getElementById('tasks');taskBox.innerHTML='';if(!a.tasks.
 const dailyBox=document.getElementById('dailyChecklist');if(dailyBox){dailyBox.innerHTML='';const today=localDayKey(),checks=Array.isArray(a.dailyChecks)?a.dailyChecks:[],done=checks.filter(x=>x.date===today);const progress=document.getElementById('dailyProgress');if(progress)progress.textContent='今日完成 '+done.length+' / '+DAILY_MODULES.length+' 项';DAILY_MODULES.forEach(name=>{const checked=done.some(x=>x.module===name),line=document.createElement('div');line.className='task';line.style.display='flex';line.style.alignItems='center';line.style.justifyContent='space-between';line.style.gap='8px';const label=document.createElement('span');label.textContent=(checked?'✓ ':'○ ')+name;label.style.fontWeight='700';const actions=document.createElement('div');actions.style.display='flex';actions.style.gap='6px';actions.style.flexShrink='0';const open=document.createElement('button');open.style.width='auto';open.style.padding='9px 10px';open.style.fontSize='12px';open.className='secondary';open.textContent='打开入口';open.onclick=()=>openDailyModule(name);const btn=document.createElement('button');btn.style.width='auto';btn.style.minWidth='88px';btn.style.padding='9px 10px';btn.style.fontSize='12px';btn.className=checked?'secondary':'';btn.textContent=checked?'撤销':'已检查';btn.onclick=()=>toggleDailyCheck(name);actions.append(open,btn);line.append(label,actions);dailyBox.append(line)})}
 const priceBox=document.getElementById('priceWatches');if(priceBox){priceBox.innerHTML='';const watches=Array.isArray(a.priceWatches)?a.priceWatches:[];if(!watches.length)priceBox.textContent='当前账号暂无监测商品';watches.forEach(w=>{const d=document.createElement('div');d.className='module';const title=document.createElement('b');title.textContent=w.name;const prices=Array.isArray(w.records)?w.records:[],latest=prices.length?Number(prices[0].price):null,lowest=prices.length?Math.min(...prices.map(x=>Number(x.price)).filter(Number.isFinite)):null;const info=document.createElement('p');info.className='muted';info.textContent='目标价 ¥'+Number(w.targetPrice).toFixed(2)+' · 最新记录 '+(latest===null?'暂无':'¥'+latest.toFixed(2))+' · 历史最低 '+(lowest===null?'暂无':'¥'+lowest.toFixed(2))+' · '+prices.length+' 条记录';const history=document.createElement('p');history.className='muted';history.textContent=prices.slice(0,5).map(x=>'¥'+Number(x.price).toFixed(2)+'（'+new Date(x.date).toLocaleDateString()+'）').join('；')||'尚无价格历史';const record=document.createElement('button');record.textContent='记录一次当前价格';record.disabled=w.enabled===false;record.onclick=()=>recordPrice(w.id);const edit=document.createElement('button');edit.className='secondary';edit.textContent='修改商品/目标价';edit.onclick=()=>editPriceWatch(w.id);const pause=document.createElement('button');pause.className='secondary';pause.textContent=w.enabled===false?'恢复监测':'暂停监测';pause.onclick=()=>togglePriceWatch(w.id);const del=document.createElement('button');del.className='danger';del.style.marginTop='6px';del.textContent='删除商品及历史';del.onclick=()=>removePriceWatch(w.id);if(w.enabled===false){const paused=document.createElement('p');paused.className='muted';paused.textContent='已暂停：不会触发目标价提醒';d.append(title,paused)}else d.append(title);if(w.url){const link=document.createElement('button');link.className='secondary';link.textContent='打开京东商品页';link.onclick=()=>{try{if(!(window.AndroidBridge&&AndroidBridge.openJdUrl(w.url)))alert('无法打开，请在京东 App 手动搜索商品')}catch(e){alert('请在京东 App 手动搜索商品')}};d.append(link)}d.append(edit,pause,record);if(prices.length){const details=document.createElement('details');details.style.marginTop='8px';const summary=document.createElement('summary');summary.textContent='查看全部价格历史（'+prices.length+'条）';details.append(summary);prices.forEach((entry,index)=>{const line=document.createElement('div');line.className='task';line.style.marginTop='6px';const stamp=document.createElement('span');stamp.textContent='¥'+Number(entry.price).toFixed(2)+' · '+(Number.isNaN(Date.parse(entry.date))?entry.date:new Date(entry.date).toLocaleString());const remove=document.createElement('button');remove.className='danger';remove.textContent='删除此条';remove.onclick=()=>removePriceRecord(w.id,index);line.append(stamp,remove);details.append(line)});d.append(details)}d.append(del);priceBox.append(d)})}
 renderIncomeRecords();
+ renderMonthlyIncome();
 }
 render();
 renderRouteHint();
