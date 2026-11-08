@@ -127,7 +127,7 @@ let accounts=loadAccounts();
 let activeId=localStorage.getItem(ACTIVE);
 if(!accounts.some(a=>a.id===activeId))activeId=accounts[0].id;
 function current(){return accounts.find(a=>a.id===activeId)||accounts[0]}
-function save(){localStorage.setItem(KEY,JSON.stringify(accounts));localStorage.setItem(ACTIVE,activeId);render()}
+function save(){localStorage.setItem(KEY,JSON.stringify(accounts));localStorage.setItem(ACTIVE,activeId);render();renderIncomeRecords();renderMonthlyIncome()}
 function money(n){return '¥'+Number(n||0).toFixed(2)}
 function switchAccount(id){if(!accounts.some(a=>a.id===id))return;try{if(window.AndroidBridge)AndroidBridge.stopClaimAttempt(current().id)}catch(e){}activeId=id;save()}
 function addAccount(){const el=document.getElementById('newAccountName'),name=el.value.trim();if(!name){alert('请先填写账号备注');return}if(accounts.some(a=>a.name===name)){alert('已有同名备注，请换一个名称');return}const a=makeAccount(name);try{if(window.AndroidBridge)AndroidBridge.stopClaimAttempt(current().id)}catch(e){}accounts.push(a);activeId=a.id;el.value='';save()}
@@ -322,11 +322,12 @@ function importBackup(){
   alert('写入本机存储失败，已尝试恢复导入前的数据。可能是设备空间不足；请先复制备份文本。')
  }
 }
+function incomeLocalDay(value){const d=new Date(value);if(Number.isNaN(d.getTime()))return '';return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function selectedIncomeRows(){
  const a=current(),value=id=>{const el=document.getElementById(id);return el?el.value:''};
  const keyword=value('incomeSearch').trim().toLowerCase(),from=value('incomeDateFrom'),to=value('incomeDateTo'),unitFilter=value('incomeFilterUnit')||'all',statusFilter=value('incomeFilterStatus')||'all';
  return a.incomes.map((x,index)=>({x,index})).filter(({x})=>{
-  const day=typeof x.date==='string'?x.date.slice(0,10):'';
+  const day=incomeLocalDay(x.date);
   if(keyword&&!String(x.name||'').toLowerCase().includes(keyword))return false;
   if(from&&(!day||day<from))return false;
   if(to&&(!day||day>to))return false;
@@ -341,7 +342,7 @@ function renderMonthlyIncome(){
  if(!input||!out)return;
  if(!input.value){const now=new Date();input.value=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')}
  const month=input.value;
- const rows=current().incomes.filter(x=>typeof x.date==='string'&&x.date.slice(0,7)===month);
+ const rows=current().incomes.filter(x=>incomeLocalDay(x.date).slice(0,7)===month);
  const total=(unit,verified)=>rows.filter(x=>(x.unit||'yuan')===unit&&(verified===null||x.verifiedByUser===verified)).reduce((n,x)=>n+Number(x.amount||0),0);
  out.textContent=month+'｜现金：已核验 '+money(total('yuan',true))+'，待核验 '+money(total('yuan',false))+'；京豆：已核验 '+total('beans',true).toLocaleString()+'，待核验 '+total('beans',false).toLocaleString()+'；红包：已核验 '+total('redpacket',true).toLocaleString()+'，待核验 '+total('redpacket',false).toLocaleString()+'。共 '+rows.length+' 笔。不同单位分开统计。';
 }
