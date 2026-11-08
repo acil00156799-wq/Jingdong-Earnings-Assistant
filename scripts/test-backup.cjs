@@ -21,8 +21,9 @@ assert.match(claimService, /manual_action_required/, 'page recognition always ha
 assert.match(claimService, /不会代替领取/, 'page recognizer clearly states it does not claim rewards');
 assert.doesNotMatch(claimService, /performAction\(AccessibilityNodeInfo\.ACTION_CLICK\)/, 'accessibility helper must never click JD claim controls');
 assert.doesNotMatch(claimService, /findClaimNode|allowedLabelsFor/, 'no automated claim-button targeting remains');
-assert.match(hc, /最长不超过180天/, 'official JD bean expiry guidance is visible in the app');
-assert.match(hc, /未经认可的软件\/机器人/, 'app warns against unapproved automated claiming');
+assert.match(html, /最长不超过180天/, 'official JD bean expiry guidance is visible in the app');
+assert.match(html, /未经认可的软件\/机器人/, 'app warns against unapproved automated claiming');
+assert.match(html, /未经认可的软件\/机器人/, 'app warns against unapproved automated claiming');
 assert.match(html, /help\.jd\.com\/user\/issue\/167-4224\.html/, 'official JD bean help source is present');
 assert.match(html, /help\.jd\.com\/user\/issue\/168-4458\.html/, 'official JD red packet help source is present');
 assert.match(html, /help\.jd\.com\/user\/issue\/169-335\.html/, 'official JD coupon help source is present');
