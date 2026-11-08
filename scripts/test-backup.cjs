@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 
 const html = fs.readFileSync('app/src/main/assets/index.html', 'utf8');
-const match = html.match(/<script>([\\s\\S]*?)<\\/script>/i);
+const match = html.match(/<script>([\s\S]*?)<\/script>/i);
 assert.ok(match, 'inline application script exists');
 const script = match[1];
 new Function(script);
