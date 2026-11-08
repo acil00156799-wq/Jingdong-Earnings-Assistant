@@ -168,12 +168,15 @@ function importBackup(){
  if(!confirm('确定恢复这份备份吗？本机现有账号、任务、收益记录和模块链接将被备份内容替换。建议先生成一份当前备份。'))return;
  const nextActive=safeAccounts.some(a=>a.id===data.activeId)?data.activeId:safeAccounts[0].id;
  const previous={accounts:localStorage.getItem(KEY),active:localStorage.getItem(ACTIVE),routes:localStorage.getItem(ROUTES)};
+ const previousMemory={accounts,activeId};
  try{
   localStorage.setItem(KEY,JSON.stringify(safeAccounts));localStorage.setItem(ACTIVE,nextActive);localStorage.setItem(ROUTES,JSON.stringify(safeRoutes));
   accounts=safeAccounts;activeId=nextActive;render();renderRouteHint();
   document.getElementById('backupHint').textContent='恢复完成：已载入 '+accounts.length+' 个账号。请检查各账号记录是否完整。';
  }catch(e){
   try{previous.accounts===null?localStorage.removeItem(KEY):localStorage.setItem(KEY,previous.accounts);previous.active===null?localStorage.removeItem(ACTIVE):localStorage.setItem(ACTIVE,previous.active);previous.routes===null?localStorage.removeItem(ROUTES):localStorage.setItem(ROUTES,previous.routes)}catch(rollbackError){}
+  accounts=previousMemory.accounts;activeId=previousMemory.activeId;
+  try{render();renderRouteHint()}catch(renderError){}
   alert('写入本机存储失败，已尝试恢复导入前的数据。可能是设备空间不足；请先复制备份文本。')
  }
 }
