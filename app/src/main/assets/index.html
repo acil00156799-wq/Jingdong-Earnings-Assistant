@@ -112,7 +112,7 @@ function refreshClaimStatus(){try{if(window.AndroidBridge&&document.getElementBy
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshClaimStatus()});
 setInterval(refreshClaimStatus,1500);
 
-function addTask(){const name=document.getElementById('taskName').value.trim(),url=document.getElementById('taskUrl').value.trim();if(!name){alert('请填写任务名称');return}if(url&&!isAllowedJdUrl(url)){alert('为保护账号安全，自定义任务只接受京东官方 HTTPS 链接（jd.com / jingdong.com）');return}current().tasks.unshift({id:Date.now(),name,url,status:'待核对',created:new Date().toISOString()});document.getElementById('taskName').value='';document.getElementById('taskUrl').value='';save()}
+function addTask(){const name=document.getElementById('taskName').value.trim(),url=document.getElementById('taskUrl').value.trim();if(!name){alert('请填写任务名称');return}if(url&&!isAllowedJdUrl(url)){alert('为保护账号安全，自定义任务只接受京东官方 HTTPS 链接（jd.com / jingdong.com）');return}const taskId=current().tasks.reduce((max,t)=>Math.max(max,Number.isSafeInteger(t.id)?t.id:0),Date.now()-1)+1;current().tasks.unshift({id:taskId,name,url,status:'待核对',created:new Date().toISOString()});document.getElementById('taskName').value='';document.getElementById('taskUrl').value='';save()}
 function goTask(id){const t=current().tasks.find(x=>x.id===id);if(!t)return;if(t.url){try{const ok=window.AndroidBridge&&AndroidBridge.openJdUrl(t.url);if(!ok)alert('无法直接打开京东 App，请手动打开京东查看。')}catch(e){alert('无法调用京东，请手动打开京东 App。')}}else openJd();t.status='已打开入口，待人工核对';save()}
 function confirmTask(id){const t=current().tasks.find(x=>x.id===id);if(!t)return;t.status='已检查任务，到账需另行核验';t.confirmed=new Date().toISOString();save()}
 function removeTask(id){current().tasks=current().tasks.filter(x=>x.id!==id);save()}
@@ -140,30 +140,41 @@ function importBackup(){
   alert('备份版本或数据结构不正确，未修改本机数据');return
  }
  const safeAccounts=[];
+ const accountIds=new Set();
  for(const a of data.accounts){
-  if(!a||typeof a.id!=='string'||!a.id||typeof a.name!=='string'||!a.name.trim()||!Array.isArray(a.tasks)||!Array.isArray(a.incomes)||a.tasks.length>5000||a.incomes.length>20000){
-   alert('备份中的账号或记录结构异常，未修改本机数据');return
+  if(!a||typeof a.id!=='string'||! /^[A-Za-z0-9_-]{1,128}$/.test(a.id)||accountIds.has(a.id)||typeof a.name!=='string'||!a.name.trim()||a.name.trim().length>80||!Array.isArray(a.tasks)||!Array.isArray(a.incomes)||a.tasks.length>5000||a.incomes.length>20000){
+   alert('备份中的账号或记录结构异常（账号 ID 不可重复），未修改本机数据');return
   }
+  accountIds.add(a.id);
+  const taskIds=new Set();
   const tasks=[];
   for(const t of a.tasks){
-   if(!t||typeof t.name!=='string'||typeof t.id!=='number'){alert('任务记录异常，未修改本机数据');return}
+   if(!t||typeof t.name!=='string'||!t.name.trim()||t.name.length>120||!Number.isSafeInteger(t.id)||t.id<0||taskIds.has(t.id)){alert('任务记录异常或任务编号重复，未修改本机数据');return}
+   taskIds.add(t.id);
    if(t.url&& !isAllowedJdUrl(t.url)){alert('备份中含有非京东官方 HTTPS 任务链接，已拒绝导入');return}
    tasks.push({id:t.id,name:t.name,url:t.url||'',status:typeof t.status==='string'?t.status:'待核对',created:typeof t.created==='string'?t.created:'' ,confirmed:typeof t.confirmed==='string'?t.confirmed:undefined})
   }
   const incomes=[];
   for(const x of a.incomes){
-   if(!x||typeof x.name!=='string'||!Number.isFinite(Number(x.amount))||Number(x.amount)<=0||!['yuan','beans','redpacket',undefined].includes(x.unit)){
+   if(!x||typeof x.name!=='string'||!x.name.trim()||x.name.length>120||!Number.isFinite(Number(x.amount))||Number(x.amount)<=0||Number(x.amount)>1000000000000||!['yuan','beans','redpacket',undefined].includes(x.unit)){
     alert('收益记录异常，未修改本机数据');return
    }
    incomes.push({name:x.name,amount:Number(x.amount),unit:x.unit||'yuan',date:typeof x.date==='string'?x.date:new Date().toISOString(),verifiedByUser:x.verifiedByUser===true,verificationSource:typeof x.verificationSource==='string'?x.verificationSource:'imported'})
   }
-  safeAccounts.push({id:a.id,name:a.name.trim(),tasks,incomes,created:typeof a.created==='string'?a.created:new Date().toISOString(),moduleChecks:a.moduleChecks&&typeof a.moduleChecks==='object'?a.moduleChecks:{}})
+  let beanCheck={};
+  if(a.moduleChecks&&typeof a.moduleChecks==='object'&&!Array.isArray(a.moduleChecks)&&a.moduleChecks.bean&&typeof a.moduleChecks.bean==='object'&&!Array.isArray(a.moduleChecks.bean)){
+   const b=a.moduleChecks.bean;
+   beanCheck={bean:{status:typeof b.status==='string'?b.status.slice(0,80):'',updated:typeof b.updated==='string'?b.updated:'',incomeRecordId:typeof b.incomeRecordId==='string'?b.incomeRecordId:''}}
+  }
+  safeAccounts.push({id:a.id,name:a.name.trim(),tasks,incomes,created:typeof a.created==='string'?a.created:new Date().toISOString(),moduleChecks:beanCheck})
  }
  const routes=data.moduleRoutes&&typeof data.moduleRoutes==='object'&&!Array.isArray(data.moduleRoutes)?data.moduleRoutes:{};
- const safeRoutes={};
+ const allowedRouteNames=new Set(['京豆签到','每日红包','宠汪汪','京东红包','游戏福利','其他活动']);
+ const safeRoutes=Object.create(null);
  for(const [name,url] of Object.entries(routes)){
-  if(typeof url==='string'&&isAllowedJdUrl(url))safeRoutes[name]=url;
-  else if(url){alert('模块链接中存在非京东官方 HTTPS 地址，已拒绝导入');return}
+  if(!allowedRouteNames.has(name)){alert('备份中含有未知模块名称，已拒绝导入');return}
+  if(typeof url==='string'&&url.length<=2048&&isAllowedJdUrl(url))safeRoutes[name]=url;
+  else if(url){alert('模块链接中存在非京东官方 HTTPS 地址或格式异常，已拒绝导入');return}
  }
  if(!confirm('确定恢复这份备份吗？本机现有账号、任务、收益记录和模块链接将被备份内容替换。建议先生成一份当前备份。'))return;
  const nextActive=safeAccounts.some(a=>a.id===data.activeId)?data.activeId:safeAccounts[0].id;
