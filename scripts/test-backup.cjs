@@ -38,6 +38,9 @@ assert.match(html, /历史最低/, 'price history shows lowest recorded price');
 assert.match(html, /已达到目标价/, 'target price threshold produces an alert');
 assert.match(html, /不会自动抓取京东价格/, 'price tracking is transparent about manual data entry');
 assert.match(html, /priceWatches/, 'price watches are included in account backup data');
+assert.match(html, /今日福利清单/, 'daily welfare checklist is visible');
+assert.match(html, /function toggleDailyCheck\(/, 'daily checklist supports manual completion toggles');
+assert.match(html, /dailyChecks/, 'daily checklist is included in account backup data');
 assert.match(html, /用户已核验/, 'income history labels user-verified records');
 assert.match(html, /导入记录\/待核验/, 'income history distinguishes imported unverified records');
 const match = html.match(/<script>([\s\S]*?)<\/script>/i);
@@ -57,7 +60,7 @@ let writeCount = 0;
 const context = {
   KEY: 'jd_assistant_accounts_v3', ACTIVE: 'jd_assistant_active_v3', ROUTES: 'jd_assistant_module_routes_v1',
   activeId: 'acct1',
-  accounts: [{ id: 'acct1', name: '主账号', tasks: [{ id: 123, name: '签到任务', url: 'https://bean.jd.com/', status: '待核对', created: '2026-11-08' }], incomes: [{ name: '京豆签到', amount: 20, unit: 'beans', date: '2026-11-08', verifiedByUser: true, verificationSource: 'user_confirmed' }], priceWatches: [{ id: 'pwatch1', name: '测试商品', url: 'https://item.jd.com/1.html', targetPrice: 99, records: [{ price: 89, date: '2026-11-08' }], created: '2026-11-08', enabled: true }], created: '2026-11-01' }],
+  accounts: [{ id: 'acct1', name: '主账号', tasks: [{ id: 123, name: '签到任务', url: 'https://bean.jd.com/', status: '待核对', created: '2026-11-08' }], incomes: [{ name: '京豆签到', amount: 20, unit: 'beans', date: '2026-11-08', verifiedByUser: true, verificationSource: 'user_confirmed' }], priceWatches: [{ id: 'pwatch1', name: '测试商品', url: 'https://item.jd.com/1.html', targetPrice: 99, records: [{ price: 89, date: '2026-11-08' }], created: '2026-11-08', enabled: true }], dailyChecks: [{ date: '2026-11-08', module: '京豆签到', checkedAt: '2026-11-08T09:00:00.000Z' }], created: '2026-11-01' }],
   localStorage: { getItem(k) { return store.has(k) ? store.get(k) : null; }, setItem(k, v) { writeCount += 1; if (failAtWrite === writeCount) throw new Error('simulated storage full'); store.set(k, String(v)); }, removeItem(k) { store.delete(k); } },
   document: { getElementById(id) { return elements[id]; } },
   alert(message) { alerts.push(String(message)); }, confirm() { return true; },
@@ -80,6 +83,7 @@ assert.equal(context.accounts[0].tasks.length, 1);
 assert.equal(context.accounts[0].incomes[0].amount, 20);
 assert.equal(context.accounts[0].priceWatches[0].targetPrice, 99, 'price watches survive backup restore');
 assert.equal(context.accounts[0].priceWatches[0].records[0].price, 89, 'price history survives backup restore');
+assert.equal(context.accounts[0].dailyChecks[0].module, '京豆签到', 'daily checklist survives backup restore');
 assert.equal(JSON.parse(context.localStorage.getItem(context.ROUTES))['京豆签到'], 'https://bean.jd.com/');
 
 // A failed multi-key restore must roll back both persisted data and in-memory state.
@@ -142,4 +146,4 @@ elements.backupData.value = 'x'.repeat(2000001);
 context.importBackup();
 assert.equal(context.accounts[0].id, beforeId, 'oversized backup must not change saved data');
 
-console.log('PASS: JavaScript syntax, account-scoped claim state, pre-click ownership guard, backup export/restore and rollback, duplicate ID rejection, module route allowlist/shape, HTTPS host, credential and port validation, malformed JSON, oversized backup');
+console.log('PASS: JavaScript syntax, account-scoped claim state, manual-only page recognition, backup export/restore and rollback, daily checklist backup/restore, duplicate ID rejection, module route allowlist/shape, HTTPS host, credential and port validation, malformed JSON, oversized backup');
