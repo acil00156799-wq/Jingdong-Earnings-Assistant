@@ -7,6 +7,7 @@ const mainJava = fs.readFileSync('app/src/main/java/com/personal/jdassistant/Mai
 const claimService = fs.readFileSync('app/src/main/java/com/personal/jdassistant/JdClaimAccessibilityService.java', 'utf8');
 assert.match(mainJava, /account\." \+ accountId \+ "\./, 'native claim preferences are account-scoped');
 assert.match(mainJava, /getClaimStatus\(String accountId\)/, 'claim status requires an account id');
+assert.match(mainJava, /Math\.max\(now, p\.getLong\(prefix \+ "attempt_id", 0L\) \+ 1L\)/, 'repeated attempts receive a fresh attempt id');
 assert.match(claimService, /active_attempt_account_id/, 'accessibility service follows the active account attempt');
 assert.match(claimService, /account\." \+ accountId \+ "\./, 'accessibility preferences are account-scoped');
 assert.match(claimService, /Re-check ownership immediately before clicking/, 'service rechecks account ownership before a click');
