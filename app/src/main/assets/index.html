@@ -285,13 +285,13 @@ function backupStats(list,routes={}){
  const all=list.reduce((s,a)=>{const inc= a.incomes||[],w=a.priceWatches||[];s.tasks+=a.tasks.length;s.incomes+=inc.length;s.verified+=inc.filter(x=>x.verifiedByUser===true).length;s.pending+=inc.filter(x=>x.verifiedByUser!==true).length;s.yuan+=inc.filter(x=>(x.unit||'yuan')==='yuan'&&x.verifiedByUser===true).reduce((n,x)=>n+Number(x.amount||0),0);s.beans+=inc.filter(x=>x.unit==='beans'&&x.verifiedByUser===true).reduce((n,x)=>n+Number(x.amount||0),0);s.redpackets+=inc.filter(x=>x.unit==='redpacket'&&x.verifiedByUser===true).reduce((n,x)=>n+Number(x.amount||0),0);s.watches+=w.length;s.priceRecords+=w.reduce((n,x)=>n+(x.records||[]).length,0);s.daily+= (a.dailyChecks||[]).length;return s},{tasks:0,incomes:0,verified:0,pending:0,yuan:0,beans:0,redpackets:0,watches:0,priceRecords:0,daily:0});
  all.accounts=list.length;all.routes=Object.keys(routes||{}).length;return all;
 }
-function backupStatsText(label,s){
- return label+'：'+s.accounts+' 个账号；任务 '+s.tasks+' 条；收益 '+s.incomes+' 笔（已核验 '+s.verified+'、待核验 '+s.pending+'）；已核验现金 ¥'+s.yuan.toFixed(2)+'、京豆 '+s.beans+' 个、红包 '+s.redpackets+' 个；价格商品 '+s.watches+' 件（历史 '+s.priceRecords+' 条）；每日清单 '+s.daily+' 条；专属入口 '+s.routes+' 个。';
+function backupStatsText(label,s,trashCount=0){
+ return label+'：'+s.accounts+' 个账号；回收站 '+trashCount+' 个；任务 '+s.tasks+' 条；收益 '+s.incomes+' 笔（已核验 '+s.verified+'、待核验 '+s.pending+'）；已核验现金 ¥'+s.yuan.toFixed(2)+'、京豆 '+s.beans+' 个、红包 '+s.redpackets+' 个；价格商品 '+s.watches+' 件（历史 '+s.priceRecords+' 条）；每日清单 '+s.daily+' 条；专属入口 '+s.routes+' 个。';
 }
 function exportBackup(){
- const routes=moduleRoutes(),payload={app:'jd-welfare-assistant',formatVersion:1,exportedAt:new Date().toISOString(),activeId,accounts,moduleRoutes:routes};
+ const routes=moduleRoutes(),payload={app:'jd-welfare-assistant',formatVersion:1,exportedAt:new Date().toISOString(),activeId,accounts,deletedAccounts,moduleRoutes:routes};
  const box=document.getElementById('backupData');box.value=JSON.stringify(payload,null,2);
- document.getElementById('backupHint').textContent='备份已生成。'+backupStatsText('本次备份',backupStats(accounts,routes))+'请复制并保存到安全位置。';
+ document.getElementById('backupHint').textContent='备份已生成。'+backupStatsText('本次备份',backupStats(accounts,routes),deletedAccounts.length)+'请复制并保存到安全位置。';
  box.focus();box.select();
 }
 function copyBackup(){
@@ -310,9 +310,12 @@ function importBackup(){
  if(!data||data.app!=='jd-welfare-assistant'||data.formatVersion!==1||!Array.isArray(data.accounts)||data.accounts.length<1||data.accounts.length>50){
   alert('备份版本或数据结构不正确，未修改本机数据');return
  }
+ if(data.deletedAccounts!==undefined&&(!Array.isArray(data.deletedAccounts)||data.deletedAccounts.length>50)){alert('备份中的回收站数据结构异常或数量超限，未修改本机数据');return}
+ const activeAccountCount=data.accounts.length;
+ const deletedSource=data.deletedAccounts||[];
  const safeAccounts=[];
  const accountIds=new Set();
- for(const a of data.accounts){
+ for(const a of [...data.accounts,...deletedSource]){
   if(!a||typeof a.id!=='string'||! /^[A-Za-z0-9_-]{1,128}$/.test(a.id)||accountIds.has(a.id)||typeof a.name!=='string'||!a.name.trim()||a.name.trim().length>80||!Array.isArray(a.tasks)||!Array.isArray(a.incomes)||a.tasks.length>5000||a.incomes.length>20000){
    alert('备份中的账号或记录结构异常（账号 ID 不可重复），未修改本机数据');return
   }
@@ -363,21 +366,26 @@ function importBackup(){
   if(typeof url==='string'&&url.length<=2048&&isAllowedJdUrl(url))safeRoutes[name]=url;
   else if(url){alert('模块链接中存在非京东官方 HTTPS 地址或格式异常，已拒绝导入');return}
  }
+ const safeDeletedAccounts=safeAccounts.splice(activeAccountCount).map((a,i)=>{
+  const deletedAt=deletedSource[i]&&deletedSource[i].deletedAt;
+  if(typeof deletedAt!=='string'||!Number.isFinite(new Date(deletedAt).getTime()))throw new Error('回收站删除时间无效');
+  return {...a,deletedAt};
+ });
  const incomingStats=backupStats(safeAccounts,safeRoutes),currentRoutes=moduleRoutes(),currentStats=backupStats(accounts,currentRoutes);
  const preview=document.getElementById('backupPreview');
- if(preview)preview.textContent=backupStatsText('待恢复备份',incomingStats)+'当前本机：'+backupStatsText('',currentStats);
- const message='恢复前请核对数据数量：\\n'+backupStatsText('备份内容',incomingStats)+'\\n'+backupStatsText('本机现有数据',currentStats)+'\\n确认后将用备份整体替换本机数据，不会合并。建议先生成并保存当前备份。';
+ if(preview)preview.textContent=backupStatsText('待恢复备份',incomingStats,safeDeletedAccounts.length)+'当前本机：'+backupStatsText('',currentStats,deletedAccounts.length);
+ const message='恢复前请核对数据数量：\\n'+backupStatsText('备份内容',incomingStats,safeDeletedAccounts.length)+'\\n'+backupStatsText('本机现有数据',currentStats,deletedAccounts.length)+'\\n确认后将用备份整体替换本机数据，不会合并。建议先生成并保存当前备份。';
  if(!confirm(message))return;
  const nextActive=safeAccounts.some(a=>a.id===data.activeId)?data.activeId:safeAccounts[0].id;
- const previous={accounts:localStorage.getItem(KEY),active:localStorage.getItem(ACTIVE),routes:localStorage.getItem(ROUTES)};
- const previousMemory={accounts,activeId};
+ const previous={accounts:localStorage.getItem(KEY),active:localStorage.getItem(ACTIVE),routes:localStorage.getItem(ROUTES),trash:localStorage.getItem(TRASH)};
+ const previousMemory={accounts,activeId,deletedAccounts};
  try{
-  localStorage.setItem(KEY,JSON.stringify(safeAccounts));localStorage.setItem(ACTIVE,nextActive);localStorage.setItem(ROUTES,JSON.stringify(safeRoutes));
-  accounts=safeAccounts;activeId=nextActive;render();renderRouteHint();
-  document.getElementById('backupHint').textContent='恢复完成。'+backupStatsText('已载入',backupStats(accounts,safeRoutes))+'请检查各账号数据是否完整。';
+  localStorage.setItem(KEY,JSON.stringify(safeAccounts));localStorage.setItem(ACTIVE,nextActive);localStorage.setItem(ROUTES,JSON.stringify(safeRoutes));localStorage.setItem(TRASH,JSON.stringify(safeDeletedAccounts));
+  accounts=safeAccounts;activeId=nextActive;deletedAccounts=safeDeletedAccounts;render();renderRouteHint();
+  document.getElementById('backupHint').textContent='恢复完成。'+backupStatsText('已载入',backupStats(accounts,safeRoutes),deletedAccounts.length)+'请检查各账号数据是否完整。';
  }catch(e){
-  try{previous.accounts===null?localStorage.removeItem(KEY):localStorage.setItem(KEY,previous.accounts);previous.active===null?localStorage.removeItem(ACTIVE):localStorage.setItem(ACTIVE,previous.active);previous.routes===null?localStorage.removeItem(ROUTES):localStorage.setItem(ROUTES,previous.routes)}catch(rollbackError){}
-  accounts=previousMemory.accounts;activeId=previousMemory.activeId;
+  try{previous.accounts===null?localStorage.removeItem(KEY):localStorage.setItem(KEY,previous.accounts);previous.active===null?localStorage.removeItem(ACTIVE):localStorage.setItem(ACTIVE,previous.active);previous.routes===null?localStorage.removeItem(ROUTES):localStorage.setItem(ROUTES,previous.routes);previous.trash===null?localStorage.removeItem(TRASH):localStorage.setItem(TRASH,previous.trash)}catch(rollbackError){}
+  accounts=previousMemory.accounts;activeId=previousMemory.activeId;deletedAccounts=previousMemory.deletedAccounts;
   try{render();renderRouteHint()}catch(renderError){}
   alert('写入本机存储失败，已尝试恢复导入前的数据。可能是设备空间不足；请先复制备份文本。')
  }
