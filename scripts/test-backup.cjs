@@ -50,6 +50,9 @@ assert.match(html, /导入记录\/待核验/, 'income history distinguishes impo
 assert.match(html, /function verifyIncome\(/, 'imported income can be marked verified only through explicit user confirmation');
 assert.match(html, /function unverifyIncome\(/, 'verified income can be reverted');
 assert.match(html, /function deleteIncome\(/, 'income records can be deleted');
+assert.match(html, /请确认：你已经在京东官方 App 或账户明细中核实/, 'new income entry requires explicit actual-arrival confirmation');
+assert.match(html, /verifiedAt:new Date\(\)\.toISOString\(\)/, 'verified income records retain a verification timestamp');
+
 assert.match(html, /核实到账后确认/, 'income verification action is clearly labeled');
 assert.match(html, /撤销核验/, 'income verification can be reverted from the record list');
 
