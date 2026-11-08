@@ -279,15 +279,15 @@ function makeStorageHarness(initial) {
 }
 const originalAccount = {id:'persisted1',name:'原始账号',tasks:[],incomes:[]};
 const harness = makeStorageHarness({'jd_assistant_accounts_v3':JSON.stringify([originalAccount]),'jd_assistant_active_v3':'persisted1'});
-harness.ctx.accounts[0].name='未保存的新名称';
+vm.runInContext("accounts[0].name='未保存的新名称'",harness.ctx);
 harness.setFail(2);
-assert.equal(harness.ctx.save(),false,'failed multi-key save reports failure');
+assert.equal(vm.runInContext('save()',harness.ctx),false,'failed multi-key save reports failure');
 assert.equal(JSON.parse(harness.data.get('jd_assistant_accounts_v3'))[0].name,'原始账号','failed save rolls persisted account data back');
-assert.equal(harness.ctx.accounts[0].name,'原始账号','failed save restores in-memory last-good data');
+assert.equal(vm.runInContext('accounts[0].name',harness.ctx),'原始账号','failed save restores in-memory last-good data');
 assert.ok(harness.alerts.some(x=>x.includes('保存失败')),'failed save explains the storage failure');
 const corruptHarness = makeStorageHarness({'jd_assistant_accounts_v3':'{corrupt'});
-assert.equal(corruptHarness.ctx.accountsLoadError,true,'corrupt persisted JSON is detected');
-assert.equal(corruptHarness.ctx.save(),false,'writes are blocked when existing account data cannot be read');
+assert.equal(vm.runInContext('accountsLoadError',corruptHarness.ctx),true,'corrupt persisted JSON is detected');
+assert.equal(vm.runInContext('save()',corruptHarness.ctx),false,'writes are blocked when existing account data cannot be read');
 assert.equal(corruptHarness.data.get('jd_assistant_accounts_v3'),'{corrupt','corrupt source data is never overwritten by fallback data');
 assert.ok(corruptHarness.alerts.some(x=>x.includes('读取异常')),'corrupt data warning directs user to restore a backup');
 
