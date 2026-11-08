@@ -68,6 +68,15 @@ footer{text-align:center;color:#aaa;font-size:11px;padding:16px}
 <div class="module"><h4>优惠券领取</h4><p class="muted">官方帮助中心指引：京东 App 首页点击“领券”进入领券中心；领取资格、有效期和适用范围以券面为准。</p><button class="secondary" onclick="openOfficialHelp('https://help.jd.com/user/issue/169-335.html')">查看优惠券官方指引</button></div>
 <div class="note">来源仅限京东官方帮助中心公开页面。若官方页面规则更新，以官方页面为准；不使用第三方脚本、账号 Cookie 或非公开接口读取个人数据。</div>
 </details>
+<details><summary>商品价格监测</summary>
+<h3>本机价格跟踪</h3>
+<p class="muted">添加商品和心理目标价。价格由你从京东商品页手动填写；每次记录后，助手会更新历史最低价，并在达到目标价时提醒。不会自动抓取京东价格，也不会后台监控。</p>
+<input id="watchName" placeholder="商品名称，例如：无线充电器">
+<input id="watchUrl" placeholder="可选：京东商品链接（仅官方 HTTPS 链接）">
+<input id="watchTarget" type="number" min="0.01" step="0.01" placeholder="目标价（元）">
+<button onclick="addPriceWatch()">＋ 添加价格监测</button>
+<div id="priceWatches" class="muted" style="margin-top:10px">暂无监测商品</div>
+</details>
 <details><summary>任务记录与自定义任务</summary><h3>当前账号任务记录</h3>
 <input id="taskName" placeholder="任务名称，例如：京豆购物返豆领取">
 <input id="taskUrl" placeholder="可选：京东活动链接（http/https）">
@@ -121,6 +130,28 @@ function refreshClaimStatus(){try{if(window.AndroidBridge&&document.getElementBy
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshClaimStatus()});
 setInterval(refreshClaimStatus,1500);
 
+function addPriceWatch(){
+ const name=document.getElementById('watchName').value.trim(),url=document.getElementById('watchUrl').value.trim(),target=Number(document.getElementById('watchTarget').value);
+ if(!name||name.length>120||!Number.isFinite(target)||target<=0||target>100000000){alert('请填写商品名称和有效目标价');return}
+ if(url&&!isAllowedJdUrl(url)){alert('商品链接只接受京东官方 HTTPS 链接');return}
+ const a=current();if(!Array.isArray(a.priceWatches))a.priceWatches=[];
+ if(a.priceWatches.length>=300){alert('单个账号最多保存300个商品');return}
+ a.priceWatches.unshift({id:'p'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),name,url,targetPrice:target,records:[],created:new Date().toISOString(),enabled:true});
+ document.getElementById('watchName').value='';document.getElementById('watchUrl').value='';document.getElementById('watchTarget').value='';save();
+}
+function recordPrice(id){
+ const a=current(),w=(a.priceWatches||[]).find(x=>x.id===id);if(!w)return;
+ const raw=prompt('填写当前京东商品页显示的价格（元）');if(raw===null)return;
+ const price=Number(raw.trim());if(!Number.isFinite(price)||price<=0||price>100000000){alert('价格格式无效，请填写大于0的数字');return}
+ if(!Array.isArray(w.records))w.records=[];
+ if(w.records.length>=2000){alert('该商品价格记录已达上限（2000条），请先删除商品重新建立');return}
+ w.records.unshift({price,date:new Date().toISOString()});save();
+ if(price<=w.targetPrice)alert('价格提醒：'+w.name+' 当前记录 ¥'+price.toFixed(2)+'，已达到目标价 ¥'+w.targetPrice.toFixed(2)+'。请打开京东核对商品规格、优惠条件和最终结算价。');
+}
+function removePriceWatch(id){
+ if(!confirm('确定删除该商品及其全部价格历史吗？'))return;
+ const a=current();a.priceWatches=(a.priceWatches||[]).filter(x=>x.id!==id);save();
+}
 function addTask(){const name=document.getElementById('taskName').value.trim(),url=document.getElementById('taskUrl').value.trim();if(!name){alert('请填写任务名称');return}if(url&&!isAllowedJdUrl(url)){alert('为保护账号安全，自定义任务只接受京东官方 HTTPS 链接（jd.com / jingdong.com）');return}const taskId=current().tasks.reduce((max,t)=>Math.max(max,Number.isSafeInteger(t.id)?t.id:0),Date.now()-1)+1;current().tasks.unshift({id:taskId,name,url,status:'待核对',created:new Date().toISOString()});document.getElementById('taskName').value='';document.getElementById('taskUrl').value='';save()}
 function goTask(id){const t=current().tasks.find(x=>x.id===id);if(!t)return;if(t.url){try{const ok=window.AndroidBridge&&AndroidBridge.openJdUrl(t.url);if(!ok)alert('无法直接打开京东 App，请手动打开京东查看。')}catch(e){alert('无法调用京东，请手动打开京东 App。')}}else openJd();t.status='已打开入口，待人工核对';save()}
 function confirmTask(id){const t=current().tasks.find(x=>x.id===id);if(!t)return;t.status='已检查任务，到账需另行核验';t.confirmed=new Date().toISOString();save()}
@@ -170,12 +201,20 @@ function importBackup(){
    }
    incomes.push({name:x.name,amount:Number(x.amount),unit:x.unit||'yuan',date:typeof x.date==='string'?x.date:new Date().toISOString(),verifiedByUser:x.verifiedByUser===true,verificationSource:typeof x.verificationSource==='string'?x.verificationSource:'imported'})
   }
+  const priceWatches=[];const watchIds=new Set();
+  if(a.priceWatches!==undefined&&!Array.isArray(a.priceWatches)){alert('价格监测数据结构异常，未修改本机数据');return}
+  for(const w of (a.priceWatches||[])){
+   if(!w||typeof w.id!=='string'||!/^p[A-Za-z0-9_-]{1,128}$/.test(w.id)||watchIds.has(w.id)||typeof w.name!=='string'||!w.name.trim()||w.name.length>120||!Number.isFinite(Number(w.targetPrice))||Number(w.targetPrice)<=0||Number(w.targetPrice)>100000000||!Array.isArray(w.records)||w.records.length>2000){alert('价格监测商品或记录结构异常，未修改本机数据');return}
+   watchIds.add(w.id);if(w.url&&!isAllowedJdUrl(w.url)){alert('价格监测中含有非京东官方 HTTPS 链接，已拒绝导入');return}
+   const records=[];for(const r of w.records){if(!r||!Number.isFinite(Number(r.price))||Number(r.price)<=0||Number(r.price)>100000000||typeof r.date!=='string'){alert('价格历史记录异常，未修改本机数据');return}records.push({price:Number(r.price),date:r.date})}
+   priceWatches.push({id:w.id,name:w.name.trim(),url:w.url||'',targetPrice:Number(w.targetPrice),records,created:typeof w.created==='string'?w.created:'',enabled:w.enabled!==false})
+  }
   let beanCheck={};
   if(a.moduleChecks&&typeof a.moduleChecks==='object'&&!Array.isArray(a.moduleChecks)&&a.moduleChecks.bean&&typeof a.moduleChecks.bean==='object'&&!Array.isArray(a.moduleChecks.bean)){
    const b=a.moduleChecks.bean;
    beanCheck={bean:{status:typeof b.status==='string'?b.status.slice(0,80):'',updated:typeof b.updated==='string'?b.updated:'',incomeRecordId:typeof b.incomeRecordId==='string'?b.incomeRecordId:''}}
   }
-  safeAccounts.push({id:a.id,name:a.name.trim(),tasks,incomes,created:typeof a.created==='string'?a.created:new Date().toISOString(),moduleChecks:beanCheck})
+  safeAccounts.push({id:a.id,name:a.name.trim(),tasks,incomes,priceWatches,created:typeof a.created==='string'?a.created:new Date().toISOString(),moduleChecks:beanCheck})
  }
  if(data.moduleRoutes!==undefined&&data.moduleRoutes!==null&&(typeof data.moduleRoutes!=='object'||Array.isArray(data.moduleRoutes))){alert('备份中的模块链接结构异常，未修改本机数据');return}
  const routes=data.moduleRoutes||{};
@@ -207,6 +246,7 @@ document.getElementById('activeTotal').textContent=money(total);document.getElem
 const beansEl=document.getElementById('activeBeans');if(beansEl)beansEl.textContent=beans.toLocaleString()+' 个';const packetsEl=document.getElementById('activeRedpackets');if(packetsEl)packetsEl.textContent=redpackets.toLocaleString()+' 个';
 const all=accounts.reduce((s,x)=>s+x.incomes.filter(yuanOnly).reduce((q,r)=>q+r.amount,0),0);document.getElementById('allTotal').textContent=money(all);const summary=document.getElementById('accountSummary');summary.innerHTML='';accounts.forEach(x=>{const p=document.createElement('p');const yuan=x.incomes.filter(yuanOnly).reduce((s,r)=>s+r.amount,0),beanCount=x.incomes.filter(r=>r.unit==='beans').reduce((s,r)=>s+r.amount,0),packetCount=x.incomes.filter(r=>r.unit==='redpacket').reduce((s,r)=>s+r.amount,0);p.textContent=x.name+'：现金 '+money(yuan)+' · 京豆 '+beanCount.toLocaleString()+' 个 · 红包 '+packetCount.toLocaleString()+' 个（'+x.incomes.length+'笔）';summary.append(p)});
 const taskBox=document.getElementById('tasks');taskBox.innerHTML='';if(!a.tasks.length)taskBox.textContent='当前账号暂无任务';a.tasks.forEach(t=>{const d=document.createElement('div');d.className='task';const b=document.createElement('b');b.textContent=t.name;const s=document.createElement('div');s.className='status';s.textContent=t.status+(t.confirmed?' · '+new Date(t.confirmed).toLocaleString():'');const go=document.createElement('button');go.textContent='打开京东查看';go.onclick=()=>goTask(t.id);const done=document.createElement('button');done.className='secondary';done.textContent='我已检查任务（不代表到账）';done.onclick=()=>confirmTask(t.id);const del=document.createElement('button');del.className='danger';del.textContent='删除任务';del.onclick=()=>removeTask(t.id);d.append(b,s,go,done,del);taskBox.append(d)});
+const priceBox=document.getElementById('priceWatches');if(priceBox){priceBox.innerHTML='';const watches=Array.isArray(a.priceWatches)?a.priceWatches:[];if(!watches.length)priceBox.textContent='当前账号暂无监测商品';watches.forEach(w=>{const d=document.createElement('div');d.className='module';const title=document.createElement('b');title.textContent=w.name;const prices=Array.isArray(w.records)?w.records:[],latest=prices.length?Number(prices[0].price):null,lowest=prices.length?Math.min(...prices.map(x=>Number(x.price)).filter(Number.isFinite)):null;const info=document.createElement('p');info.className='muted';info.textContent='目标价 ¥'+Number(w.targetPrice).toFixed(2)+' · 最新记录 '+(latest===null?'暂无':'¥'+latest.toFixed(2))+' · 历史最低 '+(lowest===null?'暂无':'¥'+lowest.toFixed(2))+' · '+prices.length+' 条记录';const history=document.createElement('p');history.className='muted';history.textContent=prices.slice(0,5).map(x=>'¥'+Number(x.price).toFixed(2)+'（'+new Date(x.date).toLocaleDateString()+'）').join('；')||'尚无价格历史';const record=document.createElement('button');record.textContent='记录一次当前价格';record.onclick=()=>recordPrice(w.id);const del=document.createElement('button');del.className='danger';del.style.marginTop='6px';del.textContent='删除商品及历史';del.onclick=()=>removePriceWatch(w.id);d.append(title,info,history);if(w.url){const link=document.createElement('button');link.className='secondary';link.textContent='打开京东商品页';link.onclick=()=>{try{if(!(window.AndroidBridge&&AndroidBridge.openJdUrl(w.url)))alert('无法打开，请在京东 App 手动搜索商品')}catch(e){alert('请在京东 App 手动搜索商品')}};d.append(link)}d.append(record,del);priceBox.append(d)})}
 const rb=document.getElementById('records');rb.innerHTML='';if(!a.incomes.length)rb.textContent='当前账号暂无收益记录';a.incomes.forEach(x=>{const p=document.createElement('p');const unit=x.unit||'yuan',shown=unit==='beans'?Number(x.amount).toLocaleString()+' 京豆':unit==='redpacket'?Number(x.amount).toLocaleString()+' 个红包':money(x.amount),check=x.verifiedByUser===true?'用户已核验':'导入记录/待核验';p.textContent=x.name+'  +'+shown+'  '+new Date(x.date).toLocaleDateString()+' · '+check;rb.append(p)})}
 render();
 renderRouteHint();
