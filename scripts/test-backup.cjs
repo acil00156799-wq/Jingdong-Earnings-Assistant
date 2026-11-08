@@ -68,6 +68,15 @@ assert.match(html, /verifiedAt:new Date\(\)\.toISOString\(\)/, 'verified income 
 
 assert.match(html, /核实到账后确认/, 'income verification action is clearly labeled');
 assert.match(html, /撤销核验/, 'income verification can be reverted from the record list');
+assert.match(html, /收益明细筛选/, 'income ledger exposes a dedicated filtering section');
+assert.match(html, /incomeDateFrom/, 'income ledger can filter from a start date');
+assert.match(html, /incomeDateTo/, 'income ledger can filter through an end date');
+assert.match(html, /incomeFilterUnit/, 'income ledger can filter by income type');
+assert.match(html, /incomeFilterStatus/, 'income ledger can filter by verification state');
+assert.match(html, /function resetIncomeFilters\(/, 'income ledger filters can be cleared');
+assert.match(html, /function renderIncomeRecords\(/, 'income ledger filtering and rendering are implemented');
+assert.match(html, /不同单位分开统计，不混合相加/, 'filtered totals keep yuan, beans and red packets separate');
+
 
 assert.match(html, /verified=x=>x\.verifiedByUser===true/, 'income totals count only user-verified records');
 assert.match(html, /activePending/, 'dashboard separately displays pending imported cash amounts');
