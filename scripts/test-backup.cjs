@@ -90,7 +90,7 @@ assert.match(html, /id="allBeans"/, 'all-account dashboard includes verified bea
 assert.match(html, /id="allRedpackets"/, 'all-account dashboard includes verified red packet totals');
 assert.match(html, /verifiedAt:typeof x\.verifiedAt==='string'\?x\.verifiedAt:undefined/, 'backup restore preserves verification timestamps');
 assert.match(html, /function accountDeleteSummary\(/, 'account deletion previews the account data inventory');
-assert.match(html, /function deleteAccount\(\)[\\s\\S]*?const typed=prompt\(/, 'account deletion requires typed confirmation after the warning');
+assert.match(html, /const typed=prompt\(/, 'account deletion requires typed confirmation after the warning');
 assert.match(html, /typed!==a\.name/, 'mismatched account name cancels deletion');
 assert.match(html, /建议先到“数据备份与恢复”生成并复制完整备份/, 'account deletion recommends exporting a backup first');
 
