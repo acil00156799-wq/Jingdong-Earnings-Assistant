@@ -134,8 +134,11 @@ public class MainActivity extends Activity {
                     .apply();
                 waiting = false;
             }
-            return p.getString("last_result", "尚未执行") +
-                (waiting ? "（正在等待领取按钮，最长3分钟）" : "");
+            String state = p.getString("claim_state", "idle");
+            String suffix = "verifying".equals(state)
+                ? "（正在核对京东页面反馈，最多20秒）"
+                : (waiting ? "（正在等待京豆签到按钮，最长3分钟）" : "");
+            return p.getString("last_result", "尚未执行") + suffix;
         }
     }
 
