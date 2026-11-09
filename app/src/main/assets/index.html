@@ -20,7 +20,7 @@ button{width:100%;border:0;border-radius:12px;padding:15px 12px;font-size:16px;f
 <main>
 <section class="card">
 <h2>一键领取京豆</h2>
-<div class="muted">点击后先打开京东官方 App。请在京东内进入“京豆”或“签到领京豆”页面，助手会识别明确的领取按钮并尝试点击一次。</div>
+<div class="muted">点击后先打开京东官方 App。请在京东内进入“京豆”或“签到领京豆”页面，助手会识别明确的签到按钮，只点击一次，并观察京东页面是否出现新的成功提示。</div>
 <button onclick="startBeanClaim()">开始领取京豆</button>
 <button class="secondary" onclick="openAccessibility()">开启 / 检查无障碍权限</button>
 <button class="secondary" onclick="stopClaim()">停止本次任务</button>
@@ -34,7 +34,7 @@ button{width:100%;border:0;border-radius:12px;padding:15px 12px;font-size:16px;f
 <li>点击“开始领取京豆”，助手会打开京东首页并开始识别。</li>
 <li>在京东 App 内手动进入“京豆”签到页面，并停留在该页面等待识别。</li>
 </ol>
-<div class="muted">本版本暂不强行跳转京豆网页，以避免京东内部网页跳转失败。安全限制：每次只尝试点击一个明确匹配的按钮，最多等待3分钟。显示“已点击”不等于奖励已到账，请以京东页面实际结果为准。</div>
+<div class="muted">本版本暂不强行跳转京豆网页，以避免京东内部网页跳转失败。安全限制：每次只尝试点击一个明确匹配的按钮，最多等待3分钟。出现“签到成功提示”表示页面反馈成功；这仍不等于余额已最终入账，请以京豆余额和明细为准。若20秒内没有成功提示，助手会明确显示“无法确认”，不会再次点击。</div>
 </section>
 </main><footer>京豆自动领取 · 本地运行</footer>
 <script>
