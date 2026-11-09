@@ -2,119 +2,55 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#e1251b">
-<title>京东个人收益助手</title>
-
+<title>京豆自动领取</title>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#f5f6f8;color:#252525;font-family:Arial,"Microsoft YaHei",sans-serif}
-header{background:linear-gradient(140deg,#d71920,#f34c3f);color:#fff;padding:25px 18px 30px;border-radius:0 0 24px 24px}
-header h2{margin:0;font-size:22px;font-weight:800}header p{margin:7px 0 0;font-size:12px;opacity:.9}
-main{padding:14px;max-width:620px;margin:auto}.card{background:#fff;border-radius:17px;padding:16px;margin-bottom:13px;box-shadow:0 3px 14px #17202b0a}
-h3{font-size:16px;margin:0 0 12px}.muted{font-size:12px;color:#888;line-height:1.6}
-.big{font-size:29px;font-weight:800;color:#df2525;margin:3px 0}.grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
-.item{background:#fff5f3;padding:11px;border-radius:12px;font-size:12px;color:#777}.item strong{display:block;color:#d92323;font-size:19px;margin-top:5px}
-button{border:0;border-radius:12px;padding:12px 10px;font-size:14px;font-weight:700;background:#e1251b;color:white;width:100%;cursor:pointer}
-.secondary{background:#f2f3f5;color:#444}.danger{background:#fff0ef;color:#b21d17}
-.launch-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.launch{background:#fafafa;border:1px solid #f0f0f0;border-radius:14px;padding:13px 5px;color:#333;min-height:94px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
-.launch .ico{font-size:27px;line-height:1}.launch span:last-child{font-size:12px;font-weight:700}
-.primary-action{margin-top:13px;padding:15px;font-size:16px;border-radius:13px}
-.status{font-size:12px;color:#8b6a54;margin-top:9px;text-align:center}
-details{background:#fff;border-radius:15px;padding:14px 16px;margin-bottom:12px;box-shadow:0 3px 12px #00000008}
-summary{font-size:14px;font-weight:700;cursor:pointer;list-style:none}summary:after{content:"＋";float:right;color:#999}details[open] summary:after{content:"－"}
-input,select{width:100%;padding:12px;border-radius:10px;border:1px solid #ddd;font-size:14px;margin:6px 0;background:#fff}
-.rowbtn{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:7px 0}
-.note{background:#fff8e8;border:1px solid #f3d59a;border-radius:10px;padding:10px;color:#75520a;font-size:11px;line-height:1.6;margin-top:10px}
-.task,.account-row{border-bottom:1px solid #eee;padding:10px 0}.module{border:1px solid #eee;border-radius:12px;padding:12px;margin:10px 0}.module h4{margin:0 0 6px;font-size:14px}.module .route{font-size:12px;color:#666;line-height:1.6;margin:5px 0}
-footer{text-align:center;color:#aaa;font-size:11px;padding:16px}
-@media(max-width:360px){.launch-grid{grid-template-columns:repeat(2,1fr)}}
-</style>
-</head>
+*{box-sizing:border-box}body{margin:0;background:#f5f6f8;color:#222;font-family:Arial,"Microsoft YaHei",sans-serif}
+header{background:linear-gradient(135deg,#c9151e,#ef493d);color:#fff;padding:28px 20px 30px;border-radius:0 0 22px 22px}
+h1{font-size:23px;margin:0}header p{font-size:13px;margin:8px 0 0;opacity:.9}
+main{max-width:520px;margin:auto;padding:18px}.card{background:#fff;border-radius:16px;padding:18px;margin-bottom:14px;box-shadow:0 3px 14px #00000009}
+h2{font-size:17px;margin:0 0 12px}.muted{font-size:13px;color:#777;line-height:1.7}
+button{width:100%;border:0;border-radius:12px;padding:15px 12px;font-size:16px;font-weight:700;background:#e1251b;color:#fff;margin-top:12px}
+.secondary{background:#f0f1f3;color:#333;font-size:14px}.status{padding:12px;background:#fff7e8;border-radius:10px;color:#76531a;font-size:13px;line-height:1.7;margin-top:12px}
+.steps{padding-left:20px;color:#555;font-size:13px;line-height:1.9}footer{text-align:center;color:#aaa;font-size:11px;padding:12px}
+</style></head>
 <body>
-<header><h2>京东福利助手</h2><p>简单操作 · 福利领取 · 收益统计</p></header>
+<header><h1>京豆自动领取</h1><p>当前版本只做一件事：辅助领取京东京豆签到奖励</p></header>
 <main>
-<details><summary>账号管理</summary>
-<h3>当前京东账号</h3>
-<select id="activeAccount" aria-label="选择当前账号" onchange="switchAccount(this.value)"></select>
-<div class="muted" id="activeHint"></div>
-<div class="rowbtn"><button class="secondary" onclick="renameAccount()">修改备注</button><button class="danger" onclick="deleteAccount()">删除当前账号</button></div>
-<input id="newAccountName" placeholder="输入账号备注，例如：主账号、家人账号">
-<button onclick="addAccount()">＋ 添加账号</button>
-<div class="note">这里仅保存账号备注和各自的统计数据，不保存京东密码、短信验证码或登录凭据。切换统计账号不会自动切换京东 App 的登录身份；请在京东官方 App 内自行确认当前登录账号。</div>
-</details>
-<section class="card"><h3>我的收益</h3><div class="big" id="activeTotal">¥0.00</div><div class="muted">累计登记收益</div><div class="grid" style="margin-top:12px"><div class="item">本月收益<strong id="activeMonth">¥0.00</strong></div><div class="item">收益记录<strong id="activeCount">0</strong></div><div class="item">京豆到账<strong id="activeBeans">0 个</strong></div><div class="item">红包到账<strong id="activeRedpackets">0 个</strong></div></div></section>
-<details><summary>所有账号收益汇总</summary><h3>所有账号汇总</h3><div class="big" id="allTotal">¥0.00</div><div class="muted">全部账号累计登记收益（仅汇总本工具中保存的数据）</div><div id="accountSummary" class="muted"></div></details>
-<section class="card"><h3>福利入口</h3><div class="launch-grid">
-<button class="launch" onclick="startTaskShortcut('京豆签到')"><span class="ico">🫘</span><span>京豆签到</span></button>
-<button class="launch" onclick="startTaskShortcut('每日红包')"><span class="ico">🧧</span><span>每日红包</span></button>
-<button class="launch" onclick="startTaskShortcut('宠汪汪')"><span class="ico">🐶</span><span>宠汪汪</span></button>
-<button class="launch" onclick="startTaskShortcut('京东红包')"><span class="ico">🎁</span><span>京东红包</span></button>
-<button class="launch" onclick="startTaskShortcut('游戏福利')"><span class="ico">🎮</span><span>游戏福利</span></button>
-<button class="launch" onclick="startTaskShortcut('其他活动')"><span class="ico">⭐</span><span>其他活动</span></button>
-</div>
-<div class="module" style="margin-top:12px"><h4>固定福利入口链接（可选）</h4><p class="muted">如果你已从京东官方 App 分享某项福利的活动链接，可在这里保存。以后点击对应入口时，助手会优先尝试打开该链接；未设置时仍打开京东首页。</p>
-<select id="routeModule" aria-label="选择福利模块"><option>京豆签到</option><option>每日红包</option><option>宠汪汪</option><option>京东红包</option><option>游戏福利</option><option>其他活动</option></select>
-<input id="routeUrl" placeholder="粘贴京东活动链接（http/https）">
-<div class="rowbtn"><button class="secondary" onclick="saveModuleRoute()">保存此模块链接</button><button class="danger" onclick="clearModuleRoute()">清除此模块链接</button></div>
-<div class="muted" id="routeHint">尚未设置专属活动链接</div></div>
-<button class="primary-action" onclick="startOneClaim()">一键启动领取识别</button><button class="secondary" style="margin-top:8px" onclick="openAccessibility()">开启/检查无障碍权限</button><button class="danger" style="margin-top:8px" onclick="stopClaim()">停止本次识别</button><div class="status" id="claimStatus">状态：等待启动</div>
-<div class="note">当前版本会打开京东并识别页面上明确的领取按钮；单次点击不代表全部任务已完成或奖励已到账。</div></section>
-<details><summary>任务记录与自定义任务</summary><h3>当前账号任务记录</h3>
-<input id="taskName" placeholder="任务名称，例如：京豆购物返豆领取">
-<input id="taskUrl" placeholder="可选：京东活动链接（http/https）">
-<button onclick="addTask()">添加任务</button><div id="tasks" class="muted">暂无任务</div>
-</details>
-<details><summary>到账登记与明细</summary><h3>登记当前账号实际到账</h3><p class="muted">此处由你根据京东页面或账单手动登记。本工具不会自动读取京东账户；只有确认实际到账后才填写。</p>
-<input id="incomeName" placeholder="收益来源，例如：购物返豆">
-<select id="incomeUnit" aria-label="收益单位"><option value="yuan">现金/红包金额（元）</option><option value="beans">京豆（个）</option><option value="redpacket">红包（个）</option></select>
-<input id="incomeAmount" type="number" min="0.01" step="0.01" placeholder="实际到账数量">
-<button onclick="addIncome()">保存到账记录</button><div id="records" class="muted">暂无收益记录</div>
-</details>
-</main><footer>京东个人收益助手 · 数据保存在本设备本地</footer>
+<section class="card">
+<h2>一键领取京豆</h2>
+<div class="muted">点击后会打开京东京豆签到页。本助手在京东页面中识别明确的京豆签到按钮，并尝试点击一次。</div>
+<button onclick="startBeanClaim()">开始领取京豆</button>
+<button class="secondary" onclick="openAccessibility()">开启 / 检查无障碍权限</button>
+<button class="secondary" onclick="stopClaim()">停止本次任务</button>
+<div class="status" id="claimStatus">状态：尚未启动</div>
+</section>
+<section class="card">
+<h2>首次使用</h2>
+<ol class="steps">
+<li>先确认手机已安装并登录京东官方 App。</li>
+<li>开启本助手的无障碍服务权限。</li>
+<li>点击“开始领取京豆”，等待京豆页面打开。</li>
+<li>如果页面未自动跳转，请在京东内手动进入“京豆”签到页，助手会继续识别。</li>
+</ol>
+<div class="muted">安全限制：每次只尝试点击一个明确匹配的按钮，最多等待3分钟。显示“已点击”不等于奖励已到账，请以京东页面实际结果为准。</div>
+</section>
+</main><footer>京豆自动领取 · 本地运行</footer>
 <script>
-const KEY='jd_assistant_accounts_v3', ACTIVE='jd_assistant_active_v3', ROUTES='jd_assistant_module_routes_v1';
-function makeAccount(name){return {id:'a'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),name,tasks:[],incomes:[],created:new Date().toISOString()}}
-const accountsSeed=[];
-function loadAccounts(){try{const v=JSON.parse(localStorage.getItem(KEY));if(Array.isArray(v)&&v.length)return v}catch(e){}const first=makeAccount('主账号');try{first.tasks=JSON.parse(localStorage.getItem('jd_tasks'))||[];first.incomes=JSON.parse(localStorage.getItem('jd_incomes'))||[];const labels=JSON.parse(localStorage.getItem('jd_accounts'))||[];labels.forEach((name,i)=>{if(typeof name==='string'&&name.trim()&&name.trim()!=='主账号')accountsSeed.push(makeAccount(name.trim()))})}catch(e){}return [first,...accountsSeed]}
-let accounts=loadAccounts();
-let activeId=localStorage.getItem(ACTIVE);
-if(!accounts.some(a=>a.id===activeId))activeId=accounts[0].id;
-function current(){return accounts.find(a=>a.id===activeId)||accounts[0]}
-function save(){localStorage.setItem(KEY,JSON.stringify(accounts));localStorage.setItem(ACTIVE,activeId);render()}
-function money(n){return '¥'+Number(n||0).toFixed(2)}
-function switchAccount(id){if(!accounts.some(a=>a.id===id))return;activeId=id;save()}
-function addAccount(){const el=document.getElementById('newAccountName'),name=el.value.trim();if(!name){alert('请先填写账号备注');return}if(accounts.some(a=>a.name===name)){alert('已有同名备注，请换一个名称');return}const a=makeAccount(name);accounts.push(a);activeId=a.id;el.value='';save()}
-function renameAccount(){const a=current(),name=prompt('修改账号备注',a.name);if(name===null)return;const v=name.trim();if(!v){alert('备注不能为空');return}if(accounts.some(x=>x.id!==a.id&&x.name===v)){alert('已有同名账号备注');return}a.name=v;save()}
-function deleteAccount(){if(accounts.length===1){alert('至少保留一个账号');return}const a=current();if(!confirm('确定删除“'+a.name+'”及其本工具中的任务和收益记录吗？此操作不可撤销。'))return;accounts=accounts.filter(x=>x.id!==a.id);activeId=accounts[0].id;save()}
-function openJd(){try{const ok=window.AndroidBridge&&AndroidBridge.openJdApp();if(!ok)alert('没有检测到京东 App，请先安装京东官方 App。')}catch(e){alert('暂时无法打开京东 App，请确认已安装。')}}
-function moduleRoutes(){try{return JSON.parse(localStorage.getItem(ROUTES)||'{}')}catch(e){return {}}}
-function saveModuleRoute(){const name=document.getElementById('routeModule').value,url=document.getElementById('routeUrl').value.trim();if(!url){alert('请先粘贴京东活动链接');return}if(!/^https?:\/\//i.test(url)){alert('只接受 http:// 或 https:// 开头的链接');return}const routes=moduleRoutes();routes[name]=url;localStorage.setItem(ROUTES,JSON.stringify(routes));renderRouteHint()}
-function clearModuleRoute(){const name=document.getElementById('routeModule').value,routes=moduleRoutes();delete routes[name];localStorage.setItem(ROUTES,JSON.stringify(routes));document.getElementById('routeUrl').value='';renderRouteHint()}
-function renderRouteHint(){const name=document.getElementById('routeModule').value,url=moduleRoutes()[name]||'';document.getElementById('routeUrl').value=url;document.getElementById('routeHint').textContent=url?'已保存此模块专属链接：点击入口时优先打开':'尚未设置专属活动链接，将打开京东首页'}
-document.getElementById('routeModule').addEventListener('change',renderRouteHint);
-
-function openAccessibility(){try{if(window.AndroidBridge)AndroidBridge.openAccessibilitySettings();else alert('请在系统设置中开启本助手的无障碍服务。')}catch(e){alert('请在系统设置中开启本助手的无障碍服务。')}}
-function startTaskShortcut(name){try{if(!window.AndroidBridge){alert('请安装本助手 APK 后使用');return}if(!AndroidBridge.startOneClaimAttempt(name,current().id)){setTaskHint('请先开启本助手的无障碍权限，再启动'+name);openAccessibility();return}setTaskHint(name+'：已启动对应模块识别，正在打开京东');const url=moduleRoutes()[name];if(url){const ok=AndroidBridge.openJdUrl(url);if(!ok){setTaskHint(name+'：活动链接无法打开，请检查链接或手动进入京东');openJd()}}else openJd()}catch(e){setTaskHint(name+'：启动失败，请检查无障碍权限')}}
-function startOneClaim(){try{if(!window.AndroidBridge){alert('请安装 Android APK 后使用自动化功能。');return}if(!AndroidBridge.startOneClaimAttempt('其他活动',current().id)){setTaskHint('请先开启本助手的无障碍权限');openAccessibility();return}setTaskHint('已启动安全识别；其他活动仍需人工核对');openJd()}catch(e){setTaskHint('启动失败，请检查无障碍权限')}}
-function stopClaim(){try{if(window.AndroidBridge)AndroidBridge.stopClaimAttempt();setTaskHint('已停止')}catch(e){setTaskHint('停止请求已发送')}}
-function setTaskHint(message){const el=document.getElementById('claimStatus');if(el)el.textContent='任务辅助状态：'+message;}
-function refreshClaimStatus(){try{if(window.AndroidBridge&&document.getElementById('claimStatus'))document.getElementById('claimStatus').textContent='任务辅助状态：'+AndroidBridge.getClaimStatus()}catch(e){}}
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshClaimStatus()});
-setInterval(refreshClaimStatus,1500);
-
-function addTask(){const name=document.getElementById('taskName').value.trim(),url=document.getElementById('taskUrl').value.trim();if(!name){alert('请填写任务名称');return}if(url&&!/^https?:\/\//i.test(url)){alert('链接需以 http:// 或 https:// 开头');return}current().tasks.unshift({id:Date.now(),name,url,status:'待核对',created:new Date().toISOString()});document.getElementById('taskName').value='';document.getElementById('taskUrl').value='';save()}
-function goTask(id){const t=current().tasks.find(x=>x.id===id);if(!t)return;if(t.url){try{const ok=window.AndroidBridge&&AndroidBridge.openJdUrl(t.url);if(!ok)alert('无法直接打开京东 App，请手动打开京东查看。')}catch(e){alert('无法调用京东，请手动打开京东 App。')}}else openJd();t.status='已打开入口，待人工核对';save()}
-function confirmTask(id){const t=current().tasks.find(x=>x.id===id);if(!t)return;t.status='已检查任务，到账需另行核验';t.confirmed=new Date().toISOString();save()}
-function removeTask(id){current().tasks=current().tasks.filter(x=>x.id!==id);save()}
-function addIncome(){const name=document.getElementById('incomeName').value.trim(),amount=Number(document.getElementById('incomeAmount').value),unit=document.getElementById('incomeUnit').value;if(!name||!Number.isFinite(amount)||amount<=0){alert('请填写收益来源和有效到账数量');return}const a=current();a.incomes.unshift({name,amount,unit,date:new Date().toISOString(),verifiedByUser:true,verificationSource:'user_confirmed'});if(unit==='beans'){if(!a.moduleChecks)a.moduleChecks={};a.moduleChecks.bean={status:'已登记用户核验到账',updated:new Date().toISOString(),incomeRecordId:a.incomes[0].date}}try{if(window.AndroidBridge)AndroidBridge.markUserVerified(unit,name,a.id)}catch(e){}document.getElementById('incomeName').value='';document.getElementById('incomeAmount').value='';save()}
-function render(){const sel=document.getElementById('activeAccount');sel.innerHTML='';accounts.forEach(a=>{const o=document.createElement('option');o.value=a.id;o.textContent=a.name;sel.append(o)});sel.value=activeId;const a=current();document.getElementById('activeHint').textContent='当前数据空间：'+a.name+' · '+a.tasks.length+' 条任务 · '+a.incomes.length+' 条收益记录';
-const yuanOnly=x=>(x.unit||'yuan')==='yuan',total=a.incomes.filter(yuanOnly).reduce((s,x)=>s+x.amount,0),beans=a.incomes.filter(x=>x.unit==='beans').reduce((s,x)=>s+x.amount,0),redpackets=a.incomes.filter(x=>x.unit==='redpacket').reduce((s,x)=>s+x.amount,0),now=new Date(),month=a.incomes.filter(x=>yuanOnly(x)&&(()=>{const d=new Date(x.date);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()})()).reduce((s,x)=>s+x.amount,0);
-document.getElementById('activeTotal').textContent=money(total);document.getElementById('activeMonth').textContent=money(month);document.getElementById('activeCount').textContent=a.incomes.length;
-const beansEl=document.getElementById('activeBeans');if(beansEl)beansEl.textContent=beans.toLocaleString()+' 个';const packetsEl=document.getElementById('activeRedpackets');if(packetsEl)packetsEl.textContent=redpackets.toLocaleString()+' 个';
-const all=accounts.reduce((s,x)=>s+x.incomes.filter(yuanOnly).reduce((q,r)=>q+r.amount,0),0);document.getElementById('allTotal').textContent=money(all);const summary=document.getElementById('accountSummary');summary.innerHTML='';accounts.forEach(x=>{const p=document.createElement('p');const yuan=x.incomes.filter(yuanOnly).reduce((s,r)=>s+r.amount,0),beanCount=x.incomes.filter(r=>r.unit==='beans').reduce((s,r)=>s+r.amount,0),packetCount=x.incomes.filter(r=>r.unit==='redpacket').reduce((s,r)=>s+r.amount,0);p.textContent=x.name+'：现金 '+money(yuan)+' · 京豆 '+beanCount.toLocaleString()+' 个 · 红包 '+packetCount.toLocaleString()+' 个（'+x.incomes.length+'笔）';summary.append(p)});
-const taskBox=document.getElementById('tasks');taskBox.innerHTML='';if(!a.tasks.length)taskBox.textContent='当前账号暂无任务';a.tasks.forEach(t=>{const d=document.createElement('div');d.className='task';const b=document.createElement('b');b.textContent=t.name;const s=document.createElement('div');s.className='status';s.textContent=t.status+(t.confirmed?' · '+new Date(t.confirmed).toLocaleString():'');const go=document.createElement('button');go.textContent='打开京东查看';go.onclick=()=>goTask(t.id);const done=document.createElement('button');done.className='secondary';done.textContent='我已检查任务（不代表到账）';done.onclick=()=>confirmTask(t.id);const del=document.createElement('button');del.className='danger';del.textContent='删除任务';del.onclick=()=>removeTask(t.id);d.append(b,s,go,done,del);taskBox.append(d)});
-const rb=document.getElementById('records');rb.innerHTML='';if(!a.incomes.length)rb.textContent='当前账号暂无收益记录';a.incomes.forEach(x=>{const p=document.createElement('p');const unit=x.unit||'yuan',shown=unit==='beans'?Number(x.amount).toLocaleString()+' 京豆':unit==='redpacket'?Number(x.amount).toLocaleString()+' 个红包':money(x.amount);p.textContent=x.name+'  +'+shown+'  '+new Date(x.date).toLocaleDateString();rb.append(p)})}
-render();
-renderRouteHint();
+const BEAN_URL='https://bean.m.jd.com/bean/signIndex.action';
+function setStatus(s){document.getElementById('claimStatus').textContent='任务状态：'+s}
+function openAccessibility(){try{if(window.AndroidBridge)AndroidBridge.openAccessibilitySettings();else setStatus('请安装 Android APK 后开启无障碍服务')}catch(e){setStatus('无法打开设置，请在系统设置中手动开启无障碍服务')}}
+function startBeanClaim(){
+ try{
+  if(!window.AndroidBridge){setStatus('请安装 Android APK 后使用');return}
+  if(!AndroidBridge.startOneClaimAttempt('京豆签到','default')){setStatus('请先开启本助手的无障碍权限');openAccessibility();return}
+  setStatus('已启动识别，正在打开京豆签到页；如未跳转，请在京东内手动进入京豆页面');
+  if(!AndroidBridge.openJdUrl(BEAN_URL)){setStatus('已启动识别，但京豆页未能自动打开；请手动打开京东并进入京豆签到页')}
+ }catch(e){setStatus('启动失败，请检查京东 App 和无障碍权限')}
+}
+function stopClaim(){try{if(window.AndroidBridge)AndroidBridge.stopClaimAttempt();setStatus('已停止')}catch(e){setStatus('停止请求已发送')}}
+function refresh(){try{if(window.AndroidBridge)document.getElementById('claimStatus').textContent='任务状态：'+AndroidBridge.getClaimStatus()}catch(e){}}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});
+setInterval(refresh,1200);
 </script></body></html>
