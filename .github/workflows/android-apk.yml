@@ -20,7 +20,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 15
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
@@ -33,8 +33,43 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
       - name: Run automated unit tests
         run: gradle --no-daemon testDebugUnitTest
+      - name: Run Android lint
+        run: gradle --no-daemon lintDebug
       - name: Build installable debug APK
         run: gradle --no-daemon assembleDebug
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Jingdong-Earnings-Assistant-APK
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
+      - name: Upload unit test and lint reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: JD-Bean-Claim-Test-Reports
+          path: |
+            app/build/reports/tests/testDebugUnitTest/
+            app/build/reports/lint-results-debug.html
+          if-no-files-found: ignore
+          retention-days: 14
+
+  emulator-integration:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    continue-on-error: true
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
       - name: Run Android emulator integration tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -45,20 +80,13 @@ jobs:
           disable-animations: true
           emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect
           script: gradle --no-daemon connectedDebugAndroidTest
-      - name: Upload test reports
+      - name: Upload emulator test reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: JD-Bean-Claim-Test-Reports
+          name: JD-Bean-Claim-Emulator-Reports
           path: |
-            app/build/reports/tests/
             app/build/reports/androidTests/
+            app/build/outputs/androidTest-results/
           if-no-files-found: ignore
           retention-days: 14
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: Jingdong-Earnings-Assistant-APK
-          path: app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
-          retention-days: 30
