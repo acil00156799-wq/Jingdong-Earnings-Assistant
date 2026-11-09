@@ -125,16 +125,29 @@ public class MainActivity extends Activity {
         public String getClaimStatus() {
             SharedPreferences p = getSharedPreferences(PREFS, MODE_PRIVATE);
             boolean waiting = p.getBoolean("auto_claim_enabled", false);
+            long now = System.currentTimeMillis();
             long startedAt = p.getLong("attempt_started_at", 0L);
-            if (waiting && startedAt > 0L && System.currentTimeMillis() - startedAt > 180000L) {
+            String state = p.getString("claim_state", "idle");
+            long lastActionAt = p.getLong("last_action_time", 0L);
+            if ("verifying".equals(state) && lastActionAt > 0L && now - lastActionAt > 20000L) {
+                p.edit()
+                    .putBoolean("auto_claim_enabled", false)
+                    .putString("claim_state", "clicked_unconfirmed")
+                    .putString("last_result", "已点击签到按钮，但20秒内未识别到成功提示；不能确认领取成功")
+                    .putLong("verification_time", now)
+                    .apply();
+                waiting = false;
+                state = "clicked_unconfirmed";
+            }
+            if (waiting && startedAt > 0L && now - startedAt > 180000L) {
                 p.edit()
                     .putBoolean("auto_claim_enabled", false)
                     .putString("claim_state", "timeout")
-                    .putString("last_result", "识别等待超过3分钟，已自动停止；请重新打开对应京东页面后再试")
+                    .putString("last_result", "识别等待超过3分钟，已自动停止；请重新打开京豆签到页面后再试")
                     .apply();
                 waiting = false;
+                state = "timeout";
             }
-            String state = p.getString("claim_state", "idle");
             String suffix = "verifying".equals(state)
                 ? "（正在核对京东页面反馈，最多20秒）"
                 : (waiting ? "（正在等待京豆签到按钮，最长3分钟）" : "");
