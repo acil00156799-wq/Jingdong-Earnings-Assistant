@@ -38,11 +38,20 @@ public class JdClaimAccessibilityService extends AccessibilityService {
 
         int type = event.getEventType();
         if (type != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
-                && type != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return;
+                && type != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
+                && type != AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED) return;
 
+        // Some JD success feedback is exposed as an accessibility toast/event,
+        // not as a node in the active window. Include event text in verification.
+        StringBuilder observed = new StringBuilder();
+        if (event.getText() != null) {
+            for (CharSequence part : event.getText()) {
+                if (part != null) observed.append(part).append(' ');
+            }
+        }
         AccessibilityNodeInfo root = getRootInActiveWindow();
-        if (root == null) return;
-        String currentText = collectVisibleText(root);
+        if (root != null) observed.append(collectVisibleText(root));
+        String currentText = observed.toString();
 
         // After the single click, observe the JD UI but never click a second time.
         if (actionAttempted) {
@@ -81,6 +90,11 @@ public class JdClaimAccessibilityService extends AccessibilityService {
             return;
         }
 
+        if (root == null) {
+            updateStateIfChanged(prefs, "button_not_found",
+                "已识别京豆签到页面，但当前没有可读取的页面控件；未执行点击");
+            return;
+        }
         AccessibilityNodeInfo target = findClaimNode(
             root, BeanClaimMatcher.claimButtonLabels(currentText));
         if (target == null) {
