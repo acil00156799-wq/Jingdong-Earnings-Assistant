@@ -26,8 +26,18 @@ jobs:
           java-version: "17"
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
+      - name: Run automated unit tests
+        run: gradle --no-daemon testDebugUnitTest
       - name: Build installable debug APK
         run: gradle --no-daemon assembleDebug
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: JD-Bean-Claim-Test-Reports
+          path: app/build/reports/tests/testDebugUnitTest/
+          if-no-files-found: ignore
+          retention-days: 14
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
