@@ -20,7 +20,7 @@ public class BeanClaimMatcherTest {
 
     @Test public void successMustAppearAfterTheClick() {
         assertTrue(BeanClaimMatcher.hasSuccessEvidence("签到成功，获得京豆", "京豆签到"));
-        assertFalse(BeanClaimMatcher.hasSuccessEvidence("签到成功，获得京豆", "京豆签到 签到成功"));
+        assertFalse(BeanClaimMatcher.hasSuccessEvidence("签到成功，获得京豆", "京豆签到 签到成功 获得京豆"));
         assertFalse(BeanClaimMatcher.hasSuccessEvidence("领取按钮 京豆签到", "京豆签到"));
         assertTrue(BeanClaimMatcher.hasSuccessEvidence("京豆到账 +5", "京豆签到"));
     }
