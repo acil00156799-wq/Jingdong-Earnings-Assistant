@@ -20,7 +20,7 @@ button{width:100%;border:0;border-radius:12px;padding:15px 12px;font-size:16px;f
 <main>
 <section class="card">
 <h2>一键领取京豆</h2>
-<div class="muted">点击后会打开京东京豆签到页。本助手在京东页面中识别明确的京豆签到按钮，并尝试点击一次。</div>
+<div class="muted">点击后先打开京东官方 App。请在京东内进入“京豆”或“签到领京豆”页面，助手会识别明确的领取按钮并尝试点击一次。</div>
 <button onclick="startBeanClaim()">开始领取京豆</button>
 <button class="secondary" onclick="openAccessibility()">开启 / 检查无障碍权限</button>
 <button class="secondary" onclick="stopClaim()">停止本次任务</button>
@@ -29,24 +29,23 @@ button{width:100%;border:0;border-radius:12px;padding:15px 12px;font-size:16px;f
 <section class="card">
 <h2>首次使用</h2>
 <ol class="steps">
-<li>先确认手机已安装并登录京东官方 App。</li>
+<li>确认已安装并登录京东官方 App。</li>
 <li>开启本助手的无障碍服务权限。</li>
-<li>点击“开始领取京豆”，等待京豆页面打开。</li>
-<li>如果页面未自动跳转，请在京东内手动进入“京豆”签到页，助手会继续识别。</li>
+<li>点击“开始领取京豆”，助手会打开京东首页并开始识别。</li>
+<li>在京东 App 内手动进入“京豆”签到页面，并停留在该页面等待识别。</li>
 </ol>
-<div class="muted">安全限制：每次只尝试点击一个明确匹配的按钮，最多等待3分钟。显示“已点击”不等于奖励已到账，请以京东页面实际结果为准。</div>
+<div class="muted">本版本暂不强行跳转京豆网页，以避免京东内部网页跳转失败。安全限制：每次只尝试点击一个明确匹配的按钮，最多等待3分钟。显示“已点击”不等于奖励已到账，请以京东页面实际结果为准。</div>
 </section>
 </main><footer>京豆自动领取 · 本地运行</footer>
 <script>
-const BEAN_URL='https://bean.m.jd.com/bean/signIndex.action';
 function setStatus(s){document.getElementById('claimStatus').textContent='任务状态：'+s}
 function openAccessibility(){try{if(window.AndroidBridge)AndroidBridge.openAccessibilitySettings();else setStatus('请安装 Android APK 后开启无障碍服务')}catch(e){setStatus('无法打开设置，请在系统设置中手动开启无障碍服务')}}
 function startBeanClaim(){
  try{
   if(!window.AndroidBridge){setStatus('请安装 Android APK 后使用');return}
   if(!AndroidBridge.startOneClaimAttempt('京豆签到','default')){setStatus('请先开启本助手的无障碍权限');openAccessibility();return}
-  setStatus('已启动识别，正在打开京豆签到页；如未跳转，请在京东内手动进入京豆页面');
-  if(!AndroidBridge.openJdUrl(BEAN_URL)){setStatus('已启动识别，但京豆页未能自动打开；请手动打开京东并进入京豆签到页')}
+  if(AndroidBridge.openJdApp())setStatus('识别已启动。请在京东 App 内手动进入京豆签到页面，助手会继续识别');
+  else setStatus('识别已启动，但未能打开京东 App；请先手动打开京东并进入京豆签到页面');
  }catch(e){setStatus('启动失败，请检查京东 App 和无障碍权限')}
 }
 function stopClaim(){try{if(window.AndroidBridge)AndroidBridge.stopClaimAttempt();setStatus('已停止')}catch(e){setStatus('停止请求已发送')}}
