@@ -30,12 +30,23 @@ jobs:
         run: gradle --no-daemon testDebugUnitTest
       - name: Build installable debug APK
         run: gradle --no-daemon assembleDebug
+      - name: Run Android emulator integration tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          script: gradle --no-daemon connectedDebugAndroidTest
       - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: JD-Bean-Claim-Test-Reports
-          path: app/build/reports/tests/testDebugUnitTest/
+          path: |
+            app/build/reports/tests/
+            app/build/reports/androidTests/
           if-no-files-found: ignore
           retention-days: 14
       - name: Upload APK
