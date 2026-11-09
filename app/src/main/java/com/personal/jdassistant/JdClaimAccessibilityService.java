@@ -4,20 +4,21 @@ import android.accessibilityservice.AccessibilityService;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.content.SharedPreferences;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
- * User-started, one-shot helper. A click is allowed only when both the selected
- * welfare module's page context and an exact visible claim label match.
- * It performs at most one click per explicit user-started attempt.
+ * One-shot JD bean sign-in helper.
+ * It clicks at most one exact, visible claim control on the bean sign-in page,
+ * then observes the resulting UI for a new success message.
  */
 public class JdClaimAccessibilityService extends AccessibilityService {
     private static final String PREFS = "jd_claim_assistant";
     private static final long MAX_ATTEMPT_MS = 180000L;
+    private static final long VERIFY_WINDOW_MS = 20000L;
+
     private long lastAttemptId = -1L;
     private boolean actionAttempted = false;
+    private long verificationStartedAt = 0L;
+    private String textBeforeClick = "";
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
@@ -26,6 +27,42 @@ public class JdClaimAccessibilityService extends AccessibilityService {
 
         SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
         if (!prefs.getBoolean("auto_claim_enabled", false)) return;
+
+        long attemptId = prefs.getLong("attempt_id", -1L);
+        if (attemptId != lastAttemptId) {
+            lastAttemptId = attemptId;
+            actionAttempted = false;
+            verificationStartedAt = 0L;
+            textBeforeClick = "";
+        }
+
+        int type = event.getEventType();
+        if (type != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
+                && type != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return;
+
+        AccessibilityNodeInfo root = getRootInActiveWindow();
+        if (root == null) return;
+        String currentText = collectVisibleText(root);
+
+        // After the single click, observe the JD UI but never click a second time.
+        if (actionAttempted) {
+            if (BeanClaimMatcher.hasSuccessEvidence(currentText, textBeforeClick)) {
+                prefs.edit()
+                    .putBoolean("auto_claim_enabled", false)
+                    .putString("claim_state", "success_message_detected")
+                    .putString("last_result", "京东页面出现新的签到成功提示；请以京豆余额/明细为最终到账依据")
+                    .putLong("verification_time", System.currentTimeMillis())
+                    .apply();
+            } else if (System.currentTimeMillis() - verificationStartedAt > VERIFY_WINDOW_MS) {
+                prefs.edit()
+                    .putBoolean("auto_claim_enabled", false)
+                    .putString("claim_state", "clicked_unconfirmed")
+                    .putString("last_result", "已点击签到按钮，但20秒内未识别到成功提示；不能确认领取成功")
+                    .putLong("verification_time", System.currentTimeMillis())
+                    .apply();
+            }
+            return;
+        }
 
         long startedAt = prefs.getLong("attempt_started_at", 0L);
         if (startedAt > 0L && System.currentTimeMillis() - startedAt > MAX_ATTEMPT_MS) {
@@ -37,85 +74,46 @@ public class JdClaimAccessibilityService extends AccessibilityService {
             return;
         }
 
-        long attemptId = prefs.getLong("attempt_id", -1L);
-        if (attemptId != lastAttemptId) {
-            lastAttemptId = attemptId;
-            actionAttempted = false;
-        }
-        if (actionAttempted) return;
-
-        int type = event.getEventType();
-        if (type != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
-                && type != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return;
-
-        String task = prefs.getString("selected_task", "其他活动");
-        AccessibilityNodeInfo root = getRootInActiveWindow();
-        if (root == null) return;
-
-        String pageText = collectVisibleText(root);
-        boolean pageMatched = isTargetPage(task, pageText);
-        if (!pageMatched) {
+        String task = prefs.getString("selected_task", "");
+        if (!"京豆签到".equals(task) || !BeanClaimMatcher.isBeanSignInPage(currentText)) {
             updateStateIfChanged(prefs, "page_not_matched",
-                task + "：当前页面尚未识别为对应福利页面，未执行点击；请停留在该模块页面");
+                "当前页面尚未识别为京豆签到页面，未执行点击；请停留在京豆签到页面");
             return;
         }
 
-        Set<String> labels = allowedLabelsFor(task, pageText);
-        AccessibilityNodeInfo target = findClaimNode(root, labels);
+        AccessibilityNodeInfo target = findClaimNode(
+            root, BeanClaimMatcher.claimButtonLabels(currentText));
         if (target == null) {
             updateStateIfChanged(prefs, "button_not_found",
-                task + "：已识别到对应页面，但暂未发现明确的领取按钮；继续等待页面加载，未执行点击");
+                "已识别京豆签到页面，但未发现明确的签到按钮；未执行点击");
             return;
         }
 
         actionAttempted = true;
         boolean clicked = target.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-        prefs.edit()
-            .putBoolean("auto_claim_enabled", false)
-            .putString("claim_state", clicked ? "clicked_unverified" : "click_failed")
-            .putString("last_result", clicked
-                ? task + "：已点击一个匹配的领取按钮，尚未确认领取成功或到账"
-                : task + "：找到匹配按钮，但点击未成功；未确认到账")
-            .putLong("last_action_time", System.currentTimeMillis())
-            .apply();
-    }
-
-    private boolean isTargetPage(String task, String pageText) {
-        if ("京豆签到".equals(task)) {
-            return pageText.contains("京豆") && (pageText.contains("签到") || pageText.contains("领豆"));
+        if (clicked) {
+            verificationStartedAt = System.currentTimeMillis();
+            textBeforeClick = currentText;
+            prefs.edit()
+                .putBoolean("auto_claim_enabled", true)
+                .putString("claim_state", "verifying")
+                .putString("last_result", "已点击签到按钮，正在观察京东是否显示成功提示（最多20秒）")
+                .putLong("last_action_time", verificationStartedAt)
+                .apply();
+        } else {
+            prefs.edit()
+                .putBoolean("auto_claim_enabled", false)
+                .putString("claim_state", "click_failed")
+                .putString("last_result", "找到签到按钮，但系统点击未成功；未确认领取")
+                .putLong("last_action_time", System.currentTimeMillis())
+                .apply();
         }
-        if ("每日红包".equals(task) || "京东红包".equals(task)) {
-            return pageText.contains("红包") && (pageText.contains("每日") || pageText.contains("签到"));
-        }
-        if ("宠汪汪".equals(task)) return pageText.contains("宠汪汪");
-        if ("游戏福利".equals(task)) return pageText.contains("游戏") && pageText.contains("福利");
-        return false;
     }
 
     private void updateStateIfChanged(SharedPreferences prefs, String state, String message) {
         if (!state.equals(prefs.getString("claim_state", ""))) {
             prefs.edit().putString("claim_state", state).putString("last_result", message).apply();
         }
-    }
-
-    private Set<String> allowedLabelsFor(String task, String pageText) {
-        Set<String> labels = new HashSet<>();
-        if ("京豆签到".equals(task)) {
-            if (pageText.contains("京豆") && (pageText.contains("签到") || pageText.contains("领豆"))) {
-                labels.addAll(Arrays.asList("签到领京豆", "领取京豆"));
-            }
-        } else if ("每日红包".equals(task) || "京东红包".equals(task)) {
-            if (pageText.contains("红包") && (pageText.contains("每日") || pageText.contains("签到"))) {
-                labels.add("领取红包");
-            }
-        } else if ("宠汪汪".equals(task) || "游戏福利".equals(task)) {
-            // These pages may contain several unrelated “领取奖励” controls.
-            // Keep recognition status visible, but do not auto-click until the
-            // exact claim control has been verified against a real page sample.
-        }
-        // “其他活动” intentionally remains manual until its page and button
-        // semantics are identified, preventing a generic button from being clicked.
-        return labels;
     }
 
     private String collectVisibleText(AccessibilityNodeInfo node) {
@@ -131,14 +129,14 @@ public class JdClaimAccessibilityService extends AccessibilityService {
         return out.toString();
     }
 
-    private AccessibilityNodeInfo findClaimNode(AccessibilityNodeInfo node, Set<String> labels) {
+    private AccessibilityNodeInfo findClaimNode(AccessibilityNodeInfo node, java.util.Set<String> labels) {
         if (node == null || !node.isVisibleToUser() || !node.isEnabled()) return null;
-        CharSequence t = node.getText();
-        CharSequence d = node.getContentDescription();
-        String label = t != null ? t.toString().trim() : "";
-        if (label.isEmpty() && d != null) label = d.toString().trim();
+        CharSequence text = node.getText();
+        CharSequence desc = node.getContentDescription();
+        boolean matchesText = text != null && labels.contains(text.toString().trim());
+        boolean matchesDescription = desc != null && labels.contains(desc.toString().trim());
 
-        if (labels.contains(label)) {
+        if (matchesText || matchesDescription) {
             AccessibilityNodeInfo candidate = node;
             while (candidate != null && !candidate.isClickable()) candidate = candidate.getParent();
             if (candidate != null && candidate.isClickable()) return candidate;
@@ -154,6 +152,7 @@ public class JdClaimAccessibilityService extends AccessibilityService {
     public void onInterrupt() {
         getSharedPreferences(PREFS, MODE_PRIVATE).edit()
             .putBoolean("auto_claim_enabled", false)
+            .putString("claim_state", "interrupted")
             .putString("last_result", "自动领取辅助已中断")
             .apply();
     }
